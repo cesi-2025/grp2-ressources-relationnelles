@@ -10,8 +10,8 @@ export default function Navbar() {
   const navLinks = [
     { href: "/", label: "Accueil" },
     { href: "/ressources", label: "Ressources" },
-    { href: "/a-propos", label: "À propos" },
-    { href: "/contact", label: "Contact" },
+    { href: "/presentation", label: "Présentation" },
+    { href: "/aide", label: "Aide" },
   ];
 
   return (
@@ -43,12 +43,12 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/login">
+            <Link href="/auth/connexion">
               <Button variant="outline" size="sm">
                 Connexion
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="/auth/inscription">
               <Button variant="primary" size="sm">
                 Inscription
               </Button>
@@ -101,12 +101,12 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-                <Link href="/login" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="outline" size="md" className="w-full">
                     Connexion
                   </Button>
                 </Link>
-                <Link href="/register" onClick={() => setIsMenuOpen(false)}>
+                <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="primary" size="md" className="w-full">
                     Inscription
                   </Button>
