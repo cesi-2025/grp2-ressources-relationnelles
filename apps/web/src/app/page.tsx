@@ -1,156 +1,241 @@
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import Input from "@/components/ui/Input";
+import Link from "next/link";
 
 export default function Home() {
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary to-primary-light text-white py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="bg-gradient-to-br from-primary via-primary-dark to-primary-light text-white py-24 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 right-0 w-96 h-96 bg-secondary rounded-full blur-3xl"></div>
+        </div>
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              (RE)Sources Relationnelles
+            <Badge variant="accent" className="mb-6 text-base py-2 px-6">
+              Plateforme citoyenne
+            </Badge>
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              (RE)Sources<br />Relationnelles
             </h1>
-            <p className="text-xl md:text-2xl mb-8 text-gray-100 max-w-3xl mx-auto">
-              Plateforme de ressources pour l&apos;amélioration des relations entre citoyens
+            <p className="text-xl md:text-2xl mb-4 text-gray-100 max-w-3xl mx-auto leading-relaxed">
+              Développez vos compétences relationnelles pour améliorer
+              vos interactions avec les autres
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button variant="accent" size="lg">
-                Découvrir les ressources
-              </Button>
-              <Button variant="outline" size="lg" className="bg-white text-primary border-white hover:bg-gray-100">
-                En savoir plus
-              </Button>
+            <p className="text-lg mb-8 text-gray-200 max-w-2xl mx-auto">
+              Une bibliothèque de ressources accessibles à tous pour construire
+              des relations plus harmonieuses au quotidien
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+              <Link href="/ressources">
+                <Button variant="accent" size="lg" className="min-w-[200px]">
+                  📚 Découvrir les ressources
+                </Button>
+              </Link>
+              <Link href="/presentation">
+                <Button variant="outline" size="lg" className="bg-white text-primary border-white hover:bg-gray-100 min-w-[200px]">
+                  En savoir plus
+                </Button>
+              </Link>
+            </div>
+            
+            {/* Stats */}
+            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto mt-12 pt-8 border-t border-white/20">
+              <div>
+                <div className="text-4xl font-bold text-accent mb-1">60+</div>
+                <div className="text-sm text-gray-200">Ressources</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-accent mb-1">6</div>
+                <div className="text-sm text-gray-200">Catégories</div>
+              </div>
+              <div>
+                <div className="text-4xl font-bold text-accent mb-1">100%</div>
+                <div className="text-sm text-gray-200">Gratuit</div>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Demo Section - Charte graphique */}
-      <section className="py-16">
+      {/* Categories Section */}
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-primary mb-8 text-center">
-            Démonstration de la charte graphique
-          </h2>
-
-          {/* Badges */}
-          <div className="mb-12">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Badges</h3>
-            <div className="flex flex-wrap gap-3">
-              <Badge variant="primary">Primaire</Badge>
-              <Badge variant="secondary">Secondaire</Badge>
-              <Badge variant="accent">Accent</Badge>
-              <Badge variant="gray">Neutre</Badge>
-              <Badge variant="success">Succès</Badge>
-              <Badge variant="warning">Attention</Badge>
-              <Badge variant="error">Erreur</Badge>
-            </div>
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
+              Catégories populaires
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Explorez nos ressources classées par thématiques
+            </p>
           </div>
 
-          {/* Buttons */}
-          <div className="mb-12">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Boutons</h3>
-            <div className="flex flex-wrap gap-4">
-              <Button variant="primary">Primaire</Button>
-              <Button variant="secondary">Secondaire</Button>
-              <Button variant="accent">Accent</Button>
-              <Button variant="outline">Contour</Button>
-              <Button variant="primary" size="sm">Petit</Button>
-              <Button variant="primary" size="lg">Grand</Button>
-            </div>
-          </div>
-
-          {/* Cards */}
-          <div className="mb-12">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Cartes</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card>
-                <h4 className="text-lg font-semibold text-primary mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Link href="/ressources?category=communication">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">💬</div>
+                <h3 className="text-xl font-semibold text-primary mb-2">
                   Communication
-                </h4>
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  Apprenez à mieux communiquer avec votre entourage
+                  Apprenez à mieux communiquer et à vous exprimer clairement
                 </p>
                 <Badge variant="primary" size="sm">12 ressources</Badge>
               </Card>
-              <Card hover>
-                <h4 className="text-lg font-semibold text-secondary mb-2">
+            </Link>
+            
+            <Link href="/ressources?category=ecoute">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">👂</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">
                   Écoute active
-                </h4>
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  Développez vos compétences d&apos;écoute
+                  Développez vos compétences d&apos;écoute et de compréhension
                 </p>
                 <Badge variant="secondary" size="sm">8 ressources</Badge>
               </Card>
-              <Card hover>
-                <h4 className="text-lg font-semibold text-accent-dark mb-2">
+            </Link>
+            
+            <Link href="/ressources?category=empathie">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">❤️</div>
+                <h3 className="text-xl font-semibold text-accent-dark mb-2">
                   Empathie
-                </h4>
+                </h3>
                 <p className="text-gray-600 mb-4">
-                  Renforcez votre capacité d&apos;empathie
+                  Renforcez votre capacité à comprendre les autres
                 </p>
                 <Badge variant="accent" size="sm">15 ressources</Badge>
               </Card>
-            </div>
+            </Link>
+            
+            <Link href="/ressources?category=conflits">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">🤝</div>
+                <h3 className="text-xl font-semibold text-primary mb-2">
+                  Gestion des conflits
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Apprenez à gérer et résoudre les désaccords
+                </p>
+                <Badge variant="primary" size="sm">10 ressources</Badge>
+              </Card>
+            </Link>
+            
+            <Link href="/ressources?category=intelligence-emotionnelle">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">🧠</div>
+                <h3 className="text-xl font-semibold text-secondary mb-2">
+                  Intelligence émotionnelle
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Maîtrisez vos émotions et celles des autres
+                </p>
+                <Badge variant="secondary" size="sm">7 ressources</Badge>
+              </Card>
+            </Link>
+            
+            <Link href="/ressources?category=collaboration">
+              <Card hover className="h-full">
+                <div className="text-4xl mb-4">🌟</div>
+                <h3 className="text-xl font-semibold text-accent-dark mb-2">
+                  Collaboration
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Travaillez efficacement en équipe et en groupe
+                </p>
+                <Badge variant="accent" size="sm">9 ressources</Badge>
+              </Card>
+            </Link>
           </div>
 
-          {/* Forms */}
-          <div className="mb-12">
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Formulaires</h3>
-            <Card className="max-w-md">
-              <h4 className="text-lg font-semibold text-primary mb-4">
-                Exemple de formulaire
-              </h4>
-              <div className="space-y-4">
-                <Input
-                  label="Nom complet"
-                  placeholder="Votre nom"
-                  type="text"
-                />
-                <Input
-                  label="Email"
-                  placeholder="votre@email.com"
-                  type="email"
-                />
-                <Input
-                  label="Message"
-                  placeholder="Votre message"
-                  error="Ce champ est requis"
-                />
-                <Button variant="primary" className="w-full">
-                  Envoyer
-                </Button>
-              </div>
-            </Card>
+          <div className="text-center mt-12">
+            <Link href="/ressources">
+              <Button variant="primary" size="lg">
+                Voir toutes les catégories →
+              </Button>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* How it works */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-3xl md:text-4xl font-bold text-primary mb-4">
+              Comment ça marche ?
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Commencez votre parcours en 3 étapes simples
+            </p>
           </div>
 
-          {/* Color palette */}
-          <div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-4">Palette de couleurs</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div>
-                <div className="bg-primary h-24 rounded-lg shadow-md mb-2"></div>
-                <p className="text-sm font-medium text-gray-700">Primaire</p>
-                <p className="text-xs text-gray-500">#1D3A6D</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-primary text-white rounded-full text-2xl font-bold mb-6">
+                1
               </div>
-              <div>
-                <div className="bg-secondary h-24 rounded-lg shadow-md mb-2"></div>
-                <p className="text-sm font-medium text-gray-700">Secondaire</p>
-                <p className="text-xs text-gray-500">#4CAF50</p>
-              </div>
-              <div>
-                <div className="bg-accent h-24 rounded-lg shadow-md mb-2"></div>
-                <p className="text-sm font-medium text-gray-700">Accent</p>
-                <p className="text-xs text-gray-500">#FFC107</p>
-              </div>
-              <div>
-                <div className="bg-gray-300 h-24 rounded-lg shadow-md mb-2"></div>
-                <p className="text-sm font-medium text-gray-700">Gris</p>
-                <p className="text-xs text-gray-500">#D1D5DB</p>
-              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                Créez votre compte
+              </h3>
+              <p className="text-gray-600">
+                Inscrivez-vous gratuitement en quelques secondes pour accéder à toutes les ressources
+              </p>
             </div>
+            
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary text-white rounded-full text-2xl font-bold mb-6">
+                2
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                Explorez les ressources
+              </h3>
+              <p className="text-gray-600">
+                Parcourez notre bibliothèque et trouvez les contenus adaptés à vos besoins
+              </p>
+            </div>
+            
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-accent text-gray-900 rounded-full text-2xl font-bold mb-6">
+                3
+              </div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-3">
+                Progressez à votre rythme
+              </h3>
+              <p className="text-gray-600">
+                Suivez votre progression et développez vos compétences relationnelles
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-gradient-to-r from-primary to-secondary text-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6">
+            Prêt à améliorer vos relations ?
+          </h2>
+          <p className="text-xl mb-8 text-gray-100">
+            Rejoignez notre communauté et accédez gratuitement à plus de 60 ressources
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Link href="/auth/inscription">
+              <Button variant="accent" size="lg" className="min-w-[200px]">
+                Créer un compte gratuit
+              </Button>
+            </Link>
+            <Link href="/presentation">
+              <Button variant="outline" size="lg" className="bg-transparent text-white border-2 border-white hover:bg-white hover:text-primary min-w-[200px]">
+                En savoir plus
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
