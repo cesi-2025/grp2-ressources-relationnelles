@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ResourceCard from "@/components/resources/ResourceCard";
@@ -9,12 +11,14 @@ import { RESOURCES } from "@/data/resources";
 const ITEMS_PER_PAGE = 6;
 
 export default function RessourcesPage() {
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [relationTypeFilter, setRelationTypeFilter] = useState("all");
   const [resourceTypeFilter, setResourceTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date-recent");
   const [page, setPage] = useState(1);
+  const isLoggedIn = searchParams.get("connected") === "1";
 
   const categories = useMemo(
     () => ["all", ...Array.from(new Set(RESOURCES.map((resource) => resource.category)))],
@@ -86,6 +90,20 @@ export default function RessourcesPage() {
           <p className="text-lg text-gray-600">
             Explorez les ressources publiques, appliquez des filtres et triez les résultats.
           </p>
+          <div className="mt-4">
+            {isLoggedIn ? (
+              <Link href="/dashboard/ressources/nouvelle?connected=1">
+                <Button variant="primary">Créer une ressource citoyenne</Button>
+              </Link>
+            ) : (
+              <p className="text-sm text-gray-600">
+                Connectez-vous pour proposer une ressource.
+                <Link href="/auth/connexion" className="text-primary font-medium hover:underline ml-1">
+                  Se connecter
+                </Link>
+              </p>
+            )}
+          </div>
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 md:p-6 mb-8">
