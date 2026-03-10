@@ -1,15 +1,7 @@
+import Link from "next/link";
 import Badge from "@/components/ui/Badge";
 import Card from "@/components/ui/Card";
-
-export interface ResourceItem {
-  id: number;
-  title: string;
-  category: string;
-  relationType: string;
-  resourceType: string;
-  excerpt: string;
-  createdAt: string;
-}
+import type { ResourceItem } from "@/data/resources";
 
 interface ResourceCardProps {
   resource: ResourceItem;
@@ -48,7 +40,16 @@ export default function ResourceCard({ resource }: ResourceCardProps) {
         </Badge>
       </div>
 
-      <div className="text-xs text-gray-500">Publié le {new Date(resource.createdAt).toLocaleDateString("fr-FR")}</div>
+      <div className="text-xs text-gray-500 mb-3">
+        Publié le {new Date(resource.createdAt).toLocaleDateString("fr-FR")}
+      </div>
+
+      <Link
+        href={`/ressources/${resource.id}`}
+        className="text-sm font-medium text-primary hover:underline"
+      >
+        Voir le détail →
+      </Link>
     </Card>
   );
 }
