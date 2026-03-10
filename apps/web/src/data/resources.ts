@@ -17,6 +17,8 @@ export interface ResourceComment {
   author: string;
   message: string;
   createdAt: string;
+  parentId: number | null;
+  status: "approved" | "pending";
 }
 
 export const RESOURCES: ResourceItem[] = [
@@ -185,6 +187,8 @@ export const RESOURCE_COMMENTS: ResourceComment[] = [
     author: "Anaïs",
     message: "Excellente ressource, la partie sur la reformulation m'a beaucoup aidée.",
     createdAt: "2026-03-04",
+    parentId: null,
+    status: "approved",
   },
   {
     id: 2,
@@ -192,6 +196,17 @@ export const RESOURCE_COMMENTS: ResourceComment[] = [
     author: "Louis",
     message: "Très clair et concret, surtout pour les réunions d'équipe.",
     createdAt: "2026-03-05",
+    parentId: null,
+    status: "approved",
+  },
+  {
+    id: 5,
+    resourceId: 1,
+    author: "Camille",
+    message: "Merci pour votre retour ! Avez-vous testé la technique en réunion ?",
+    createdAt: "2026-03-06",
+    parentId: 2,
+    status: "approved",
   },
   {
     id: 3,
@@ -199,6 +214,8 @@ export const RESOURCE_COMMENTS: ResourceComment[] = [
     author: "Mina",
     message: "La vidéo est courte mais très utile pour comprendre l'empathie au quotidien.",
     createdAt: "2026-02-23",
+    parentId: null,
+    status: "approved",
   },
   {
     id: 4,
@@ -206,6 +223,17 @@ export const RESOURCE_COMMENTS: ResourceComment[] = [
     author: "Yanis",
     message: "Les templates de réunion sont super pratiques pour les associations.",
     createdAt: "2026-02-12",
+    parentId: null,
+    status: "approved",
+  },
+  {
+    id: 6,
+    resourceId: 6,
+    author: "NouveauCitoyen",
+    message: "Je propose une variante basée sur un tableau Kanban collaboratif.",
+    createdAt: "2026-03-09",
+    parentId: null,
+    status: "pending",
   },
 ];
 
