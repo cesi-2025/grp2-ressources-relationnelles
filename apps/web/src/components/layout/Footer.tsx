@@ -9,8 +9,8 @@ export default function Footer() {
       links: [
         { href: "/", label: "Accueil" },
         { href: "/ressources", label: "Ressources" },
-        { href: "/a-propos", label: "À propos" },
-        { href: "/contact", label: "Contact" },
+        { href: "/presentation", label: "Présentation" },
+        { href: "/aide", label: "Aide" },
       ],
     },
     {
@@ -23,11 +23,11 @@ export default function Footer() {
       ],
     },
     {
-      title: "Ressources",
+      title: "Compte",
       links: [
-        { href: "/categories", label: "Catégories" },
-        { href: "/aide", label: "Aide" },
-        { href: "/faq", label: "FAQ" },
+        { href: "/auth/inscription", label: "Créer un compte" },
+        { href: "/auth/connexion", label: "Se connecter" },
+        { href: "/aide", label: "Centre d'aide" },
       ],
     },
   ];
