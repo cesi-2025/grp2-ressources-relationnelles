@@ -42,6 +42,59 @@ cd apps/web && pnpm install && pnpm dev
 cd apps/mobile && pnpm install && pnpm start
 ```
 
+## Environnement Docker (équipe)
+
+Pour éviter les différences de machines entre membres de l'équipe, le backend peut être lancé en conteneurs.
+
+### Services disponibles
+
+- `db` : PostgreSQL 16
+- `api` : Laravel (PHP 8.4 + Composer)
+- `db_admin` : Adminer (interface web d'administration BDD)
+
+### Lancer l'environnement backend
+
+```bash
+cp .env.example .env
+docker compose up -d --build db api db_admin
+docker compose logs -f api
+```
+
+### Accéder à l'admin BDD
+
+- URL : `http://localhost:8080`
+- System : `PostgreSQL`
+- Server : `db`
+- Username : `postgres`
+- Password : `postgres`
+- Database : `ressources_relationnelles`
+
+### Arrêter l'environnement
+
+```bash
+docker compose down
+```
+
+### Réinitialiser complètement la base
+
+```bash
+docker compose down -v
+```
+
+### Commandes Laravel dans le conteneur
+
+```bash
+docker compose exec api php artisan migrate
+docker compose exec api php artisan test
+docker compose exec api php artisan route:list
+```
+
+### Travail en parallèle dans le monorepo
+
+- Le backend peut tourner en Docker (`api` + `db`) pour Chamil.
+- Le web et le mobile restent lancés localement par chaque dev (`pnpm dev`, `pnpm start`) tant que leurs apps sont en cours de setup.
+- Les packages `packages/ui` et `packages/shared` restent partagés via le monorepo, sans changer le workflow Git.
+
 ---
 
 ## Équipe
