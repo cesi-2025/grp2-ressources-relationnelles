@@ -135,6 +135,84 @@ Se connecter et obtenir un token.
 { "message": "User account is disabled." }
 ```
 
+### Ressources et catégories
+
+#### `GET /api/resources`
+
+Lister les ressources **publiques** et **publiées**.
+
+**Query params disponibles** :
+
+| Paramètre | Description |
+|---|---|
+| `category` | Filtrer par `category_id` |
+| `relation_type` | Filtrer par `relation_type_id` |
+| `resource_type` | Filtrer par `resource_type_id` |
+| `sort=date` | Trier par date décroissante (défaut) |
+| `sort=title` | Trier par titre croissant |
+
+**Pagination** : `15` résultats par page.
+
+**Exemple** :
+```bash
+curl "http://localhost:8000/api/resources?category=1&relation_type=1&resource_type=1&sort=date"
+```
+
+**Réponse** `200` :
+```json
+{
+  "current_page": 1,
+  "data": [
+    {
+      "id": 1,
+      "title": "Ma ressource",
+      "content": "Contenu de la ressource",
+      "status": "published",
+      "is_public": true,
+      "user": { "id": 1, "name": "John Doe" },
+      "category": { "id": 1, "name": "Catégorie A" },
+      "relation_type": { "id": 1, "name": "Familiale" },
+      "resource_type": { "id": 1, "name": "Article" }
+    }
+  ],
+  "per_page": 15,
+  "total": 1
+}
+```
+
+#### `GET /api/resources/{id}`
+
+Détail d'une ressource **publique** et **publiée**.
+
+**Réponse** `200` :
+```json
+{
+  "id": 1,
+  "title": "Ma ressource",
+  "content": "Contenu de la ressource",
+  "status": "published",
+  "is_public": true,
+  "user": { "id": 1, "name": "John Doe" },
+  "category": { "id": 1, "name": "Catégorie A" },
+  "relation_type": { "id": 1, "name": "Familiale" },
+  "resource_type": { "id": 1, "name": "Article" }
+}
+```
+
+**Erreur** `404` : ressource absente, privée, ou non publiée.
+
+#### `GET /api/categories`
+
+Lister toutes les catégories, triées par nom.
+
+**Réponse** `200` :
+```json
+[
+  { "id": 1, "name": "Catégorie A", "description": null },
+  { "id": 2, "name": "Catégorie B", "description": "Description" }
+]
+```
+
 ### Routes authentifiées (Bearer token requis)
 
 #### `POST /api/logout`
@@ -181,6 +259,81 @@ Health check réservé aux admins.
 **Erreur** `403` :
 ```json
 { "message": "Forbidden." }
+```
+
+#### `POST /api/resources`
+
+Créer une ressource. Route réservée au **citizen** connecté. Le statut est toujours forcé à `pending`.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{
+  "title": "Nouvelle ressource",
+  "content": "Contenu assez long pour être valide.",
+  "category_id": 1,
+  "relation_type_id": 1,
+  "resource_type_id": 1,
+  "is_public": true
+}
+```
+
+| Champ | Règles |
+|---|---|
+| `title` | requis, string, min:3, max:255 |
+| `content` | requis, string, min:10 |
+| `category_id` | requis, entier, existe dans `categories` |
+| `relation_type_id` | requis, entier, existe dans `relation_types` |
+| `resource_type_id` | requis, entier, existe dans `resource_types` |
+| `is_public` | optionnel, booléen |
+
+**Réponse** `201` :
+```json
+{
+  "id": 12,
+  "title": "Nouvelle ressource",
+  "status": "pending",
+  "is_public": true,
+  "user_id": 3
+}
+```
+
+**Erreur** `403` :
+```json
+{ "message": "Forbidden." }
+```
+
+#### `PUT /api/resources/{id}`
+
+Modifier une ressource. Seul **l'auteur** peut l'éditer.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{
+  "title": "Titre mis à jour",
+  "content": "Contenu mis à jour assez long.",
+  "category_id": 1,
+  "relation_type_id": 1,
+  "resource_type_id": 1,
+  "is_public": false
+}
+```
+
+**Réponse** `200` :
+```json
+{
+  "id": 12,
+  "title": "Titre mis à jour",
+  "is_public": false
+}
+```
+
+**Erreur** `403` :
+```json
+{ "message": "This action is unauthorized." }
 ```
 
 ---
