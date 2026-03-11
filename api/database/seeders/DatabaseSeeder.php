@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use App\Models\Category;
 use App\Models\RelationType;
 use App\Models\ResourceType;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -51,13 +50,8 @@ class DatabaseSeeder extends Seeder
             Category::firstOrCreate(['name' => $category]);
         }
 
-        // Créer un utilisateur de test
-        if (User::count() === 0) {
-            User::factory()->create([
-                'name' => 'Admin User',
-                'email' => 'admin@example.com',
-                'role' => \App\Enums\Role::SUPER_ADMIN,
-            ]);
-        }
+        $this->call([
+            AuthUsersSeeder::class,
+        ]);
     }
 }
