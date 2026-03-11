@@ -69,8 +69,8 @@ export default function DisconnectedTable({ users }: DisconnectedTableProps) {
               <td style={{ padding: "12px 16px", fontSize: 12, color: "#94a3b8" }}>{user.email}</td>
               <td style={{ padding: "12px 16px" }}>
                 <span style={{
-                  background: user.status === "Inactif" ? "#fee2e2" : "#f1f5f9",
-                  color: user.status === "Inactif" ? "#ef4444" : "#64748b",
+                  background: user.status === "Désactivé" ? "#fee2e2" : "#f1f5f9",
+                  color: user.status === "Désactivé" ? "#ef4444" : "#64748b",
                   padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600,
                 }}>
                   {user.status}

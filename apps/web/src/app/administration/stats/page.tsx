@@ -7,9 +7,9 @@ import AdminPanel from "@/components/tableauDeBord/panelAdmin";
 
 export default function DashboardPage() {
   const totalUsers        = USERS.length;
-  const activeUsers       = USERS.filter((u) => u.status === "Publié").length;
+  const activeUsers       = USERS.filter((u) => u.status === "Actif").length;
   const newThisMonth      = 18;
-  const disconnectedUsers = USERS.filter((u) => u.status === "Inactif" || u.status === "Archivé");
+  const disconnectedUsers = USERS.filter((u) => u.status === "Désactivé" );
 
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: 48 }}>
@@ -31,7 +31,7 @@ export default function DashboardPage() {
           <StatCard label="Total inscrits"      value={totalUsers}               sub="depuis le lancement"          color="#6366f1" icon="👥" />
           <StatCard label="Utilisateurs actifs" value={activeUsers}              sub={`sur ${totalUsers} inscrits`}  color="#10b981" icon="✅" />
           <StatCard label="Nouveaux ce mois"    value={newThisMonth}             sub="en décembre 2026"             color="#f59e0b" icon="🆕" />
-          <StatCard label="Inactifs / Archivés" value={disconnectedUsers.length} sub="à surveiller"                 color="#ef4444" icon="⚠️" />
+          <StatCard label="Désactivé / Archivés" value={disconnectedUsers.length} sub="à surveiller"                 color="#ef4444" icon="⚠️" />
         </div>
       </div>
 
