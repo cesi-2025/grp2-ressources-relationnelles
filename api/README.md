@@ -476,6 +476,125 @@ Retourner le tableau de bord progression de l'utilisateur connecté.
 }
 ```
 
+### Administration, modération et super-admin
+
+#### `GET /api/admin/statistics`
+
+Tableau de bord statistiques (admin/super-admin uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Query params** :
+
+| Paramètre | Valeurs |
+|---|---|
+| `period` | `day`, `week`, `month`, `all` (défaut) |
+| `category` | `category_id` pour filtrer les stats |
+
+**Réponse** `200` :
+```json
+{
+  "filters": { "period": "all", "category": null },
+  "statistics": {
+    "consultations": 0,
+    "recherches": 0,
+    "exploitations": 3,
+    "creations": 10,
+    "favoris": 5,
+    "commentaires": 8,
+    "resources_pending": 4,
+    "resources_published": 6
+  }
+}
+```
+
+#### `PUT /api/admin/resources/{id}/suspend`
+
+Suspendre une ressource (admin/super-admin uniquement). Le statut passe à `archived`.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Resource suspended successfully.",
+  "resource": { "id": 1, "status": "archived" }
+}
+```
+
+#### `PUT /api/moderation/resources/{id}/validate`
+
+Valider une ressource (moderator/admin/super-admin). Le statut passe à `published`.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Resource validated successfully.",
+  "resource": { "id": 1, "status": "published" }
+}
+```
+
+#### `PUT /api/moderation/comments/{id}/approve`
+
+Approuver un commentaire (moderator/admin/super-admin).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Comment approved successfully.",
+  "comment": { "id": 1, "is_approved": true }
+}
+```
+
+#### `DELETE /api/moderation/comments/{id}`
+
+Supprimer un commentaire (moderator/admin/super-admin).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{ "message": "Comment deleted successfully." }
+```
+
+#### `POST /api/super-admin/users`
+
+Créer un compte privilégié (super-admin uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{
+  "name": "Moderator User",
+  "email": "moderator.user@example.com",
+  "password": "Password123!",
+  "password_confirmation": "Password123!",
+  "role": "moderator",
+  "is_active": true
+}
+```
+
+`role` accepte uniquement : `moderator` ou `admin`.
+
+**Réponse** `201` :
+```json
+{
+  "message": "Privileged user created successfully.",
+  "user": {
+    "id": 20,
+    "name": "Moderator User",
+    "email": "moderator.user@example.com",
+    "role": "moderator",
+    "is_active": true
+  }
+}
+```
+
 ---
 
 ## Rôles utilisateurs
