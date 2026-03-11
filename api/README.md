@@ -336,6 +336,146 @@ Modifier une ressource. Seul **l'auteur** peut l'éditer.
 { "message": "This action is unauthorized." }
 ```
 
+### Interactions (commentaires, favoris, progression)
+
+#### `GET /api/resources/{id}/comments`
+
+Lister l'arbre de commentaires **approuvés** (parents + réponses approuvées) d'une ressource.
+
+**Réponse** `200` :
+```json
+[
+  {
+    "id": 10,
+    "content": "Commentaire parent",
+    "replies": [
+      { "id": 11, "content": "Réponse" }
+    ]
+  }
+]
+```
+
+#### `POST /api/resources/{id}/comments`
+
+Ajouter un commentaire (citizen connecté uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{ "content": "Mon commentaire" }
+```
+
+**Réponse** `201` :
+```json
+{
+  "id": 12,
+  "content": "Mon commentaire",
+  "resource_id": 1,
+  "parent_id": null
+}
+```
+
+#### `POST /api/comments/{id}/reply`
+
+Répondre à un commentaire (citizen connecté uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{ "content": "Ma réponse" }
+```
+
+**Réponse** `201` :
+```json
+{
+  "id": 13,
+  "content": "Ma réponse",
+  "resource_id": 1,
+  "parent_id": 12
+}
+```
+
+#### `POST /api/resources/{id}/favorite`
+
+Ajouter une ressource aux favoris de l'utilisateur connecté.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `201` (créé) ou `200` (déjà favori) :
+```json
+{
+  "message": "Resource added to favorites.",
+  "favorite": {
+    "user_id": 3,
+    "resource_id": 1
+  }
+}
+```
+
+#### `DELETE /api/resources/{id}/favorite`
+
+Retirer une ressource des favoris de l'utilisateur connecté.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{ "message": "Resource removed from favorites." }
+```
+
+#### `POST /api/resources/{id}/exploit`
+
+Marquer une ressource comme exploitée.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Progression status updated.",
+  "progression": {
+    "user_id": 3,
+    "resource_id": 1,
+    "status": "exploited"
+  }
+}
+```
+
+#### `POST /api/resources/{id}/set-aside`
+
+Marquer une ressource comme mise de côté.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Progression status updated.",
+  "progression": {
+    "user_id": 3,
+    "resource_id": 1,
+    "status": "set_aside"
+  }
+}
+```
+
+#### `GET /api/progression`
+
+Retourner le tableau de bord progression de l'utilisateur connecté.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "favorites": [],
+  "exploited": [],
+  "set_aside": []
+}
+```
+
 ---
 
 ## Rôles utilisateurs

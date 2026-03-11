@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\FavoriteController;
+use App\Http\Controllers\ProgressionController;
 use App\Http\Controllers\ResourceController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,3 +31,14 @@ Route::post('/resources', [ResourceController::class, 'store'])->middleware(['au
 Route::put('/resources/{resource}', [ResourceController::class, 'update'])->middleware(['auth:sanctum']);
 
 Route::get('/categories', [CategoryController::class, 'index']);
+
+Route::get('/resources/{id}/comments', [CommentController::class, 'indexByResource']);
+Route::post('/resources/{id}/comments', [CommentController::class, 'store'])->middleware(['auth:sanctum']);
+Route::post('/comments/{id}/reply', [CommentController::class, 'reply'])->middleware(['auth:sanctum']);
+
+Route::post('/resources/{id}/favorite', [FavoriteController::class, 'store'])->middleware(['auth:sanctum']);
+Route::delete('/resources/{id}/favorite', [FavoriteController::class, 'destroy'])->middleware(['auth:sanctum']);
+
+Route::post('/resources/{id}/exploit', [ProgressionController::class, 'exploit'])->middleware(['auth:sanctum']);
+Route::post('/resources/{id}/set-aside', [ProgressionController::class, 'setAside'])->middleware(['auth:sanctum']);
+Route::get('/progression', [ProgressionController::class, 'index'])->middleware(['auth:sanctum']);
