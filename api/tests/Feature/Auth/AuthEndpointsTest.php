@@ -168,4 +168,15 @@ class AuthEndpointsTest extends TestCase
                 'status' => 'admin-ok',
             ]);
     }
+
+    public function test_api_responses_include_security_headers(): void
+    {
+        $this->getJson('/api/ping')
+            ->assertOk()
+            ->assertHeader('X-Content-Type-Options', 'nosniff')
+            ->assertHeader('X-Frame-Options', 'DENY')
+            ->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertHeader('X-XSS-Protection', '1; mode=block')
+            ->assertHeader('Content-Security-Policy', "default-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'");
+    }
 }
