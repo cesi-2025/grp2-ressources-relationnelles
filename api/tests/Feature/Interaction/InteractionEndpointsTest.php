@@ -72,15 +72,15 @@ class InteractionEndpointsTest extends TestCase
         Sanctum::actingAs($citizen);
 
         $this->postJson('/api/resources/'.$resource->id.'/comments', [
-            'content' => 'This is my comment',
+            'content' => '  <script>alert(1)</script>This is my comment  ',
         ])
             ->assertCreated()
-            ->assertJsonPath('content', 'This is my comment');
+            ->assertJsonPath('content', 'alert(1)This is my comment');
 
         $this->assertDatabaseHas('comments', [
             'resource_id' => $resource->id,
             'user_id' => $citizen->id,
-            'content' => 'This is my comment',
+            'content' => 'alert(1)This is my comment',
         ]);
     }
 

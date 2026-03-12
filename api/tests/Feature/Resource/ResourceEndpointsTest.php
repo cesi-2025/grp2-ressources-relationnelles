@@ -111,8 +111,8 @@ class ResourceEndpointsTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/resources', [
-            'title' => 'New Resource',
-            'content' => 'New resource content with enough length.',
+            'title' => '  <b>New Resource</b>  ',
+            'content' => '  <p>New resource content with enough length.</p>  ',
             'category_id' => $category->id,
             'relation_type_id' => $relationType->id,
             'resource_type_id' => $resourceType->id,
@@ -122,6 +122,7 @@ class ResourceEndpointsTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('title', 'New Resource')
+            ->assertJsonPath('content', 'New resource content with enough length.')
             ->assertJsonPath('status', ResourceStatus::PENDING->value)
             ->assertJsonPath('user_id', $user->id);
 

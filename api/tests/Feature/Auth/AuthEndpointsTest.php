@@ -24,8 +24,8 @@ class AuthEndpointsTest extends TestCase
     public function test_register_creates_citizen_and_returns_token(): void
     {
         $response = $this->postJson('/api/register', [
-            'name' => 'New Citizen',
-            'email' => 'new.citizen@example.com',
+            'name' => '  <b>New Citizen</b>  ',
+            'email' => '  NEW.CITIZEN@example.com  ',
             'password' => 'Password123!',
             'password_confirmation' => 'Password123!',
         ]);
@@ -40,6 +40,7 @@ class AuthEndpointsTest extends TestCase
 
         $this->assertDatabaseHas('users', [
             'email' => 'new.citizen@example.com',
+            'name' => 'New Citizen',
             'role' => Role::CITIZEN->value,
             'is_active' => true,
         ]);

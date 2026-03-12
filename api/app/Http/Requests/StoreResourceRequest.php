@@ -2,13 +2,24 @@
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\SanitizesInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreResourceRequest extends FormRequest
 {
+    use SanitizesInput;
+
     public function authorize(): bool
     {
         return true;
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'title' => $this->sanitizePlainText($this->input('title')),
+            'content' => $this->sanitizePlainText($this->input('content')),
+        ]);
     }
 
     /**
