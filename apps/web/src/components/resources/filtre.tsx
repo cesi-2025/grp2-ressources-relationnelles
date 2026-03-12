@@ -1,7 +1,6 @@
 "use client";
  
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
  
 interface ResourceFiltersProps {
   search: string;
