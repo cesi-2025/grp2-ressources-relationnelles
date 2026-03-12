@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 export default function Footer() {
@@ -39,9 +40,13 @@ export default function Footer() {
           {/* Brand Section */}
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">(RE)</span>
-              </div>
+              <Image
+                src="/ressourceRelationel_logo.png"
+                alt="Logo Ressource Relationnel"
+                width={40}
+                height={40}
+                className="w-10 h-10 rounded-lg"
+              />
               <span className="text-xl font-bold text-white">
                 Sources<br />Relationnelles
               </span>
