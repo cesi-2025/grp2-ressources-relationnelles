@@ -623,17 +623,27 @@ Créer un compte privilégié (super-admin uniquement).
 
 ## Seeders de test
 
-Après `docker compose up -d`, les seeders créent ces comptes (mot de passe : `password123`) :
+Après `docker compose up -d`, les seeders créent un jeu de données de démonstration complet (mot de passe utilisateurs : `password123`) :
 
 | Email | Rôle |
 |---|---|
 | `superadmin@ressources.local` | super_admin |
-| `admin@ressources.local` | admin |
-| `moderator@ressources.local` | moderator |
+| `admin1@ressources.local` | admin |
+| `admin2@ressources.local` | admin |
+| `moderator1@ressources.local` | moderator |
+| `moderator2@ressources.local` | moderator |
 | `citizen1@ressources.local` | citizen |
 | `citizen2@ressources.local` | citizen |
+| `citizen3@ressources.local` | citizen |
+| `citizen4@ressources.local` | citizen |
+| `citizen5@ressources.local` | citizen |
 
-> **Note** : les seeders ne sont exécutés que manuellement via `docker exec rr_api php artisan db:seed`.
+Les seeders ajoutent aussi :
+
+- `20` ressources de démo
+- `15` commentaires de démo
+
+> **Note** : pour recréer une base QA cohérente, utiliser `docker exec rr_api php artisan migrate:fresh --seed --force`.
 
 ---
 

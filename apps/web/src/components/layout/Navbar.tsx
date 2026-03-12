@@ -44,7 +44,7 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/auth/connexion">
+            <Link href="/administration">
               <Button variant="outline" size="sm">
                 Connexion
               </Button>
