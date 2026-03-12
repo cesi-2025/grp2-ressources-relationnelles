@@ -25,11 +25,14 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.className} antialiased`}>
+        <a href="#main-content" className="skip-link">
+          Aller au contenu principal
+        </a>
         <div className="flex flex-col min-h-screen">
           <NavbarAdmin/>
           <div style={{ display: "flex", flex: 1 }}>
             <SidebarAdmin/>
-            <main className="flex-grow">{children}</main>
+            <main id="main-content" className="flex-grow">{children}</main>
           </div>
           <Footer />
         </div>

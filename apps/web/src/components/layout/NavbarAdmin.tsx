@@ -6,10 +6,11 @@ import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
  
 export default function NavbarAdmin() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const mobileMenuId = "admin-mobile-menu";
  
   return (
     <>
-      <nav style={navbarAdminS.nav}>
+      <nav style={navbarAdminS.nav} aria-label="Navigation administration">
         <div style={navbarAdminS.inner}>
  
           {/* ── Logo ──────────────────────────────────────────────────────── */}
@@ -40,6 +41,9 @@ export default function NavbarAdmin() {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menu"
+            aria-expanded={isMenuOpen}
+            aria-controls={mobileMenuId}
+            type="button"
             style={navbarAdminS.burger(isMenuOpen)}
             className="navbar-admin-burger"
           >
@@ -55,7 +59,7 @@ export default function NavbarAdmin() {
  
         {/* ── Mobile menu ───────────────────────────────────────────────────── */}
         {isMenuOpen && (
-          <div style={navbarAdminS.mobileMenu}>
+          <div id={mobileMenuId} style={navbarAdminS.mobileMenu}>
             <div style={navbarAdminS.mobileAuthRow}>
               <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
                 Connexion
