@@ -19,13 +19,6 @@ const SECTIONS = [
       { href: "/administration/moderation",  label: "Modération",   icon: "🛡️", badge: { text: "3",  color: tokens.colors.jauneRelation } },
     ],
   },
-  {
-    label: "Paramètres",
-    links: [
-      { href: "/administration/profil",    label: "Mon profil", icon: "👤", badge: null },
-      { href: "/administration/securite",  label: "Sécurité",   icon: "🔒", badge: null },
-    ],
-  },
 ];
  
 export default function SidebarAdmin() {
