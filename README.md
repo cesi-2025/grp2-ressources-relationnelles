@@ -32,33 +32,49 @@ packages/shared/ → Types, hooks, services API partagés
 git clone https://github.com/cesi-2025/grp2-ressources-relationnelles.git
 cd grp2-ressources-relationnelles
 
-# API
-cd api && composer install && cp .env.example .env && php artisan migrate && php artisan serve
+# Environnement recommandé (API + DB + Adminer + Web)
+cp .env.example .env
+docker compose up -d --build
 
-# Web
-cd apps/web && pnpm install && pnpm dev
+# API : http://localhost:8000
+# Web : http://localhost:3005 (ou valeur de WEB_PORT dans .env)
+# Adminer : http://localhost:8080
 
-# Mobile
+# Mobile (hors Docker)
 cd apps/mobile && pnpm install && pnpm start
 ```
 
+> Le workflow local sans Docker reste possible, mais l'équipe utilise désormais principalement Docker pour l'API et le web.
+
 ## Environnement Docker (équipe)
 
-Pour éviter les différences de machines entre membres de l'équipe, le backend peut être lancé en conteneurs.
+Pour éviter les différences de machines entre membres de l'équipe, l'environnement applicatif partagé peut être lancé en conteneurs.
 
 ### Services disponibles
 
 - `db` : PostgreSQL 16
 - `api` : Laravel (PHP 8.4 + Composer)
 - `db_admin` : Adminer (interface web d'administration BDD)
+- `web` : Next.js (`pnpm`, hot reload, store pnpm persistant)
 
-### Lancer l'environnement backend
+### Lancer l'environnement
 
 ```bash
 cp .env.example .env
-docker compose up -d --build db api db_admin
+docker compose up -d --build
 docker compose logs -f api
 ```
+
+### Ports par défaut
+
+| Service | URL / Port |
+|---|---|
+| API Laravel | http://localhost:8000 |
+| Web Next.js | http://localhost:3005 |
+| Adminer | http://localhost:8080 |
+| PostgreSQL | localhost:5432 |
+
+> Le port web est piloté par `WEB_PORT` dans `.env`.
 
 ### Accéder à l'admin BDD
 
@@ -87,13 +103,45 @@ docker compose down -v
 docker compose exec api php artisan migrate
 docker compose exec api php artisan test
 docker compose exec api php artisan route:list
+docker compose exec api php artisan db:seed
+docker compose exec api php artisan migrate:fresh --seed --force
+```
+
+### Commandes web dans le conteneur
+
+```bash
+docker compose logs -f web
+docker compose exec web pnpm lint
 ```
 
 ### Travail en parallèle dans le monorepo
 
-- Le backend peut tourner en Docker (`api` + `db`) pour Chamil.
-- Le web et le mobile restent lancés localement par chaque dev (`pnpm dev`, `pnpm start`) tant que leurs apps sont en cours de setup.
+- Le backend et le web peuvent tourner ensemble en Docker (`api` + `db` + `db_admin` + `web`).
+- Le mobile reste lancé localement (`pnpm start`) pour Expo.
 - Les packages `packages/ui` et `packages/shared` restent partagés via le monorepo, sans changer le workflow Git.
+
+### Données de démonstration
+
+Le seeding courant permet de reconstruire un environnement QA cohérent :
+
+- `10` utilisateurs de démonstration (tous rôles)
+- `20` ressources
+- `15` commentaires
+
+Comptes principaux de démo (mot de passe : `password123`) :
+
+| Email | Rôle |
+|---|---|
+| `superadmin@ressources.local` | super_admin |
+| `admin1@ressources.local` | admin |
+| `admin2@ressources.local` | admin |
+| `moderator1@ressources.local` | moderator |
+| `moderator2@ressources.local` | moderator |
+| `citizen1@ressources.local` | citizen |
+| `citizen2@ressources.local` | citizen |
+| `citizen3@ressources.local` | citizen |
+| `citizen4@ressources.local` | citizen |
+| `citizen5@ressources.local` | citizen |
 
 ---
 
