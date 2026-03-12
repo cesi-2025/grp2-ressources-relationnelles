@@ -147,6 +147,34 @@ class AuthEndpointsTest extends TestCase
             ]);
     }
 
+    public function test_user_deletion_anonymizes_account_and_revokes_tokens(): void
+    {
+        $user = User::factory()->create([
+            'name' => 'Citizen Name',
+            'email' => 'delete.me@example.com',
+            'role' => Role::ADMIN,
+            'is_active' => true,
+        ]);
+
+        $token = $user->createToken('delete-account')->plainTextToken;
+
+        $this->withHeader('Authorization', 'Bearer '.$token)
+            ->deleteJson('/api/user')
+            ->assertOk()
+            ->assertJson([
+                'message' => 'Account anonymized successfully.',
+            ]);
+
+        $user->refresh();
+
+        $this->assertSame('Deleted User', $user->name);
+        $this->assertFalse($user->is_active);
+        $this->assertSame(Role::CITIZEN, $user->role);
+        $this->assertStringStartsWith('deleted-user-'.$user->id.'-', $user->email);
+        $this->assertStringEndsWith('@example.invalid', $user->email);
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
     public function test_role_middleware_blocks_non_admin_and_allows_admin(): void
     {
         $citizen = User::factory()->create([

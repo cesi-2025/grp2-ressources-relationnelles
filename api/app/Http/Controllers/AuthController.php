@@ -71,4 +71,20 @@ class AuthController extends Controller
     {
         return response()->json($request->user());
     }
+
+    public function destroy(Request $request): JsonResponse
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated.'], 401);
+        }
+
+        $user->tokens()->delete();
+        $user->anonymize();
+
+        return response()->json([
+            'message' => 'Account anonymized successfully.',
+        ]);
+    }
 }

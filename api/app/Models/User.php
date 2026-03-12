@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
@@ -71,5 +72,18 @@ class User extends Authenticatable
     public function progressions(): HasMany
     {
         return $this->hasMany(Progression::class);
+    }
+
+    public function anonymize(): void
+    {
+        $this->forceFill([
+            'name' => 'Deleted User',
+            'email' => 'deleted-user-'.$this->id.'-'.Str::uuid().'@example.invalid',
+            'password' => Str::password(32),
+            'role' => Role::CITIZEN,
+            'is_active' => false,
+            'remember_token' => null,
+            'email_verified_at' => null,
+        ])->save();
     }
 }
