@@ -18,6 +18,7 @@ class LoginRequest extends FormRequest
     {
         $this->merge([
             'email' => $this->sanitizeEmail($this->input('email')),
+            'email_hash' => $this->hashEmail($this->input('email')),
         ]);
     }
 
@@ -28,6 +29,7 @@ class LoginRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email'],
+            'email_hash' => ['required', 'string', 'size:64'],
             'password' => ['required', 'string'],
         ];
     }

@@ -20,6 +20,7 @@ class RegisterRequest extends FormRequest
         $this->merge([
             'name' => $this->sanitizePlainText($this->input('name')),
             'email' => $this->sanitizeEmail($this->input('email')),
+            'email_hash' => $this->hashEmail($this->input('email')),
         ]);
     }
 
@@ -30,7 +31,8 @@ class RegisterRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255'],
+            'email_hash' => ['required', 'string', 'size:64', 'unique:users,email_hash'],
             'password' => ['required', 'confirmed', Password::defaults()],
         ];
     }

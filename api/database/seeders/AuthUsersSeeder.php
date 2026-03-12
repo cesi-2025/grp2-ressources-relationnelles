@@ -43,9 +43,10 @@ class AuthUsersSeeder extends Seeder
 
         foreach ($users as $data) {
             User::query()->updateOrCreate(
-                ['email' => $data['email']],
+                ['email_hash' => User::hashEmailValue($data['email'])],
                 [
                     'name' => $data['name'],
+                    'email' => $data['email'],
                     'password' => 'password123',
                     'role' => $data['role'],
                     'is_active' => true,

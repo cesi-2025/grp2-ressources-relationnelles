@@ -5,6 +5,7 @@ namespace Tests\Feature\Auth;
 use App\Enums\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\RateLimiter;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -36,14 +37,22 @@ class AuthEndpointsTest extends TestCase
                 'token',
                 'token_type',
                 'user' => ['id', 'name', 'email', 'role'],
-            ]);
+            ])
+            ->assertJsonPath('user.name', 'New Citizen')
+            ->assertJsonPath('user.email', 'new.citizen@example.com');
 
         $this->assertDatabaseHas('users', [
-            'email' => 'new.citizen@example.com',
-            'name' => 'New Citizen',
+            'email_hash' => User::hashEmailValue('new.citizen@example.com'),
             'role' => Role::CITIZEN->value,
             'is_active' => true,
         ]);
+
+        $user = User::query()->where('email_hash', User::hashEmailValue('new.citizen@example.com'))->firstOrFail();
+
+        $this->assertSame('New Citizen', $user->name);
+        $this->assertSame('new.citizen@example.com', $user->email);
+        $this->assertNotSame('new.citizen@example.com', $user->getRawOriginal('email'));
+        $this->assertNotSame('New Citizen', $user->getRawOriginal('name'));
     }
 
     public function test_login_returns_sanctum_token(): void
@@ -172,6 +181,7 @@ class AuthEndpointsTest extends TestCase
         $this->assertSame(Role::CITIZEN, $user->role);
         $this->assertStringStartsWith('deleted-user-'.$user->id.'-', $user->email);
         $this->assertStringEndsWith('@example.invalid', $user->email);
+        $this->assertNotSame($user->email, $user->getRawOriginal('email'));
         $this->assertDatabaseCount('personal_access_tokens', 0);
     }
 

@@ -13,9 +13,18 @@ class SuperAdminController extends Controller
 {
     public function createPrivilegedUser(Request $request): JsonResponse
     {
+        $normalizedEmail = User::normalizeEmail((string) $request->input('email'));
+
+        $request->merge([
+            'name' => trim(strip_tags((string) $request->input('name'))),
+            'email' => $normalizedEmail,
+            'email_hash' => $normalizedEmail !== '' ? User::hashEmailValue($normalizedEmail) : null,
+        ]);
+
         $validated = $request->validate([
             'name' => ['required', 'string', 'min:2', 'max:255'],
-            'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
+            'email' => ['required', 'string', 'email:rfc', 'max:255'],
+            'email_hash' => ['required', 'string', 'size:64', 'unique:users,email_hash'],
             'password' => ['required', 'confirmed', Password::defaults()],
             'role' => ['required', Rule::in([Role::MODERATOR->value, Role::ADMIN->value])],
             'is_active' => ['sometimes', 'boolean'],

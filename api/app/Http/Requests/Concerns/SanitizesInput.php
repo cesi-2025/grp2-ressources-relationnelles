@@ -24,4 +24,15 @@ trait SanitizesInput
 
         return strtolower(trim($value));
     }
+
+    protected function hashEmail(?string $value): ?string
+    {
+        $sanitizedEmail = $this->sanitizeEmail($value);
+
+        if ($sanitizedEmail === null || $sanitizedEmail === '') {
+            return null;
+        }
+
+        return hash('sha256', $sanitizedEmail);
+    }
 }
