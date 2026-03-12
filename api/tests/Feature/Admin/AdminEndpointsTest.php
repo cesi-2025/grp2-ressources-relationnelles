@@ -123,10 +123,11 @@ class AdminEndpointsTest extends TestCase
             'is_active' => true,
         ])
             ->assertCreated()
+            ->assertJsonPath('user.email', 'moderator.created@example.com')
             ->assertJsonPath('user.role', Role::MODERATOR->value);
 
         $this->assertDatabaseHas('users', [
-            'email' => 'moderator.created@example.com',
+            'email_hash' => User::hashEmailValue('moderator.created@example.com'),
             'role' => Role::MODERATOR->value,
             'is_active' => true,
         ]);

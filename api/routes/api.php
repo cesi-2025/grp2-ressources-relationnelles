@@ -17,10 +17,11 @@ Route::get('/ping', function () {
     ]);
 });
 
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth');
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 Route::get('/user', [AuthController::class, 'me'])->middleware('auth:sanctum');
+Route::delete('/user', [AuthController::class, 'destroy'])->middleware('auth:sanctum');
 
 Route::get('/admin/ping', function () {
     return response()->json([

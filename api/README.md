@@ -66,6 +66,8 @@ Health check.
 
 Créer un compte citoyen.
 
+**Rate limiting** : `5` tentatives / minute (par email + IP).
+
 **Body** :
 ```json
 {
@@ -107,6 +109,8 @@ Créer un compte citoyen.
 #### `POST /api/login`
 
 Se connecter et obtenir un token.
+
+**Rate limiting** : `5` tentatives / minute (par email + IP).
 
 **Body** :
 ```json
@@ -243,6 +247,17 @@ Récupérer l'utilisateur connecté.
   "created_at": "2026-03-11T10:00:00.000000Z",
   "updated_at": "2026-03-11T10:00:00.000000Z"
 }
+```
+
+#### `DELETE /api/user`
+
+Anonymiser le compte connecté (RGPD). Le compte est conservé pour l'intégrité des relations (ressources/commentaires), mais les données personnelles sont remplacées.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{ "message": "Account anonymized successfully." }
 ```
 
 #### `GET /api/admin/ping`
@@ -612,13 +627,24 @@ Après `docker compose up -d`, les seeders créent ces comptes (mot de passe : `
 
 | Email | Rôle |
 |---|---|
-| `superadmin@rr.fr` | super_admin |
-| `admin@rr.fr` | admin |
-| `moderator@rr.fr` | moderator |
-| `citizen1@rr.fr` | citizen |
-| `citizen2@rr.fr` | citizen |
+| `superadmin@ressources.local` | super_admin |
+| `admin@ressources.local` | admin |
+| `moderator@ressources.local` | moderator |
+| `citizen1@ressources.local` | citizen |
+| `citizen2@ressources.local` | citizen |
 
 > **Note** : les seeders ne sont exécutés que manuellement via `docker exec rr_api php artisan db:seed`.
+
+---
+
+## Sécurité & RGPD (implémenté)
+
+- Mots de passe hashés via le cast Laravel `hashed`.
+- Données personnelles utilisateur chiffrées en base (`users.name`, `users.email`) avec `Crypt`.
+- Recherche login et unicité email via `users.email_hash` (SHA-256 email normalisé), pas via email en clair.
+- Anonymisation de compte via `DELETE /api/user` (désactivation + remplacement des données perso).
+- Rate limiting sur `POST /api/register` et `POST /api/login`.
+- Headers de sécurité API : `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `X-XSS-Protection`, `Content-Security-Policy`.
 
 ---
 
@@ -631,7 +657,7 @@ const API_URL = 'http://localhost:8000/api';
 const res = await fetch(`${API_URL}/login`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'citizen1@rr.fr', password: 'password123' }),
+  body: JSON.stringify({ email: 'citizen1@ressources.local', password: 'password123' }),
 });
 const { token } = await res.json();
 
