@@ -156,6 +156,27 @@ class AuthEndpointsTest extends TestCase
             ]);
     }
 
+    public function test_protected_auth_routes_require_authentication(): void
+    {
+        $this->postJson('/api/logout')
+            ->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.',
+            ]);
+
+        $this->getJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.',
+            ]);
+
+        $this->deleteJson('/api/user')
+            ->assertStatus(401)
+            ->assertJson([
+                'message' => 'Unauthenticated.',
+            ]);
+    }
+
     public function test_user_deletion_anonymizes_account_and_revokes_tokens(): void
     {
         $user = User::factory()->create([
