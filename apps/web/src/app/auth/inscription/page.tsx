@@ -20,24 +20,28 @@ export default function InscriptionPage() {
               label="Nom complet"
               type="text"
               placeholder="Jean Dupont"
+              autoComplete="name"
               required
             />
             <Input
               label="Email"
               type="email"
               placeholder="jean.dupont@example.com"
+              autoComplete="email"
               required
             />
             <Input
               label="Mot de passe"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               required
             />
             <Input
               label="Confirmer le mot de passe"
               type="password"
               placeholder="••••••••"
+              autoComplete="new-password"
               required
             />
 
@@ -45,7 +49,7 @@ export default function InscriptionPage() {
               <input
                 type="checkbox"
                 id="terms"
-                className="mt-1 mr-2"
+                className="mt-1 mr-2 rounded border-gray-300 text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 required
               />
               <label htmlFor="terms" className="text-sm text-gray-600">

@@ -110,7 +110,7 @@ export default function ResourceDetailPage() {
         <Card>
           <h2 className="text-2xl font-bold text-primary mb-2">Commentaires</h2>
           {!isLoggedIn && (
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-gray-600 mb-6" role="status" aria-live="polite">
               Vous êtes en mode lecture seule. Connectez-vous pour laisser un commentaire.
             </p>
           )}
@@ -134,10 +134,14 @@ export default function ResourceDetailPage() {
           </div>
 
           <div className="space-y-3">
-            <label className="block text-sm font-medium text-gray-700">Votre commentaire</label>
+            <label className="block text-sm font-medium text-gray-700" htmlFor="comment-message">
+              Votre commentaire
+            </label>
             <textarea
+              id="comment-message"
               rows={4}
               disabled={!isLoggedIn}
+              aria-disabled={!isLoggedIn}
               className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 shadow-sm disabled:bg-gray-100 disabled:text-gray-500"
               placeholder={
                 isLoggedIn

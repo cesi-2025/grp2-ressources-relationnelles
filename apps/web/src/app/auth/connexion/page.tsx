@@ -20,18 +20,24 @@ export default function ConnexionPage() {
               label="Email"
               type="email"
               placeholder="jean.dupont@example.com"
+              autoComplete="email"
               required
             />
             <Input
               label="Mot de passe"
               type="password"
               placeholder="••••••••"
+              autoComplete="current-password"
               required
             />
 
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
-                <input type="checkbox" id="remember" className="mr-2" />
+                <input
+                  type="checkbox"
+                  id="remember"
+                  className="mr-2 rounded border-gray-300 text-primary focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                />
                 <label htmlFor="remember" className="text-gray-600">
                   Se souvenir de moi
                 </label>
