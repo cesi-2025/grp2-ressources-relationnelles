@@ -92,6 +92,7 @@ export default function RessourcesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4">
             <div className="xl:col-span-2">
               <Input
+                label="Recherche"
                 placeholder="Rechercher par titre ou extrait..."
                 value={search}
                 onChange={(event) => onFilterChange(() => setSearch(event.target.value))}
@@ -99,6 +100,8 @@ export default function RessourcesPage() {
             </div>
 
             <select
+              id="category-filter"
+              aria-label="Filtrer par catégorie"
               className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 shadow-sm"
               value={categoryFilter}
               onChange={(event) => onFilterChange(() => setCategoryFilter(event.target.value))}
@@ -114,6 +117,8 @@ export default function RessourcesPage() {
             </select>
 
             <select
+              id="relation-type-filter"
+              aria-label="Filtrer par type de relation"
               className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 shadow-sm"
               value={relationTypeFilter}
               onChange={(event) => onFilterChange(() => setRelationTypeFilter(event.target.value))}
@@ -129,6 +134,8 @@ export default function RessourcesPage() {
             </select>
 
             <select
+              id="resource-type-filter"
+              aria-label="Filtrer par type de ressource"
               className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200 shadow-sm"
               value={resourceTypeFilter}
               onChange={(event) => onFilterChange(() => setResourceTypeFilter(event.target.value))}
@@ -216,6 +223,8 @@ export default function RessourcesPage() {
                         ? "bg-primary text-white"
                         : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                     }`}
+                      aria-label={`Aller à la page ${pageNumber}`}
+                      aria-current={pageNumber === page ? "page" : undefined}
                     onClick={() => setPage(pageNumber)}
                   >
                     {pageNumber}
