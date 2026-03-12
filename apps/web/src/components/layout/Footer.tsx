@@ -41,7 +41,7 @@ export default function Footer() {
           <div className="lg:col-span-1">
             <div className="flex items-center space-x-2 mb-4">
               <Image
-                src="/ressourceRelationel_logo.png"
+                src="/RessourceRelationnel_Logo.svg"
                 alt="Logo Ressource Relationnel"
                 width={40}
                 height={40}
