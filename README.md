@@ -372,6 +372,305 @@ Les deux diagrammes Mermaid ci-dessus peuvent être repris dans le document de s
 
 ---
 
+## Chapitres front-office & RGAA
+
+Cette section documente l'architecture front-end Next.js, les composants UI réutilisables et la conformité RGAA (Règles pour l'Accessibilité des contenus Web et mobiles).
+
+### 1. Architecture Next.js : App Router, layout structure, routing
+
+Le front-office repose sur **Next.js 14+ avec App Router** et TypeScript. L'architecture utilise les route groups pour organiser le contenu public et le back-office.
+
+#### Structure routing
+
+```
+src/app/
+├── (main)               → Route group pour pages publiques
+│   ├── layout.tsx       → Layout racine public (html + body)
+│   ├── page.tsx         → Page d'accueil
+│   ├── aide/page.tsx    → Page statique "Aide"
+│   ├── ressources/      → Listing public ressources
+│   │   ├── [id]/        → Détail ressource
+│   │   └── layout.tsx   → Context ressources
+│   └── (auth)/          → Route group auth
+│       ├── connexion/   → Login page
+│       └── inscription/ → Register page
+└── administration/      → Route group admin
+    ├── layout.tsx       → Layout admin (navigation, sidebar)
+    ├── page.tsx         → Dashboard admin
+    ├── categorie/       → Gestion catégories
+    ├── utilisateurs/    → Gestion utilisateurs
+    ├── moderation/      → Modération ressources/commentaires
+    └── statistiques/    → Statistiques usage
+```
+
+#### Conventions
+
+- Les **route groups** `(main)` et `administration` n'apparaissent pas dans l'URL
+- Les **layouts enfants** héritent du layout parent pour navigation cohérente
+- Les **pages dynamiques** `[id]` utilisent `params` pour la récupération
+- Les **métadonnées** sont configurées via `metadata` ou `generateMetadata()`
+
+#### Exemple d'arborescence React
+
+```
+App (RootLayout)
+├── Main (MainLayout)
+│   ├── Navbar
+│   ├── Pages publiques
+│   └── Footer
+└── Admin (AdminLayout)
+    ├── NavbarAdmin
+    ├── SidebarAdmin
+    ├── Pages administration
+    └── Footer
+```
+
+### 2. Système de composants UI et thème Tailwind
+
+Les composants réutilisables sont centralisés dans `apps/web/src/components/ui/` avec une base commune de design tokens Tailwind.
+
+#### Composants disponibles
+
+| Composant | Fichier | Responsabilité |
+|---|---|---|
+| `Button` | `components/ui/Button.tsx` | Boutons avec variants (primary, secondary, ghost) |
+| `Input` | `components/ui/Input.tsx` | Champs de saisie avec validation intégrée |
+| `Badge` | `components/ui/Badge.tsx` | Étiquettes de statut + catégories |
+| `Card` | `components/ui/Card.tsx` | Conteneur avec bordures + ombre |
+| `Navbar` | `components/layout/Navbar.tsx` | Navigation publique avec menu mobile |
+| `NavbarAdmin` | `components/layout/NavbarAdmin.tsx` | Navigation admin avec rôlesVisible |
+| `SidebarAdmin` | `components/layout/SidebarAdmin.tsx` | Menu latéral administration |
+| `Footer` | `components/layout/Footer.tsx` | Pied de page avec branding + liens sociaux |
+
+#### Theme Tailwind
+
+Le thème `tailwind.config.ts` expose :
+
+- **Palettes de couleurs** : primaire (bleu), secondaire (gris), états (success, error, warning)
+- **Typography** : tailles headlines, body, captions avec line heights cohérents
+- **Espacements** : grille en multiples de 4px (4, 8, 12, 16, 20, 24, 28, 32)
+- **Éléments de base** : bordures, coins arrondis, ombres
+
+Exemple d'utilisation :
+```tsx
+<Button className="bg-primary-500 hover:bg-primary-600 rounded-lg px-4 py-2">
+  Valider
+</Button>
+```
+
+#### Variants composants
+
+Chaque composant expose les variants courants via props TypeScript :
+
+```tsx
+interface ButtonProps {
+  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  loading?: boolean;
+}
+```
+
+### 3. Conformité RGAA : skip-links, landmarks, focus management, formulaires
+
+L'accessibilité est une priorité transversale intégrée à chaque couche (layouts, composants, pages).
+
+#### Skip-link et navigation au clavier
+
+Chaque layout public dispose d'un **skip-link** invisible jusqu'au focus clavier :
+
+```tsx
+// apps/web/src/app/(main)/layout.tsx
+<a href="#main-content" className="sr-only focus:not-sr-only">
+  Aller au contenu
+</a>
+<main id="main-content">{children}</main>
+```
+
+Permet de passer navigation et sidebars en clavier (`Tab`).
+
+#### Landmarks sémantiques
+
+- `<header>` pour Navbar / NavbarAdmin
+- `<nav>` pour les menus navigation
+- `<main>` pour le contenu principal
+- `<aside>` pour les sidebars optionnelles
+- `<footer>` pour le pied de page
+
+Lecteurs d'écran utilisent ces landmarks pour naviguer rapidement.
+
+#### ARIA attributes
+
+Appliqués sur composants interactifs :
+
+- `aria-label` sur boutons sans texte (icones)
+- `aria-expanded` / `aria-controls` sur menus déroulants
+- `aria-pressed` sur onglets/toggles
+- `aria-current="page"` sur liens nav actifs
+- `aria-describedby` pour messages d'erreur formulaires
+- `role="tablist"` / `role="tab"` pour onglets structurés
+
+Exemple menu mobile :
+```tsx
+<button
+  aria-label="Menu navigation"
+  aria-expanded={isMenuOpen}
+  aria-controls="mobile-menu"
+  onClick={toggleMenu}
+>
+  ☰
+</button>
+<nav id="mobile-menu" hidden={!isMenuOpen}>
+  {/* liens */}
+</nav>
+```
+
+#### Focus management
+
+- **Focus-visible rings** sur tous éléments interactifs (Tailwind `focus-visible:ring-2`)
+- **Tab order logique** respecte DOM order, pas `z-index`
+- **Piège focus modal** sur dialogues (trap dans modal, restaure focus à fermeture)
+- **Focus initial** sur premier champ formulaire ou titre page
+
+#### Formulaires accessibles
+
+Chaque input dispose de :
+
+```tsx
+// apps/web/src/components/ui/Input.tsx
+<label htmlFor={id} className="block text-sm font-medium">
+  {label}
+</label>
+<input
+  id={id}
+  aria-describedby={error ? `${id}-error` : undefined}
+  aria-invalid={!!error}
+/>
+{error && (
+  <span id={`${id}-error`} role="alert" className="text-red-500">
+    {error}
+  </span>
+)}
+```
+
+- Labels explicites liés via `htmlFor`
+- Erreurs avec `role="alert"` et `aria-describedby`
+- `aria-invalid` indique validation échecs
+
+#### Contraste et typographie
+
+- **Ratios de contraste** : minimum 4.5:1 texte sur fond pour AA WCAG
+- **Tailles minimales** : texte non comprimé ≥ 12px, headlines ≥ 18px
+- **Espaces interligne** : ≥ 1.5× taille fonte pour lisibilité
+
+### 4. State management, hooks partagés, intégration API
+
+L'état applicatif est géré par React hooks + contexte pour l'auth utilisateur et l'état global.
+
+#### Auth context
+
+```tsx
+// apps/web/src/contexts/AuthContext.tsx
+const AuthContext = createContext<{
+  user: User | null;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  loading: boolean;
+}>(null);
+
+function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth hors AuthProvider');
+  return context;
+}
+```
+
+Fourni au niveau root pour accès global user + token.
+
+#### Hooks API partagés
+
+Centralisés dans `packages/shared/hooks/api/` :
+
+- `useResourceList()` — Fetching listing ressources avec pagination/filtrage
+- `useResourceDetail()` — Fetching détail 1 ressource
+- `useFavorite()` — Toggle favori (optimistic update)
+- `useComments()` — Fetching commentaires hierarchiques
+
+Pattern React Query pour caching, retry, loading states.
+
+#### Services API clients
+
+```tsx
+// packages/shared/services/api/resourceClient.ts
+export const resourceClient = {
+  list: (params) => fetch(`/api/resources?...`),
+  detail: (id) => fetch(`/api/resources/${id}`),
+  create: (data) => fetch(`/api/resources`, { method: 'POST', body: JSON.stringify(data) }),
+  // ...
+};
+```
+
+Types TypeScript partagées via `packages/shared/types/`.
+
+### 5. Styles et responsive design
+
+#### Breakpoints Tailwind
+
+```
+sm: 640px  → Phones paysage
+md: 768px  → Tablettes
+lg: 1024px → Desktops
+xl: 1280px → Larges screens
+```
+
+Classes responsive : `md:flex lg:grid-cols-3`
+
+#### Dark mode support
+
+Configuration Tailwind `darkMode: 'class'` + toggle utilisateur dans settings (optionnel).
+
+#### Utilities CSS personnalisables
+
+`apps/web/src/app/globals.css` expose :
+
+- `.sr-only` — Screen reader only (skip-links, désactive visuellement)
+- `.focus-visible-ring` — Ring focusable sur tous éléments
+- `.truncate-ellipsis` — Text overflow gestion
+- `.gradient-primary` — Gradients thème
+
+### 6. Performance et optimisations
+
+#### Image optimization
+
+- Next `<Image>` composant pour lazy load + AVIF
+- Logo + assets en SVG dans `public/`
+- Responsive images via `srcSet`
+
+#### Code splitting
+
+- Route-based splitting automatique (chaque page = chunk séparé)
+- `dynamic()` import pour lazy-load modales / components lourds
+- Suppression dead code via tree-shaking Tailwind
+
+#### Caching
+
+- Cache statique : pages markées `revalidate=3600` (1 heure)
+- Cache utilisateur : localStorage pour tokens, préférences UI
+
+### 7. Schémas et captures recommandés pour le document final
+
+Pour la soutenance, inclure :
+
+1. Visual du routing structure (organigramme `(main)` vs `administration`)
+2. Composants UI avec screenshots (Button, Input, Badge)
+3. Démonstration navigation clavier (skip-link, tab order)
+4. Rapport audit RGAA accessibility (Lighthouse / axe DevTools)
+5. Exemple page complète annotée (landmarks, ARIA, contraste)
+
+> Les détails d'implémentation restent documentés inline dans le code (JSDoc sur composants, commentaires points critiques).
+
+---
+
 ## Équipe
 
 | Nom | GitHub | Rôle | Périmètre |
