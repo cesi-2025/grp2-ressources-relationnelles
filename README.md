@@ -32,33 +32,49 @@ packages/shared/ → Types, hooks, services API partagés
 git clone https://github.com/cesi-2025/grp2-ressources-relationnelles.git
 cd grp2-ressources-relationnelles
 
-# API
-cd api && composer install && cp .env.example .env && php artisan migrate && php artisan serve
+# Environnement recommandé (API + DB + Adminer + Web)
+cp .env.example .env
+docker compose up -d --build
 
-# Web
-cd apps/web && pnpm install && pnpm dev
+# API : http://localhost:8000
+# Web : http://localhost:3005 (ou valeur de WEB_PORT dans .env)
+# Adminer : http://localhost:8080
 
-# Mobile
+# Mobile (hors Docker)
 cd apps/mobile && pnpm install && pnpm start
 ```
 
+> Le workflow local sans Docker reste possible, mais l'équipe utilise désormais principalement Docker pour l'API et le web.
+
 ## Environnement Docker (équipe)
 
-Pour éviter les différences de machines entre membres de l'équipe, le backend peut être lancé en conteneurs.
+Pour éviter les différences de machines entre membres de l'équipe, l'environnement applicatif partagé peut être lancé en conteneurs.
 
 ### Services disponibles
 
 - `db` : PostgreSQL 16
 - `api` : Laravel (PHP 8.4 + Composer)
 - `db_admin` : Adminer (interface web d'administration BDD)
+- `web` : Next.js (`pnpm`, hot reload, store pnpm persistant)
 
-### Lancer l'environnement backend
+### Lancer l'environnement
 
 ```bash
 cp .env.example .env
-docker compose up -d --build db api db_admin
+docker compose up -d --build
 docker compose logs -f api
 ```
+
+### Ports par défaut
+
+| Service | URL / Port |
+|---|---|
+| API Laravel | http://localhost:8000 |
+| Web Next.js | http://localhost:3005 |
+| Adminer | http://localhost:8080 |
+| PostgreSQL | localhost:5432 |
+
+> Le port web est piloté par `WEB_PORT` dans `.env`.
 
 ### Accéder à l'admin BDD
 
@@ -87,13 +103,272 @@ docker compose down -v
 docker compose exec api php artisan migrate
 docker compose exec api php artisan test
 docker compose exec api php artisan route:list
+docker compose exec api php artisan db:seed
+docker compose exec api php artisan migrate:fresh --seed --force
+```
+
+### Commandes web dans le conteneur
+
+```bash
+docker compose logs -f web
+docker compose exec web pnpm lint
 ```
 
 ### Travail en parallèle dans le monorepo
 
-- Le backend peut tourner en Docker (`api` + `db`) pour Chamil.
-- Le web et le mobile restent lancés localement par chaque dev (`pnpm dev`, `pnpm start`) tant que leurs apps sont en cours de setup.
+- Le backend et le web peuvent tourner ensemble en Docker (`api` + `db` + `db_admin` + `web`).
+- Le mobile reste lancé localement (`pnpm start`) pour Expo.
 - Les packages `packages/ui` et `packages/shared` restent partagés via le monorepo, sans changer le workflow Git.
+
+### Données de démonstration
+
+Le seeding courant permet de reconstruire un environnement QA cohérent :
+
+- `10` utilisateurs de démonstration (tous rôles)
+- `20` ressources
+- `15` commentaires
+
+Comptes principaux de démo (mot de passe : `password123`) :
+
+| Email | Rôle |
+|---|---|
+| `superadmin@ressources.local` | super_admin |
+| `admin1@ressources.local` | admin |
+| `admin2@ressources.local` | admin |
+| `moderator1@ressources.local` | moderator |
+| `moderator2@ressources.local` | moderator |
+| `citizen1@ressources.local` | citizen |
+| `citizen2@ressources.local` | citizen |
+| `citizen3@ressources.local` | citizen |
+| `citizen4@ressources.local` | citizen |
+| `citizen5@ressources.local` | citizen |
+
+---
+
+## Chapitres backend & sécurité
+
+Cette section sert de base au document technique demandé pour le backend Laravel. Elle synthétise l'architecture API REST, le modèle de données, les mécanismes d'authentification et les mesures de sécurité/RGPD déjà implémentées.
+
+### 1. API REST : routes, controllers, validation
+
+Le backend est construit autour d'une API REST JSON avec Laravel 11. Les routes sont centralisées dans [api/routes/api.php](api/routes/api.php) et organisées par domaines fonctionnels.
+
+#### Découpage fonctionnel
+
+| Domaine | Contrôleur | Responsabilité principale |
+|---|---|---|
+| Authentification | `AuthController` | inscription, connexion, déconnexion, profil, anonymisation de compte |
+| Ressources | `ResourceController` | listing public, détail public, création, mise à jour |
+| Catégories | `CategoryController` | exposition des catégories |
+| Interactions | `CommentController`, `FavoriteController`, `ProgressionController` | commentaires, favoris, progression utilisateur |
+| Administration | `AdminController` | statistiques, suspension de ressource |
+| Modération | `ModerationController` | validation de ressources, approbation/suppression de commentaires |
+| Super-admin | `SuperAdminController` | création de comptes privilégiés |
+
+#### Principes d'implémentation
+
+- toutes les réponses API sont forcées en JSON ;
+- les endpoints publics exposent uniquement les ressources `published` et `is_public=true` ;
+- les écritures passent par des `FormRequest` dédiées pour la validation ;
+- les règles d'autorisation sont réparties entre middleware de rôle et policies ;
+- les tests feature valident les cas métier principaux et les accès interdits.
+
+#### Validation des entrées
+
+Les validations sont portées par des classes dédiées dans `api/app/Http/Requests` :
+
+- `RegisterRequest` et `LoginRequest` pour l'authentification ;
+- `StoreResourceRequest` et `UpdateResourceRequest` pour les ressources ;
+- `CommentRequest` pour les commentaires.
+
+Une sanitization centralisée est appliquée avant validation :
+
+- `trim()` sur les champs texte ;
+- suppression des balises HTML (`strip_tags`) ;
+- normalisation des emails en minuscules ;
+- génération d'un `email_hash` pour les recherches d'authentification.
+
+#### Organisation des routes
+
+| Type de route | Middleware |
+|---|---|
+| Routes publiques | aucun, sauf `throttle:auth` sur `register` / `login` |
+| Routes authentifiées | `auth:sanctum` |
+| Routes admin | `auth:sanctum` + `role:admin,super_admin` |
+| Routes modération | `auth:sanctum` + `role:moderator,admin,super_admin` |
+| Routes super-admin | `auth:sanctum` + `role:super_admin` |
+
+### 2. Base de données : MCD, migrations, relations Eloquent
+
+Le modèle de données repose sur PostgreSQL. Les tables principales sont créées par migrations Laravel et reflètent directement les besoins métier : comptes, ressources, commentaires, favoris, progression et tables de référence.
+
+#### Tables métier principales
+
+| Table | Rôle |
+|---|---|
+| `users` | comptes utilisateurs, rôles, activation, données personnelles chiffrées |
+| `resources` | ressources publiées ou en attente, rattachées à un auteur et à des tables de référence |
+| `comments` | commentaires hiérarchiques avec modération (`is_approved`) |
+| `favorites` | relation utilisateur ↔ ressource pour les favoris |
+| `progressions` | état d'avancement utilisateur ↔ ressource |
+| `categories` | catégories métier |
+| `relation_types` | type de relation ciblé |
+| `resource_types` | type de contenu |
+| `personal_access_tokens` | tokens Sanctum |
+
+#### Contraintes et intégrité
+
+- clés étrangères sur toutes les relations métier ;
+- unicité `favorites(user_id, resource_id)` ;
+- unicité `progressions(user_id, resource_id)` ;
+- index sur `resources.status`, `resources.is_public`, `comments.is_approved` ;
+- `users.email_hash` unique pour garantir l'unicité fonctionnelle de l'email malgré son chiffrement.
+
+#### Diagramme relationnel simplifié
+
+```mermaid
+erDiagram
+        USERS ||--o{ RESOURCES : creates
+        USERS ||--o{ COMMENTS : writes
+        USERS ||--o{ FAVORITES : owns
+        USERS ||--o{ PROGRESSIONS : tracks
+
+        CATEGORIES ||--o{ RESOURCES : classifies
+        RELATION_TYPES ||--o{ RESOURCES : targets
+        RESOURCE_TYPES ||--o{ RESOURCES : formats
+
+        RESOURCES ||--o{ COMMENTS : receives
+        RESOURCES ||--o{ FAVORITES : bookmarked_in
+        RESOURCES ||--o{ PROGRESSIONS : tracked_in
+        COMMENTS ||--o{ COMMENTS : replies_to
+
+        USERS {
+            bigint id PK
+            text name
+            text email
+            varchar email_hash UK
+            varchar role
+            boolean is_active
+        }
+
+        RESOURCES {
+            bigint id PK
+            varchar title
+            text content
+            bigint user_id FK
+            bigint category_id FK
+            bigint relation_type_id FK
+            bigint resource_type_id FK
+            varchar status
+            boolean is_public
+        }
+
+        COMMENTS {
+            bigint id PK
+            text content
+            bigint user_id FK
+            bigint resource_id FK
+            bigint parent_id FK
+            boolean is_approved
+        }
+```
+
+#### Relations Eloquent
+
+- `User` → `hasMany(Resource|Comment|Favorite|Progression)`
+- `Resource` → `belongsTo(User|Category|RelationType|ResourceType)`
+- `Resource` → `hasMany(Comment|Favorite|Progression)`
+- `Comment` → `belongsTo(User|Resource|Comment(parent))`
+- `Comment` → `hasMany(Comment replies)`
+- `Favorite` et `Progression` servent de tables pivot enrichies.
+
+### 3. Sécurité : RGPD, chiffrement, hashage, rate limiting
+
+La sécurité backend repose sur plusieurs couches complémentaires : validation, authentification, contrôle d'accès, limitation d'abus et protection des données personnelles.
+
+#### Mesures implémentées
+
+| Mesure | Implémentation |
+|---|---|
+| Hashage mot de passe | cast Laravel `hashed` sur `User.password` |
+| Chiffrement données sensibles | `Crypt` sur `users.name` et `users.email` |
+| Lookup email | `users.email_hash` (SHA-256 email normalisé) |
+| Rate limiting auth | `throttle:auth` sur `register` / `login` |
+| Headers de sécurité | middleware `SecurityHeaders` appliqué au groupe API |
+| Validation / sanitization | `FormRequest` + trait `SanitizesInput` |
+| Contrôle d'accès métier | `RoleMiddleware` + `ResourcePolicy` |
+| RGPD | anonymisation via `DELETE /api/user` |
+
+#### Détails RGPD
+
+Le choix retenu n'est pas une suppression physique du compte, car les ressources, commentaires, favoris et progressions doivent conserver une cohérence historique. L'endpoint `DELETE /api/user` applique donc une **anonymisation logique** :
+
+- révocation des tokens actifs ;
+- remplacement du nom par `Deleted User` ;
+- remplacement de l'email par une adresse technique `@example.invalid` ;
+- désactivation du compte ;
+- remise du rôle en `citizen`.
+
+#### Headers de sécurité ajoutés
+
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `Referrer-Policy: no-referrer`
+- `X-XSS-Protection: 1; mode=block`
+- `Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'`
+
+### 4. Authentification : Sanctum, middleware rôles, policies
+
+L'authentification repose sur Laravel Sanctum avec des **tokens Bearer**. Les endpoints `register` et `login` émettent un token stocké dans `personal_access_tokens`, ensuite transmis dans l'en-tête `Authorization`.
+
+#### Flux d'authentification
+
+```mermaid
+sequenceDiagram
+        participant Client
+        participant API as Laravel API
+        participant DB as PostgreSQL
+
+        Client->>API: POST /api/login (email, password)
+        API->>DB: recherche via email_hash
+        DB-->>API: utilisateur trouvé
+        API->>API: Hash::check(password)
+        API->>API: vérification is_active
+        API->>DB: createToken()
+        API-->>Client: token Bearer + user
+
+        Client->>API: GET /api/user + Authorization: Bearer <token>
+        API->>DB: validation Sanctum
+        API-->>Client: utilisateur authentifié
+```
+
+#### Contrôle d'accès
+
+- `auth:sanctum` bloque les utilisateurs anonymes ;
+- `RoleMiddleware` contrôle les rôles autorisés par route ;
+- `ResourcePolicy` garantit que seule l'autrice ou l'auteur peut modifier sa ressource ;
+- la modération et le back-office sont cloisonnés par niveau de privilège.
+
+#### Rôles métier
+
+| Rôle | Usage |
+|---|---|
+| `citizen` | consultation, création de ressources, commentaires, favoris, progression |
+| `moderator` | validation des ressources et commentaires |
+| `admin` | statistiques et suspension de ressources |
+| `super_admin` | création de comptes privilégiés |
+
+### 5. Schémas et captures recommandés pour le document final
+
+Les deux diagrammes Mermaid ci-dessus peuvent être repris dans le document de soutenance. Pour compléter la version finale PDF/Word, les captures d'écran les plus pertinentes sont :
+
+1. `php artisan route:list` pour illustrer le découpage REST ;
+2. Adminer / schéma PostgreSQL montrant les tables `users`, `resources`, `comments` ;
+3. exécution de `php artisan test` avec la suite verte ;
+4. exemple d'appel authentifié (`/api/login` puis `/api/user`) ;
+5. exemple d'appel de modération (`/api/moderation/comments/{id}/approve`).
+
+> Le détail opérationnel des endpoints reste documenté dans [api/README.md](api/README.md).
 
 ---
 

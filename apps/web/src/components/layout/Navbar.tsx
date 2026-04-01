@@ -6,6 +6,7 @@ import Button from "../ui/Button";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const mobileMenuId = "main-mobile-menu";
 
   const navLinks = [
     { href: "/", label: "Accueil" },
@@ -15,7 +16,7 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white shadow-md sticky top-0 z-50" aria-label="Navigation principale">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -43,7 +44,7 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/auth/connexion">
+            <Link href="/administration">
               <Button variant="outline" size="sm">
                 Connexion
               </Button>
@@ -60,6 +61,9 @@ export default function Navbar() {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
             aria-label="Menu"
+            aria-expanded={isMenuOpen}
+            aria-controls={mobileMenuId}
+            type="button"
           >
             <svg
               className="w-6 h-6 text-gray-700"
@@ -88,7 +92,7 @@ export default function Navbar() {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden py-4 border-t border-gray-200">
+          <div id={mobileMenuId} className="md:hidden py-4 border-t border-gray-200">
             <div className="flex flex-col space-y-3">
               {navLinks.map((link) => (
                 <Link

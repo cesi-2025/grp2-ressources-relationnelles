@@ -20,13 +20,23 @@ class AuthUsersSeeder extends Seeder
                 'role' => Role::SUPER_ADMIN,
             ],
             [
-                'name' => 'Admin',
-                'email' => 'admin@ressources.local',
+                'name' => 'Admin One',
+                'email' => 'admin1@ressources.local',
                 'role' => Role::ADMIN,
             ],
             [
-                'name' => 'Moderator',
-                'email' => 'moderator@ressources.local',
+                'name' => 'Admin Two',
+                'email' => 'admin2@ressources.local',
+                'role' => Role::ADMIN,
+            ],
+            [
+                'name' => 'Moderator One',
+                'email' => 'moderator1@ressources.local',
+                'role' => Role::MODERATOR,
+            ],
+            [
+                'name' => 'Moderator Two',
+                'email' => 'moderator2@ressources.local',
                 'role' => Role::MODERATOR,
             ],
             [
@@ -39,13 +49,29 @@ class AuthUsersSeeder extends Seeder
                 'email' => 'citizen2@ressources.local',
                 'role' => Role::CITIZEN,
             ],
+            [
+                'name' => 'Citizen Three',
+                'email' => 'citizen3@ressources.local',
+                'role' => Role::CITIZEN,
+            ],
+            [
+                'name' => 'Citizen Four',
+                'email' => 'citizen4@ressources.local',
+                'role' => Role::CITIZEN,
+            ],
+            [
+                'name' => 'Citizen Five',
+                'email' => 'citizen5@ressources.local',
+                'role' => Role::CITIZEN,
+            ],
         ];
 
         foreach ($users as $data) {
             User::query()->updateOrCreate(
-                ['email' => $data['email']],
+                ['email_hash' => User::hashEmailValue($data['email'])],
                 [
                     'name' => $data['name'],
+                    'email' => $data['email'],
                     'password' => 'password123',
                     'role' => $data['role'],
                     'is_active' => true,

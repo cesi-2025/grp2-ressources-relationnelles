@@ -72,3 +72,28 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform: translateY(-120%);
+  background: var(--primary);
+  color: #fff;
+  padding: 0.75rem 1rem;
+  z-index: 100;
+  border-bottom-right-radius: 0.5rem;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}

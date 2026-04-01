@@ -77,6 +77,43 @@ class ResourceEndpointsTest extends TestCase
             ]);
     }
 
+    public function test_index_supports_title_sort_and_pagination(): void
+    {
+        $category = Category::query()->create(['name' => 'Category']);
+        $relationType = RelationType::query()->create(['name' => 'Relation']);
+        $resourceType = ResourceType::query()->create(['name' => 'Type']);
+        $author = User::factory()->create(['role' => Role::CITIZEN, 'is_active' => true]);
+
+        foreach (range(1, 16) as $index) {
+            Resource::query()->create([
+                'title' => sprintf('Resource %02d', 17 - $index),
+                'content' => 'Content for resource '.$index.' with enough length.',
+                'user_id' => $author->id,
+                'category_id' => $category->id,
+                'relation_type_id' => $relationType->id,
+                'resource_type_id' => $resourceType->id,
+                'status' => ResourceStatus::PUBLISHED->value,
+                'is_public' => true,
+            ]);
+        }
+
+        $response = $this->getJson('/api/resources?sort=title&page=1');
+
+        $response
+            ->assertOk()
+            ->assertJsonPath('current_page', 1)
+            ->assertJsonPath('per_page', 15)
+            ->assertJsonPath('total', 16)
+            ->assertJsonPath('data.0.title', 'Resource 01')
+            ->assertJsonPath('data.14.title', 'Resource 15');
+
+        $this->getJson('/api/resources?sort=title&page=2')
+            ->assertOk()
+            ->assertJsonPath('current_page', 2)
+            ->assertJsonCount(1, 'data')
+            ->assertJsonPath('data.0.title', 'Resource 16');
+    }
+
     public function test_show_returns_resource_detail_for_public_published_resource(): void
     {
         $category = Category::query()->create(['name' => 'Category']);
@@ -111,8 +148,8 @@ class ResourceEndpointsTest extends TestCase
         Sanctum::actingAs($user);
 
         $response = $this->postJson('/api/resources', [
-            'title' => 'New Resource',
-            'content' => 'New resource content with enough length.',
+            'title' => '  <b>New Resource</b>  ',
+            'content' => '  <p>New resource content with enough length.</p>  ',
             'category_id' => $category->id,
             'relation_type_id' => $relationType->id,
             'resource_type_id' => $resourceType->id,
@@ -122,6 +159,7 @@ class ResourceEndpointsTest extends TestCase
         $response
             ->assertCreated()
             ->assertJsonPath('title', 'New Resource')
+            ->assertJsonPath('content', 'New resource content with enough length.')
             ->assertJsonPath('status', ResourceStatus::PENDING->value)
             ->assertJsonPath('user_id', $user->id);
 

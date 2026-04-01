@@ -66,6 +66,8 @@ Health check.
 
 Créer un compte citoyen.
 
+**Rate limiting** : `5` tentatives / minute (par email + IP).
+
 **Body** :
 ```json
 {
@@ -107,6 +109,8 @@ Créer un compte citoyen.
 #### `POST /api/login`
 
 Se connecter et obtenir un token.
+
+**Rate limiting** : `5` tentatives / minute (par email + IP).
 
 **Body** :
 ```json
@@ -243,6 +247,17 @@ Récupérer l'utilisateur connecté.
   "created_at": "2026-03-11T10:00:00.000000Z",
   "updated_at": "2026-03-11T10:00:00.000000Z"
 }
+```
+
+#### `DELETE /api/user`
+
+Anonymiser le compte connecté (RGPD). Le compte est conservé pour l'intégrité des relations (ressources/commentaires), mais les données personnelles sont remplacées.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{ "message": "Account anonymized successfully." }
 ```
 
 #### `GET /api/admin/ping`
@@ -476,6 +491,125 @@ Retourner le tableau de bord progression de l'utilisateur connecté.
 }
 ```
 
+### Administration, modération et super-admin
+
+#### `GET /api/admin/statistics`
+
+Tableau de bord statistiques (admin/super-admin uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Query params** :
+
+| Paramètre | Valeurs |
+|---|---|
+| `period` | `day`, `week`, `month`, `all` (défaut) |
+| `category` | `category_id` pour filtrer les stats |
+
+**Réponse** `200` :
+```json
+{
+  "filters": { "period": "all", "category": null },
+  "statistics": {
+    "consultations": 0,
+    "recherches": 0,
+    "exploitations": 3,
+    "creations": 10,
+    "favoris": 5,
+    "commentaires": 8,
+    "resources_pending": 4,
+    "resources_published": 6
+  }
+}
+```
+
+#### `PUT /api/admin/resources/{id}/suspend`
+
+Suspendre une ressource (admin/super-admin uniquement). Le statut passe à `archived`.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Resource suspended successfully.",
+  "resource": { "id": 1, "status": "archived" }
+}
+```
+
+#### `PUT /api/moderation/resources/{id}/validate`
+
+Valider une ressource (moderator/admin/super-admin). Le statut passe à `published`.
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Resource validated successfully.",
+  "resource": { "id": 1, "status": "published" }
+}
+```
+
+#### `PUT /api/moderation/comments/{id}/approve`
+
+Approuver un commentaire (moderator/admin/super-admin).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{
+  "message": "Comment approved successfully.",
+  "comment": { "id": 1, "is_approved": true }
+}
+```
+
+#### `DELETE /api/moderation/comments/{id}`
+
+Supprimer un commentaire (moderator/admin/super-admin).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Réponse** `200` :
+```json
+{ "message": "Comment deleted successfully." }
+```
+
+#### `POST /api/super-admin/users`
+
+Créer un compte privilégié (super-admin uniquement).
+
+**Headers** : `Authorization: Bearer <token>`
+
+**Body** :
+```json
+{
+  "name": "Moderator User",
+  "email": "moderator.user@example.com",
+  "password": "Password123!",
+  "password_confirmation": "Password123!",
+  "role": "moderator",
+  "is_active": true
+}
+```
+
+`role` accepte uniquement : `moderator` ou `admin`.
+
+**Réponse** `201` :
+```json
+{
+  "message": "Privileged user created successfully.",
+  "user": {
+    "id": 20,
+    "name": "Moderator User",
+    "email": "moderator.user@example.com",
+    "role": "moderator",
+    "is_active": true
+  }
+}
+```
+
 ---
 
 ## Rôles utilisateurs
@@ -489,17 +623,38 @@ Retourner le tableau de bord progression de l'utilisateur connecté.
 
 ## Seeders de test
 
-Après `docker compose up -d`, les seeders créent ces comptes (mot de passe : `password123`) :
+Après `docker compose up -d`, les seeders créent un jeu de données de démonstration complet (mot de passe utilisateurs : `password123`) :
 
 | Email | Rôle |
 |---|---|
-| `superadmin@rr.fr` | super_admin |
-| `admin@rr.fr` | admin |
-| `moderator@rr.fr` | moderator |
-| `citizen1@rr.fr` | citizen |
-| `citizen2@rr.fr` | citizen |
+| `superadmin@ressources.local` | super_admin |
+| `admin1@ressources.local` | admin |
+| `admin2@ressources.local` | admin |
+| `moderator1@ressources.local` | moderator |
+| `moderator2@ressources.local` | moderator |
+| `citizen1@ressources.local` | citizen |
+| `citizen2@ressources.local` | citizen |
+| `citizen3@ressources.local` | citizen |
+| `citizen4@ressources.local` | citizen |
+| `citizen5@ressources.local` | citizen |
 
-> **Note** : les seeders ne sont exécutés que manuellement via `docker exec rr_api php artisan db:seed`.
+Les seeders ajoutent aussi :
+
+- `20` ressources de démo
+- `15` commentaires de démo
+
+> **Note** : pour recréer une base QA cohérente, utiliser `docker exec rr_api php artisan migrate:fresh --seed --force`.
+
+---
+
+## Sécurité & RGPD (implémenté)
+
+- Mots de passe hashés via le cast Laravel `hashed`.
+- Données personnelles utilisateur chiffrées en base (`users.name`, `users.email`) avec `Crypt`.
+- Recherche login et unicité email via `users.email_hash` (SHA-256 email normalisé), pas via email en clair.
+- Anonymisation de compte via `DELETE /api/user` (désactivation + remplacement des données perso).
+- Rate limiting sur `POST /api/register` et `POST /api/login`.
+- Headers de sécurité API : `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `X-XSS-Protection`, `Content-Security-Policy`.
 
 ---
 
@@ -512,7 +667,7 @@ const API_URL = 'http://localhost:8000/api';
 const res = await fetch(`${API_URL}/login`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ email: 'citizen1@rr.fr', password: 'password123' }),
+  body: JSON.stringify({ email: 'citizen1@ressources.local', password: 'password123' }),
 });
 const { token } = await res.json();
 

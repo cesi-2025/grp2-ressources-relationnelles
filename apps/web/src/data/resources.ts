@@ -216,3 +216,16 @@ export function getResourceById(id: number): ResourceItem | undefined {
 export function getCommentsByResourceId(resourceId: number): ResourceComment[] {
   return RESOURCE_COMMENTS.filter((comment) => comment.resourceId === resourceId);
 }
+
+export const EMPTY_RESOURCE: Omit<ResourceItem, "id"> = {
+  title: "",
+  category: "",
+  relationType: "",
+  resourceType: "",
+  excerpt: "",
+  content: "",
+  author: "",
+  createdAt: new Date().toISOString().split("T")[0],
+  updatedAt: new Date().toISOString().split("T")[0],
+};
+ 
