@@ -2,10 +2,28 @@
  
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
+import { useAuth } from "@/contexts/AuthContext";
  
 export default function NavbarAdmin() {
+  const router = useRouter();
+  const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+ 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setIsMenuOpen(false);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
  
   return (
     <>
@@ -28,12 +46,43 @@ export default function NavbarAdmin() {
  
           {/* ── Auth ─────────────────────────────────────────────────────── */}
           <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
-            <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
-              Connexion
-            </Link>
-            <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
-              Inscription
-            </Link>
+            {!loading && (
+              <>
+                {isAuthenticated && user ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontSize: "14px", fontWeight: "500", color: "#333" }}>
+                        {user.name}
+                      </div>
+                      <div style={{ fontSize: "12px", color: "#666" }}>
+                        {user.role}
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                      style={{
+                        ...navbarAdminS.btnOutline,
+                        opacity: isLoggingOut ? 0.6 : 1,
+                        cursor: isLoggingOut ? "not-allowed" : "pointer",
+                      }}
+                      className="btn-admin-outline"
+                    >
+                      {isLoggingOut ? "Déconnexion..." : "Déconnexion"}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
+                      Connexion
+                    </Link>
+                    <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
+                      Inscription
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
  
           {/* ── Burger mobile ─────────────────────────────────────────────── */}
@@ -57,12 +106,44 @@ export default function NavbarAdmin() {
         {isMenuOpen && (
           <div style={navbarAdminS.mobileMenu}>
             <div style={navbarAdminS.mobileAuthRow}>
-              <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
-                Connexion
-              </Link>
-              <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
-                Inscription
-              </Link>
+              {!loading && (
+                <>
+                  {isAuthenticated && user ? (
+                    <>
+                      <div style={{ padding: "12px", textAlign: "center" }}>
+                        <div style={{ fontSize: "14px", fontWeight: "500", color: "#333" }}>
+                          {user.name}
+                        </div>
+                        <div style={{ fontSize: "12px", color: "#666" }}>
+                          {user.role}
+                        </div>
+                      </div>
+                      <button
+                        onClick={handleLogout}
+                        disabled={isLoggingOut}
+                        style={{
+                          ...navbarAdminS.btnOutline,
+                          opacity: isLoggingOut ? 0.6 : 1,
+                          cursor: isLoggingOut ? "not-allowed" : "pointer",
+                          width: "100%",
+                        }}
+                        className="btn-admin-outline"
+                      >
+                        {isLoggingOut ? "Déconnexion..." : "Déconnexion"}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
+                        Connexion
+                      </Link>
+                      <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
+                        Inscription
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "../ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
+  const router = useRouter();
+  const { user, isAuthenticated, logout, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const mobileMenuId = "main-mobile-menu";
 
   const navLinks = [
@@ -14,6 +19,19 @@ export default function Navbar() {
     { href: "/presentation", label: "Présentation" },
     { href: "/aide", label: "Aide" },
   ];
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await logout();
+      setIsMenuOpen(false);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50" aria-label="Navigation principale">
@@ -42,18 +60,48 @@ export default function Navbar() {
             ))}
           </div>
 
-          {/* Desktop Auth Buttons */}
+          {/* Desktop Auth Section */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/administration">
-              <Button variant="outline" size="sm">
-                Connexion
-              </Button>
-            </Link>
-            <Link href="/auth/inscription">
-              <Button variant="primary" size="sm">
-                Inscription
-              </Button>
-            </Link>
+            {!loading && (
+              <>
+                {isAuthenticated && user ? (
+                  <div className="flex items-center space-x-3">
+                    <div className="text-sm">
+                      <p className="font-medium text-gray-900">{user.name}</p>
+                      <p className="text-xs text-gray-500">{user.role}</p>
+                    </div>
+                    {["admin", "super_admin", "moderator"].includes(user.role) && (
+                      <Link href="/administration">
+                        <Button variant="outline" size="sm">
+                          Admin
+                        </Button>
+                      </Link>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleLogout}
+                      disabled={isLoggingOut}
+                    >
+                      {isLoggingOut ? "Déconnexion..." : "Déconnexion"}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <Link href="/auth/connexion">
+                      <Button variant="outline" size="sm">
+                        Connexion
+                      </Button>
+                    </Link>
+                    <Link href="/auth/inscription">
+                      <Button variant="primary" size="sm">
+                        Inscription
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -105,16 +153,58 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-                <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" size="md" className="w-full">
-                    Connexion
-                  </Button>
-                </Link>
-                <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="primary" size="md" className="w-full">
-                    Inscription
-                  </Button>
-                </Link>
+                {!loading && (
+                  <>
+                    {isAuthenticated && user ? (
+                      <>
+                        <div className="px-2 py-2">
+                          <p className="font-medium text-gray-900">{user.name}</p>
+                          <p className="text-xs text-gray-500">{user.role}</p>
+                        </div>
+                        {["admin", "super_admin", "moderator"].includes(
+                          user.role
+                        ) && (
+                          <Link
+                            href="/administration"
+                            onClick={() => setIsMenuOpen(false)}
+                          >
+                            <Button variant="outline" size="md" className="w-full">
+                              Admin
+                            </Button>
+                          </Link>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="md"
+                          className="w-full"
+                          onClick={handleLogout}
+                          disabled={isLoggingOut}
+                        >
+                          {isLoggingOut ? "Déconnexion..." : "Déconnexion"}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Link
+                          href="/auth/connexion"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <Button variant="outline" size="md" className="w-full">
+                            Connexion
+                          </Button>
+                        </Link>
+                        <Link
+                          href="/auth/inscription"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          <Button variant="primary" size="md" className="w-full">
+                            Inscription
+                          </Button>
+                        </Link>
+                      </>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>

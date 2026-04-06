@@ -32,6 +32,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(
             focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent
             transition-all duration-200
             shadow-sm
+            disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100
             ${className}
           `}
           {...props}

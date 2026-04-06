@@ -1,9 +1,8 @@
-import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import "../globals.css";
 import NavbarAdmin from "@/components/layout/NavbarAdmin";
 import Footer from "@/components/layout/Footer";
 import SidebarAdmin from "@/components/layout/sideBarAdmin";
+import { ProtectedRoute } from "@/components/ProtectedRoute";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -11,29 +10,21 @@ const inter = Inter({
 });
 
 
-export const metadata: Metadata = {
-  title: "(RE)Mode Admin",
-  description: "Platforme d'administration permettant l'acces au modifications",
-  keywords: ["admin", "modération", "modification", "bannissement"],
-};
-
-export default function RootLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fr">
-      <body className={`${inter.className} antialiased`}>
-        <div className="flex flex-col min-h-screen">
-          <NavbarAdmin/>
-          <div style={{ display: "flex", flex: 1 }}>
-            <SidebarAdmin/>
-            <main className="flex-grow">{children}</main>
-          </div>
-          <Footer />
+    <ProtectedRoute requiredRoles={["admin", "super_admin", "moderator"]}>
+      <div className="flex flex-col min-h-screen">
+        <NavbarAdmin />
+        <div style={{ display: "flex", flex: 1 }}>
+          <SidebarAdmin />
+          <main className="flex-grow">{children}</main>
         </div>
-      </body>
-    </html>
+        <Footer />
+      </div>
+    </ProtectedRoute>
   );
 }
