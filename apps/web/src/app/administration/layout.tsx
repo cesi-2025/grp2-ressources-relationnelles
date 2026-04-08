@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import "../globals.css";
 import NavbarAdmin from "@/components/layout/NavbarAdmin";
 import Footer from "@/components/layout/Footer";
@@ -10,7 +9,7 @@ import { AdminPage } from "@/components/layout/ProtectedPage";
 
 export const metadata: Metadata = {
   title: "(RE)Mode Admin",
-  description: "Platforme d'administration permettant l'acces au modifications",
+  description: "Platforme d'administration permettant l'acces au modifications test",
   keywords: ["admin", "modération", "modification", "bannissement"],
 };
 

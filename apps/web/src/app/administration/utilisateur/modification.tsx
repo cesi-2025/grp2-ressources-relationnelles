@@ -26,7 +26,7 @@ export default function EditModal({ item, onClose, onSave }: EditModalProps) {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
 
   return (

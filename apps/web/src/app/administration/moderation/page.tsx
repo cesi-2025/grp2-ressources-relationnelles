@@ -19,7 +19,7 @@ export default function ModerationPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
  
   // ── Ressources ──────────────────────────────────────────────────────────────

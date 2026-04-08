@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CategorieItems, CATEGORIE } from "@/data/categorie";
 import EditModal from "./modification";
 import DeleteModal from "./suppresion";
 import CreateModal from "./creation";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 
 const COLUMNS = ["Nom", "Description", "Action"];
@@ -15,6 +17,13 @@ export default function RessourcesPage() {
   const [deleteTarget, setDeleteTarget] = useState<CategorieItems | null>(null);
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
+
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
+  }, [user,loading,router])
 
   const filtered = items.filter((item) =>
     [item.nom].some((v) =>

@@ -1,9 +1,10 @@
 'use client';
-
+ 
 import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/context/AuthContext';
 import { resources, progression, Resource } from '@/lib/api';
 import s from '@/style/dashboardStyle';
+import { useRouter } from 'next/navigation';
  
  
 function StatusBadge({ status }: { status: Resource['status'] }) {
@@ -18,18 +19,24 @@ function StatusBadge({ status }: { status: Resource['status'] }) {
  
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth();
+  const router = useRouter()
   const [myResources, setMyResources] = useState<Resource[]>([]);
   const [progressionList, setProgressionList] = useState<Resource[]>([]);
  
   useEffect(() => {
+    if (loading || !user && user.role !== "citoyen") router.replace("/administration/dashboard");
+  }, [user,loading,router])
+
+  /**useEffect(() => {
     if (loading || !user) return;
     resources.list().then((res: any) => setMyResources(Array.isArray(res) ? res : res.data ?? [])).catch(console.error);
     progression.list().then((res: any) => setProgressionList(Array.isArray(res) ? res : res.data ?? [])).catch(console.error)
-  }, [user, loading]);
+  }, [user, loading]);**/
  
  
   return (
     <>
+    {/** }
       <main style={s.page}>
         <h1 style={s.greeting}>Bonjour, {user.name}</h1>
         <p style={s.greetingSub}>Voici un aperçu de votre activité sur la plateforme.</p>
@@ -96,6 +103,8 @@ export default function DashboardPage() {
           Mieux comprendre les autres, c&apos;est déjà mieux vivre ensemble.
         </blockquote>
       </main>
+      */}
     </>
   );
+    
 }

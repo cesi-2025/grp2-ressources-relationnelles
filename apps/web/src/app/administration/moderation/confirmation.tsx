@@ -15,7 +15,7 @@ export default function ConfirmModal({ title, message, onClose, onConfirm }: Con
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
   
   return (
