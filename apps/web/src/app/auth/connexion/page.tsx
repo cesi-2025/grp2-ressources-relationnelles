@@ -88,7 +88,7 @@ export default function ConnexionPage() {
                 Mot de passe oublié ?
               </Link>
             </div>
-            {errors && <p>{globalError}</p>}
+            {globalError && <p className="text-red-500 text-sm">{globalError}</p>}
             <Button variant="primary" className="w-full" type="submit" disabled={loading}>
               Se connecter
             </Button>

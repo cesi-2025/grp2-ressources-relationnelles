@@ -45,17 +45,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
  
   // Restore session on mount
   useEffect(() => {
+    let cancelled = false;
     const token = tokenStorage.get();
     if (!token) {
       setState({ user: null, loading: false });
       return;
     }
     auth.me()
-      .then((user) => setState({ user, loading: false }))
+      .then((user) => { if (!cancelled) setState({ user, loading: false }); })
       .catch(() => {
         tokenStorage.remove();
-        setState({ user: null, loading: false });
+        if (!cancelled) setState({ user: null, loading: false });
       });
+      return () => { cancelled = true; };
   }, []);
  
   const login = useCallback(async (email: string, password: string) => {
@@ -114,14 +116,14 @@ export function useAuth(): AuthContextValue {
  
 // Convenience hook — redirects to login if not authenticated
 export function useRequireAuth(): AuthContextValue {
-  const auth = useAuth();
+  const authCtx = useAuth();
   const router = useRouter();
  
   useEffect(() => {
-    if (!auth.loading && !auth.isAuthenticated) {
+    if (!authCtx.loading && !authCtx.isAuthenticated) {
       router.replace('/auth/connexion');
     }
-  }, [auth.loading, auth.isAuthenticated, router]);
+  }, [authCtx.loading, authCtx.isAuthenticated, router]);
  
-  return auth;
+  return authCtx;
 }
