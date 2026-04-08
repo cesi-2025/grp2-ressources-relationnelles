@@ -5,8 +5,7 @@ import Button from "@/components/ui/Button";
 import Link from "next/link";
 
 import { FormEvent, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { ApiError, authApi } from '@/lib/api';
+import { ApiError } from '@/lib/api';
 import { useAuth } from "@/context/AuthContext";
 
 export default function InscriptionPage() {

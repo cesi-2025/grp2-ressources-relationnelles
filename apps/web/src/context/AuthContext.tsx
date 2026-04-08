@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import { useRouter } from 'next/navigation';
 import { auth, tokenStorage, User, ApiError } from '@/lib/api';
+import { authCookies } from '@/lib/cookies';
  
 interface AuthState {
   user: User | null;
@@ -31,9 +32,8 @@ function getRedirectPath(role: User['role']): string {
   switch (role) {
     case 'admin':
     case 'super_admin':
-      return '/administration';
     case 'moderateur':
-      return '/moderation';
+      return '/administration';
     default:
       return '/dashboard';
   }
@@ -43,7 +43,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [state, setState] = useState<AuthState>({ user: null, loading: true });
  
-  // Restore session on mount
   useEffect(() => {
     let cancelled = false;
     const token = tokenStorage.get();
@@ -51,18 +50,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setState({ user: null, loading: false });
       return;
     }
+
+    if (state.user) {
+      setState((s) => ({ ...s, loading: false }));
+      return;
+    }
+    // récupération des information d'auth 
     auth.me()
-      .then((user) => { if (!cancelled) setState({ user, loading: false }); })
+      .then((user) => {
+        if (!cancelled) {
+          authCookies.set(token, user.role); // création d'un cookies avec nos information
+          setState({ user, loading: false }); // récupération de l'état d'auht
+        }
+      })
       .catch(() => {
         tokenStorage.remove();
+        authCookies.remove();
         if (!cancelled) setState({ user: null, loading: false });
       });
-      return () => { cancelled = true; };
+    return () => { cancelled = true; };
   }, []);
  
   const login = useCallback(async (email: string, password: string) => {
     const { token, user } = await auth.login({ email, password });
     tokenStorage.set(token);
+    authCookies.set(token, user.role); // recupération et stockage du token avec auth
     setState({ user, loading: false });
     router.push(getRedirectPath(user.role));
   }, [router]);
@@ -80,6 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       password_confirmation: passwordConfirmation,
     });
     tokenStorage.set(token);
+    authCookies.set(token, user.role); //  recupération et stockage du token avec auth
     setState({ user, loading: false });
     router.push(getRedirectPath(user.role));
   }, [router]);
@@ -89,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await auth.logout();
     } finally {
       tokenStorage.remove();
+      authCookies.remove(); // suppresion du cookies
       setState({ user: null, loading: false });
       router.push('/auth/connexion');
     }
@@ -114,7 +128,6 @@ export function useAuth(): AuthContextValue {
   return ctx;
 }
  
-// Convenience hook — redirects to login if not authenticated
 export function useRequireAuth(): AuthContextValue {
   const authCtx = useAuth();
   const router = useRouter();
@@ -127,3 +140,17 @@ export function useRequireAuth(): AuthContextValue {
  
   return authCtx;
 }
+ 
+export function useRequireAdmin(): AuthContextValue {
+  const authCtx = useAuth();
+  const router = useRouter();
+ 
+  useEffect(() => {
+    if (!authCtx.loading && !authCtx.isAdmin) {
+      router.replace('/dashboard');
+    }
+  }, [authCtx.loading, authCtx.isAdmin, router]);
+ 
+  return authCtx;
+}
+ 

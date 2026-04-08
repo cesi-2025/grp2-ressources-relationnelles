@@ -5,6 +5,7 @@ import NavbarAdmin from "@/components/layout/NavbarAdmin";
 import Footer from "@/components/layout/Footer";
 import SidebarAdmin from "@/components/layout/sideBarAdmin";
 import { AuthProvider } from "@/context/AuthContext";
+import { AdminPage } from "@/components/layout/ProtectedPage";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -28,7 +29,7 @@ export default function RootLayout({
         <NavbarAdmin/>
         <div style={{ display: "flex", flex: 1 }}>
           <SidebarAdmin/>
-          <main className="flex-grow">{children}</main>
+          <main className="flex-grow"><AdminPage>{children}</AdminPage></main>
         </div>
         <Footer />
       </div>

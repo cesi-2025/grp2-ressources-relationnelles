@@ -54,6 +54,7 @@ export default function Navbar() {
                 <div>
                   <h3>{user?.name}</h3>
                   <span>{user?.email}</span>
+                  <span>{user?.role}</span>
                 </div>
                 <button onClick={logout} >Déconnection</button>
               </div>

@@ -17,7 +17,7 @@ export default function NavbarAdmin() {
         <div style={navbarAdminS.inner}>
  
           {/* ── Logo ──────────────────────────────────────────────────────── */}
-          <Link href="/administration" style={navbarAdminS.logoWrap}>
+          <Link href="/admin" style={navbarAdminS.logoWrap}>
             <div style={navbarAdminS.logoIcon}>MA</div>
             <div>
               <span style={navbarAdminS.logoText}>Harmonie</span>

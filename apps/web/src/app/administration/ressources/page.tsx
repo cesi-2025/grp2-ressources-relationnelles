@@ -25,12 +25,12 @@ export default function RessourcesPage() {
   const [editTarget, setEditTarget] = useState<ResourceItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<ResourceItem | null>(null);
  
-  // Options de filtres dynamiques
+  // Filtrage dynamiques
   const categories   = useMemo(() => Array.from(new Set(resources.map((r) => r.category))).filter(Boolean),    [resources]);
   const relationTypes = useMemo(() => Array.from(new Set(resources.map((r) => r.relationType))).filter(Boolean), [resources]);
   const resourceTypes = useMemo(() => Array.from(new Set(resources.map((r) => r.resourceType))).filter(Boolean), [resources]);
  
-  // Filtrage + tri
+  // filtre et trie des ressource
   const filteredAndSorted = useMemo(() => {
     const filtered = resources.filter((r) => {
       const q = search.trim().toLowerCase();
@@ -58,7 +58,7 @@ export default function RessourcesPage() {
  
   function onFilterChange(fn: () => void) { fn(); setPage(1); }
  
-  // ── CRUD ────────────────────────────────────────────────────────────────────
+  // Méthode de CRUD
   function handleCreate(data: Omit<ResourceItem, "id">) {
     const newId = Math.max(0, ...resources.map((r) => r.id)) + 1;
     setResources((prev) => [{ ...data, id: newId } as ResourceItem, ...prev]);
