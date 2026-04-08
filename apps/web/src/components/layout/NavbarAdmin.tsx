@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
+import { useAuth } from "@/context/AuthContext";
  
 export default function NavbarAdmin() {
+  const {logout} = useAuth()
+  const { user, loading, isAuthenticated} = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
  
+  if(loading) return null;
   return (
     <>
       <nav style={navbarAdminS.nav}>
@@ -27,14 +31,28 @@ export default function NavbarAdmin() {
           <div style={navbarAdminS.spacer} />
  
           {/* ── Auth ─────────────────────────────────────────────────────── */}
-          <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
-            <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
-              Connexion
-            </Link>
-            <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
-              Inscription
-            </Link>
-          </div>
+          {isAuthenticated ? (
+            <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
+              <div>
+                <div>
+                  <h3>{user?.name}</h3>
+                  <span>{user?.email}</span> 
+                </div>
+                <button type="button" onClick={(() =>{alert("voulez vous vraiment quitter"); logout()})}>Déconnection  </button>
+              </div>
+            </div>
+          ):
+          (
+            <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
+              <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
+                Connexion
+              </Link>
+              <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
+                Inscription
+              </Link>
+            </div>
+          )}
+          
  
           {/* ── Burger mobile ─────────────────────────────────────────────── */}
           <button

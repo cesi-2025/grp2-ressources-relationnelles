@@ -3,10 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import Button from "../ui/Button";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
+  const { user, loading, isAuthenticated, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mobileMenuId = "main-mobile-menu";
+
+  if(loading) return null;
 
   const navLinks = [
     { href: "/", label: "Accueil" },
@@ -43,18 +47,35 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Auth Buttons */}
-          <div className="hidden md:flex items-center space-x-4">
-            <Link href="/administration">
-              <Button variant="outline" size="sm">
-                Connexion
-              </Button>
-            </Link>
-            <Link href="/auth/inscription">
-              <Button variant="primary" size="sm">
-                Inscription
-              </Button>
-            </Link>
-          </div>
+          {isAuthenticated ? 
+          (
+            <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
+              <div>
+                <div>
+                  <h3>{user?.name}</h3>
+                  <span>{user?.email}</span>
+                </div>
+                <button onClick={logout} >Déconnection</button>
+              </div>
+            </div> 
+          )
+          : 
+          (
+            <div className="hidden md:flex items-center space-x-4">
+              <Link href="/auth/connexion">
+                <Button variant="outline" size="sm">
+                  Connexion
+                </Button>
+              </Link>
+              <Link href="/auth/inscription">
+                <Button variant="primary" size="sm">
+                  Inscription
+                </Button>
+              </Link>
+            </div>
+          )
+          }
+          
 
           {/* Mobile Menu Button */}
           <button
@@ -104,6 +125,16 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              {isAuthenticated ? (
+                <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
+                  <div>
+                    <h3>{user?.name}</h3>
+                    <span>{user?.email}</span>
+                  </div>
+                  <button onClick={logout} >Déconnection</button>
+                </div> 
+              ): (
+
               <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
                 <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
                   <Button variant="outline" size="md" className="w-full">
@@ -115,7 +146,9 @@ export default function Navbar() {
                     Inscription
                   </Button>
                 </Link>
-              </div>
+              </div>)
+            }
+              
             </div>
           </div>
         )}
