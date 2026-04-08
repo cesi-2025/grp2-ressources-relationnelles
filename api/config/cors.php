@@ -21,7 +21,7 @@ return [
 
     'allowed_origins' => array_filter(array_map('trim', explode(',', env(
         'CORS_ALLOWED_ORIGINS',
-        'http://localhost:3000,http://localhost:3005,http://127.0.0.1:3000,http://localhost:19006,http://127.0.0.1:19006,http://localhost:8081,http://127.0.0.1:8081,exp://127.0.0.1:19000,exp://localhost:19000'
+        'http://localhost:3000,http://127.0.0.1:3000,http://localhost:19006,http://127.0.0.1:19006,http://localhost:8081,http://127.0.0.1:8081,exp://127.0.0.1:19000,exp://localhost:19000'
     )))),
 
     'allowed_origins_patterns' => [],
