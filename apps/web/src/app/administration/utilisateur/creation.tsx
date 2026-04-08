@@ -32,7 +32,7 @@ export default function CreateModal({ onClose, onCreate, nextId }: CreateModalPr
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
 
   const set = (key: keyof typeof emptyForm, value: string) => {

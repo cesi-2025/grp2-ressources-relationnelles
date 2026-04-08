@@ -38,9 +38,9 @@ export default function RessourcesPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
-  
+
   // filtre et trie des ressource
   const filteredAndSorted = useMemo(() => {
     const filtered = resources.filter((r) => {

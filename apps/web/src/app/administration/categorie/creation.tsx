@@ -1,5 +1,10 @@
 
-import { useState } from "react";
+
+import { useEffect, useState } from "react";
+
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 import { CategorieItems } from "@/data/categorie";
 import {
   overlayStyle, modalStyle, closeBtnStyle,
@@ -20,6 +25,13 @@ const emptyForm = {
 export default function CreateModal({ onClose, onCreate, nextId }: CreateModalProps) {
   const [form, setForm] = useState(emptyForm);
   const [errors, setErrors] = useState<Partial<typeof emptyForm>>({});
+
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
+  }, [user,loading,router])
 
   const set = (key: keyof typeof emptyForm, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));

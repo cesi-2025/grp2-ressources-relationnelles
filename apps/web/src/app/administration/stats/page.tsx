@@ -19,7 +19,7 @@ export default function DashboardPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: 48 }}>

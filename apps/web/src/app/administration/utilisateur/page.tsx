@@ -24,8 +24,9 @@ export default function RessourcesPage() {
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
+
   const filtered = items.filter((item) =>
     [item.nom, item.role, item.email, item.status].some((v) =>
       v.toLowerCase().includes(search.toLowerCase())

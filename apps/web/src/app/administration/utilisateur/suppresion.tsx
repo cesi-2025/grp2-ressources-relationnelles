@@ -1,7 +1,7 @@
 import { UserItem } from "@/data/user";
 import { overlayStyle, modalStyle, primaryBtnStyle, secondaryBtnStyle } from "@/style/userStyle";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 import { useRequireAdmin } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
@@ -17,7 +17,7 @@ export default function DeleteModal({ item, onClose, onConfirm }: DeleteModalPro
   const router = useRouter()
 
   useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
   
   return (
