@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/context/AuthContext';
 import { resources, progression, Resource } from '@/lib/api';
 import s from '@/style/dashboardStyle';
+import { useRouter } from 'next/navigation';
  
  
 function StatusBadge({ status }: { status: Resource['status'] }) {
@@ -18,17 +19,20 @@ function StatusBadge({ status }: { status: Resource['status'] }) {
  
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth();
+  const router = useRouter()
   const [myResources, setMyResources] = useState<Resource[]>([]);
   const [progressionList, setProgressionList] = useState<Resource[]>([]);
  
   useEffect(() => {
-    if (!user) return;
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
+
+  useEffect(() => {
+    if (loading || !user) return;
     resources.list().then((res: any) => setMyResources(Array.isArray(res) ? res : res.data ?? [])).catch(console.error);
     progression.list().then((res: any) => setProgressionList(Array.isArray(res) ? res : res.data ?? [])).catch(console.error)
-  }, [user]);
+  }, [user, loading]);
  
-  if (loading) return <div style={s.loadingScreen}>Chargement…</div>;
-  if (!user) return null;
  
   return (
     <>

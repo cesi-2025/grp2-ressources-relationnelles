@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "../globals.css";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { AuthPage } from "@/components/layout/ProtectedPage";
 
 
 
@@ -23,7 +24,7 @@ export default function AdministrationLayout({
       </a>
       <div className="flex flex-col min-h-screen">
           <Navbar />
-          <main id="main-content" className="flex-grow">{children}</main>
+          <main id="main-content" className="flex-grow"><AuthPage>{children}</AuthPage></main>
           <Footer />
       </div>
     </>
