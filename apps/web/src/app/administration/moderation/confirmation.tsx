@@ -1,5 +1,8 @@
 "use client";
  
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 interface ConfirmModalProps {
   title: string;
   message: string;
@@ -8,6 +11,13 @@ interface ConfirmModalProps {
 }
  
 export default function ConfirmModal({ title, message, onClose, onConfirm }: ConfirmModalProps) {
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
+  
   return (
     <div
       style={{

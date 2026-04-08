@@ -1,6 +1,11 @@
 import { UserItem } from "@/data/user";
 import { overlayStyle, modalStyle, primaryBtnStyle, secondaryBtnStyle } from "@/style/userStyle";
 
+import { useEffect, useState } from "react";
+
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 interface DeleteModalProps {
   item: UserItem;
   onClose: () => void;
@@ -8,6 +13,13 @@ interface DeleteModalProps {
 }
 
 export default function DeleteModal({ item, onClose, onConfirm }: DeleteModalProps) {
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
+  
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div

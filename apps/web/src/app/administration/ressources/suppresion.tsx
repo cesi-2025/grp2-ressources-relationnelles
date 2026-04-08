@@ -1,6 +1,9 @@
 "use client";
  
+import { useRequireAdmin } from "@/context/AuthContext";
 import { overlayStyle, modalStyle, primaryBtn, secondaryBtn } from "@/style/ressourceStyle";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
  
 interface ResourceDeleteModalProps {
   title: string;
@@ -9,6 +12,13 @@ interface ResourceDeleteModalProps {
 }
  
 export default function ResourceDeleteModal({ title, onClose, onConfirm }: ResourceDeleteModalProps) {
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
+  
   return (
     <div style={overlayStyle} onClick={onClose}>
       <div
