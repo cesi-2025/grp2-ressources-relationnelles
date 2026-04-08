@@ -4,13 +4,8 @@ import "../globals.css";
 import NavbarAdmin from "@/components/layout/NavbarAdmin";
 import Footer from "@/components/layout/Footer";
 import SidebarAdmin from "@/components/layout/sideBarAdmin";
-import { AuthProvider } from "@/context/AuthContext";
 import { AdminPage } from "@/components/layout/ProtectedPage";
 
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-});
 
 
 export const metadata: Metadata = {

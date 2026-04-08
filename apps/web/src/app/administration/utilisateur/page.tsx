@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserItem, USERS } from "@/data/user";
 import Avatar from "./avatar";
 import StatusBadge from "./statusBar";
 import EditModal from "./modification";
 import DeleteModal from "./suppresion";
 import CreateModal from "./creation";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
 
 
 const COLUMNS = ["Nom", "Role", "Email", "Statut", "Date", "Actions"];
@@ -18,6 +20,12 @@ export default function RessourcesPage() {
   const [showCreate, setShowCreate] = useState(false);
   const [search, setSearch] = useState("");
 
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
   const filtered = items.filter((item) =>
     [item.nom, item.role, item.email, item.status].some((v) =>
       v.toLowerCase().includes(search.toLowerCase())

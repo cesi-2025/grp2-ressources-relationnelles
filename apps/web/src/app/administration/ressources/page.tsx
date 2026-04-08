@@ -9,6 +9,10 @@ import ResourceFilters from "@/components/resources/filtre";
 import ResourcePagination from "@/components/resources/pagination";
 import ResourceFormModal from "./modification";
 import ResourceDeleteModal from "./suppresion";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 
 const ITEMS_PER_PAGE = 6;
  
@@ -30,6 +34,13 @@ export default function RessourcesPage() {
   const relationTypes = useMemo(() => Array.from(new Set(resources.map((r) => r.relationType))).filter(Boolean), [resources]);
   const resourceTypes = useMemo(() => Array.from(new Set(resources.map((r) => r.resourceType))).filter(Boolean), [resources]);
  
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
+  
   // filtre et trie des ressource
   const filteredAndSorted = useMemo(() => {
     const filtered = resources.filter((r) => {

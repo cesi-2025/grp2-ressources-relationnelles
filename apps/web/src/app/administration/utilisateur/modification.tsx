@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { UserItem, ROLES, STATUSES } from "@/data/user";
 import {
   overlayStyle,
@@ -10,6 +10,9 @@ import {
   inputStyle,
   labelStyle,
 } from "@/style/userStyle";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 
 interface EditModalProps {
   item: UserItem;
@@ -19,6 +22,12 @@ interface EditModalProps {
 
 export default function EditModal({ item, onClose, onSave }: EditModalProps) {
   const [form, setForm] = useState<UserItem>({ ...item });
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
 
   return (
     <div style={overlayStyle} onClick={onClose}>

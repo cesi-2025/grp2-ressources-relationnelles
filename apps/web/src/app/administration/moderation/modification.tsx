@@ -1,8 +1,12 @@
 "use client";
  
-import { useState } from "react";
+import {  useEffect,useState } from "react";
 import { Comment } from "@/data/moderation";
- 
+
+
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 interface EditCommentModalProps {
   comment: Comment;
   onClose: () => void;
@@ -11,6 +15,12 @@ interface EditCommentModalProps {
  
 export default function EditCommentModal({ comment, onClose, onSave }: EditCommentModalProps) {
   const [value, setValue] = useState(comment.content);
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
  
   return (
     <div

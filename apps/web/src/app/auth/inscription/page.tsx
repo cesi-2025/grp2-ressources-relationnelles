@@ -124,6 +124,7 @@ export default function InscriptionPage() {
               </label>
             </div>
 
+            {globalError && <p className="text-red-500 text-sm">{globalError}</p>}
             <Button variant="primary" className="w-full" type="submit" disabled={loading}>
               S&apos;inscrire
             </Button>

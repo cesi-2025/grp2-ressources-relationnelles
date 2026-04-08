@@ -4,6 +4,10 @@ import BarChart from "@/components/tableauDeBord/barChart";
 import DonutChart from "@/components/tableauDeBord/DonutChart";
 import DisconnectedTable from "@/components/tableauDeBord/tableDeconecter";
 import AdminPanel from "@/components/tableauDeBord/panelAdmin";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
+
 
 export default function DashboardPage() {
   const totalUsers        = USERS.length;
@@ -11,6 +15,12 @@ export default function DashboardPage() {
   const newThisMonth      = 18;
   const disconnectedUsers = USERS.filter((u) => u.status === "Désactivé" );
 
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: 48 }}>
 

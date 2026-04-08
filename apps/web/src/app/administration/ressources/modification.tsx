@@ -1,12 +1,15 @@
 "use client";
  
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ResourceItem } from "@/data/resources";
 import {
   overlayStyle, modalStyle, inputStyle,
   labelStyle, primaryBtn, secondaryBtn,
 } from "@/style/ressourceStyle";
  
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+
 interface ResourceFormModalProps {
   initial: Omit<ResourceItem, "id"> & { id?: number };
   categories: string[];
@@ -28,6 +31,12 @@ export default function ResourceFormModal({
   const [form, setForm] = useState({ ...initial });
   const set = (key: keyof typeof form, value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
  
   return (
     <div style={overlayStyle} onClick={onClose}>

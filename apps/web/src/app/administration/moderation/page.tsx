@@ -1,6 +1,6 @@
 "use client";
  
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ResourceItem } from "@/data/resources";
 import { Comment, PENDING_RESOURCES, INITIAL_COMMENTS } from "@/data/moderation";
 import { Badge } from "@/components/ui/moderation/uiModeration";
@@ -8,11 +8,19 @@ import PendingResourceCard from "@/components/moderation/carteResourcePendu";
 import CommentRow          from "@/components/moderation/montreCommentaire";
 import ConfirmModal        from "./confirmation";
 import EditCommentModal    from "./modification";
+import { useRequireAdmin } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
  
 type Tab = "resources" | "comments";
  
 export default function ModerationPage() {
   const [tab, setTab] = useState<Tab>("resources");
+  const {user, loading}= useRequireAdmin()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (loading || user && user.role !== "citoyen") router.replace("/administration");
+  }, [user,loading,router])
  
   // ── Ressources ──────────────────────────────────────────────────────────────
   const [pending, setPending] = useState<ResourceItem[]>(PENDING_RESOURCES);

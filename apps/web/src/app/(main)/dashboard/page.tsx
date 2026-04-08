@@ -1,10 +1,9 @@
 'use client';
- 
+
 import { useEffect, useState } from 'react';
 import { useRequireAuth } from '@/context/AuthContext';
 import { resources, progression, Resource } from '@/lib/api';
 import s from '@/style/dashboardStyle';
-import { useRouter } from 'next/navigation';
  
  
 function StatusBadge({ status }: { status: Resource['status'] }) {
@@ -19,14 +18,9 @@ function StatusBadge({ status }: { status: Resource['status'] }) {
  
 export default function DashboardPage() {
   const { user, loading } = useRequireAuth();
-  const router = useRouter()
   const [myResources, setMyResources] = useState<Resource[]>([]);
   const [progressionList, setProgressionList] = useState<Resource[]>([]);
  
-  useEffect(() => {
-    if (loading || user && user.role !== "citoyen") router.replace("/administration");
-  }, [user,loading,router])
-
   useEffect(() => {
     if (loading || !user) return;
     resources.list().then((res: any) => setMyResources(Array.isArray(res) ? res : res.data ?? [])).catch(console.error);
