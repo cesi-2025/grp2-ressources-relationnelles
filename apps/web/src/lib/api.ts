@@ -91,14 +91,33 @@ export const auth = {
 export interface Resource {
   id: number;
   title: string;
-  description: string;
   content: string;
   category_id: number;
+  relation_type_id: number;
+  resource_type_id: number;
   user_id: number;
   status: 'pending' | 'validated' | 'suspended';
+  is_public: boolean;
   created_at: string;
 }
  
+export interface RelationType {
+  id: number;
+  name: string;
+}
+ 
+export interface ResourceType {
+  id: number;
+  name: string;
+}
+ 
+export const relationTypes = {
+  list: () => request<RelationType[]>('/relation-types'),
+};
+ 
+export const resourceTypes = {
+  list: () => request<ResourceType[]>('/resource-types'),
+};
 export const resources = {
   list: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
