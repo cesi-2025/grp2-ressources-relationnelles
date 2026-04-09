@@ -104,7 +104,17 @@ export default function AdminRessourcesPage() {
       addToast('Erreur lors de la suspension.', 'error');
     }
   }
- 
+
+  async function handleReactivate(r: Resource) {
+  try {
+    await admin.reactivateResource(r.id);
+    addToast(`Ressource "${r.title}" réactivée.`, 'success');
+    fetchResources();
+  } catch {
+    addToast('Erreur lors de la réactivation.', 'error');
+  }
+}
+
   async function handleDelete() {
     if (!deleteTarget) return;
     setDeleting(true);
@@ -222,7 +232,7 @@ export default function AdminRessourcesPage() {
                             Suspendre
                           </button>
                         ) : (
-                          <button style={s.btnReactivate} onClick={() => handleSuspend(r)}>
+                          <button style={s.btnReactivate} onClick={() => handleReactivate(r)}>
                             Réactiver
                           </button>
                         )}
