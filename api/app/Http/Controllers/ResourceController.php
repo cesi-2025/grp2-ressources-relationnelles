@@ -38,7 +38,7 @@ class ResourceController extends Controller
 
         return response()->json($resources->paginate(15)->withQueryString());
     }
-
+    
     public function show(int $id): JsonResponse
     {
         $resource = Resource::query()
@@ -52,7 +52,12 @@ class ResourceController extends Controller
 
     public function store(StoreResourceRequest $request): JsonResponse
     {
-        if ($request->user()?->role !== Role::CITIZEN) {
+        if (!in_array($request->user()?->role, [
+            Role::CITIZEN,
+            Role::ADMIN,
+            Role::SUPER_ADMIN,
+            Role::MODERATOR, // si tu as ce rôle
+        ])) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

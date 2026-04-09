@@ -183,8 +183,12 @@ export const progression = {
  
 export const admin = {
   statistics: () => request<Record<string, number>>('/admin/statistics'),
+  listResources: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: Resource[] }>(`/admin/resources${qs}`);
+  },
   suspendResource: (resourceId: number) =>
-    request<void>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
+    request<Resource>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
   reactivateResource: (resourceId: number) =>
     request<Resource>(`/resources/${resourceId}`, { 
       method: 'PUT', 

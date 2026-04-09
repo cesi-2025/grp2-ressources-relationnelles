@@ -351,6 +351,17 @@ const s: Record<string, React.CSSProperties> = {
     color: '#8b1a1a',
     border: '1px solid #fca5a5',
   },
+  btnValidate: {
+    height: 30,
+    padding: '0 10px',
+    background: 'transparent',
+    border: '1px solid #9FD8A3',
+    borderRadius: 5,
+    fontSize: '0.75rem',
+    color: '#1a5c1e',
+    cursor: 'pointer',
+    fontFamily: "'Open Sans', sans-serif",
+  },
 };
  
 export default s;
