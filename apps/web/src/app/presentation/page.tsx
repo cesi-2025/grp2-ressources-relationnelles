@@ -1,19 +1,8 @@
 "use client"
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
-import { useEffect } from 'react';
-import { useRequireAuth } from '@/context/AuthContext';
-
-import { useRouter } from 'next/navigation';
 
 export default function PresentationPage() {
-  const { user, loading } = useRequireAuth();
-  const router = useRouter()
-
- 
-  useEffect(() => {
-    if (loading || !user && user.role !== "citoyen") router.replace("/administration/dashboard");
-  }, [user,loading,router])
 
   return (
     <div className="bg-gray-50 min-h-screen">

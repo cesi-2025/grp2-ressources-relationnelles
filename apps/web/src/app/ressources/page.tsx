@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ResourceCard from "@/components/resources/ResourceCard";
 import { RESOURCES } from "@/data/resources";
 
-import { useRequireAuth } from '@/context/AuthContext';
-import { useRouter } from 'next/navigation';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -19,13 +17,6 @@ export default function RessourcesPage() {
   const [sortBy, setSortBy] = useState("date-recent");
   const [page, setPage] = useState(1);
 
-  const { user, loading } = useRequireAuth();
-  const router = useRouter()
-
- 
-  useEffect(() => {
-    if (loading || !user && user.role !== "citoyen") router.replace("/administration/dashboard");
-  }, [user,loading,router])
 
   const categories = useMemo(
     () => ["all", ...Array.from(new Set(RESOURCES.map((resource) => resource.category)))],
