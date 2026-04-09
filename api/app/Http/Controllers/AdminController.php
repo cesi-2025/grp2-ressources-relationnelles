@@ -72,13 +72,28 @@ class AdminController extends Controller
 
     public function suspendResource(Resource $resource): JsonResponse
     {
-        $resource->update([
-            'status' => ResourceStatus::ARCHIVED->value,
-        ]);
+        $newStatus = $resource->status === ResourceStatus::ARCHIVED
+            ? ResourceStatus::PUBLISHED->value
+            : ResourceStatus::ARCHIVED->value;
+
+        $resource->update(['status' => $newStatus]);
 
         return response()->json([
-            'message' => 'Resource suspended successfully.',
+            'message' => 'Status updated.',
             'resource' => $resource,
         ]);
     }
+    
+    public function indexResources(Request $request): JsonResponse
+    {
+        $resources = Resource::query()
+            ->with(['category', 'relationType', 'resourceType'])
+            ->when($request->query('status'), fn($q, $s) => $q->where('status', $s))
+            ->when($request->query('category_id'), fn($q, $c) => $q->where('category_id', $c))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($resources);
+    }
+        
 }

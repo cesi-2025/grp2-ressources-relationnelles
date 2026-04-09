@@ -2,7 +2,7 @@
  
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { resources, categories, admin, relationTypes, resourceTypes, Resource, Category, RelationType, ResourceType } from '@/lib/api';
+import { resources, categories, admin, relationTypes, resourceTypes, Resource, Category, RelationType, ResourceType, moderation } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import ResourceForm from '@/components/format/ressourceForma';
 import Toast, { ToastItem } from '@/components/toast/ressourceToast';
@@ -60,19 +60,36 @@ export default function AdminRessourcesPage() {
       const params: Record<string, string> = {};
       if (filterStatus) params.status = filterStatus;
       if (filterCategory) params.category_id = filterCategory;
-      const res = await resources.list(params);
+      const res = await admin.listResources(params);
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
     } catch {
-      addToast('Erreur lors du chargement des ressources.', 'error');
+      addToast('Erreur lors du chargement.', 'error');
     } finally {
-      setPageLoading(false);
+      setPageLoading(false); // ← manquait ici
     }
   }, [filterStatus, filterCategory, addToast]);
  
   useEffect(() => {
     categories.list().then(setCatList).catch(console.error);
-    relationTypes.list().then(setRelTypeList).catch(console.error);
-    resourceTypes.list().then(setResTypeList).catch(console.error);
+  
+    // Charge une ressource pour extraire les types disponibles
+    resources.list().then((res: any) => {
+      const list = Array.isArray(res) ? res : res.data ?? [];
+      
+      // Extrait les relation_types uniques
+      const relTypes = list
+        .map((r: any) => r.relation_type)
+        .filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex(x => x.id === v.id) === i);
+      
+      const resTypes = list
+        .map((r: any) => r.resource_type)
+        .filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex(x => x.id === v.id) === i);
+      
+      setRelTypeList(relTypes);
+      setResTypeList(resTypes);
+    }).catch(console.error);
   }, []);
  
   useEffect(() => {
@@ -81,14 +98,17 @@ export default function AdminRessourcesPage() {
  
   // ── Actions ───────────────────────────────────────────
   async function handleSuspend(r: Resource) {
-    try {
-      await admin.suspendResource(r.id);
-      addToast(`Ressource "${r.title}" suspendue.`, 'success');
-      fetchResources();
-    } catch {
-      addToast('Erreur lors de la suspension.', 'error');
-    }
+  try {
+    await admin.suspendResource(r.id);
+    const newStatus = r.status !== 'suspended' ? 'suspended' : 'validated';
+    setList((prev) => prev.map((item) =>
+      item.id === r.id ? { ...item, status: newStatus as Resource['status'] } : item
+    ));
+    addToast(newStatus === 'suspended' ? `Ressource suspendue.` : `Ressource réactivée.`, 'success');
+  } catch {
+    addToast('Erreur.', 'error');
   }
+}
 
   async function handleReactivate(r: Resource) {
   try {
@@ -116,6 +136,19 @@ export default function AdminRessourcesPage() {
     }
   }
  
+  async function handleValidate(r: Resource) {
+  try {
+    await moderation.validateResource(r.id);
+    setList((prev) => prev.map((item) =>
+      item.id === r.id ? { ...item, status: 'validated' as const } : item
+    ));
+    addToast(`Ressource "${r.title}" validée.`, 'success');
+  } catch {
+    addToast('Erreur lors de la validation.', 'error');
+  }
+}
+
+
   // ── Filtered list ─────────────────────────────────────
   const filtered = list.filter((r) => {
     if (filterStatus && r.status !== filterStatus) return false;
@@ -212,12 +245,17 @@ export default function AdminRessourcesPage() {
                         >
                           Éditer
                         </button>
+                        {r.status === 'pending' && (
+                          <button style={s.btnValidate} onClick={() => handleValidate(r)}>
+                            Valider
+                          </button>
+                        )}
                         {r.status !== 'suspended' ? (
                           <button style={s.btnSuspend} onClick={() => handleSuspend(r)}>
                             Suspendre
                           </button>
                         ) : (
-                          <button style={s.btnReactivate} onClick={() => handleReactivate(r)}>
+                          <button style={s.btnReactivate} onClick={() => handleSuspend(r)}>
                             Réactiver
                           </button>
                         )}
