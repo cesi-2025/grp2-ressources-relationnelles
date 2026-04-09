@@ -71,8 +71,23 @@ export default function AdminRessourcesPage() {
  
   useEffect(() => {
     categories.list().then(setCatList).catch(console.error);
-    relationTypes.list().then(setRelTypeList).catch(console.error);
-    resourceTypes.list().then(setResTypeList).catch(console.error);
+    resources.list().then((res: any) => {
+      const list = Array.isArray(res) ? res : res.data ?? [];
+      
+      // Extrait les relation_types uniques
+      const relTypes = list
+        .map((r: any) => r.relation_type)
+        .filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex(x => x.id === v.id) === i);
+      
+      const resTypes = list
+        .map((r: any) => r.resource_type)
+        .filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex(x => x.id === v.id) === i);
+      
+      setRelTypeList(relTypes);
+      setResTypeList(resTypes);
+  }).catch(console.error);
   }, []);
  
   useEffect(() => {

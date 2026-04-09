@@ -118,6 +118,7 @@ export const relationTypes = {
 export const resourceTypes = {
   list: () => request<ResourceType[]>('/resource-types'),
 };
+
 export const resources = {
   list: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
