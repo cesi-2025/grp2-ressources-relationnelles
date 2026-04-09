@@ -1,15 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Badge from "@/components/ui/Badge";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import { getCommentsByResourceId, getResourceById } from "@/data/resources";
-import { useRequireAuth } from '@/context/AuthContext';
-
-import { useRouter } from 'next/navigation';
 
 
 function getCategoryVariant(category: string): "primary" | "secondary" | "accent" {
@@ -32,14 +29,6 @@ export default function ResourceDetailPage() {
 
   const resource = useMemo(() => getResourceById(resourceId), [resourceId]);
   const comments = useMemo(() => getCommentsByResourceId(resourceId), [resourceId]);
-
-  const { user, loading } = useRequireAuth();
-  const router = useRouter()
-
- 
-  useEffect(() => {
-    if (loading || !user && user.role !== "citoyen") router.replace("/administration/dashboard");
-  }, [user,loading,router])
 
   if (!resource) {
     return (
