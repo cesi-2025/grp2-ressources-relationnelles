@@ -186,6 +186,11 @@ export const admin = {
   statistics: () => request<Record<string, number>>('/admin/statistics'),
   suspendResource: (resourceId: number) =>
     request<void>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
+  reactivateResource: (resourceId: number) =>
+    request<Resource>(`/resources/${resourceId}`, { 
+      method: 'PUT', 
+      body: JSON.stringify({ status: 'published' }) 
+    }),
 };
  
 // ── Moderation ───────────────────────────────────────────────────────────────
