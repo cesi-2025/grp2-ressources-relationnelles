@@ -1,188 +1,151 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { CategorieItems, CATEGORIE } from "@/data/categorie";
-import EditModal from "./modification";
-import DeleteModal from "./suppresion";
-import CreateModal from "./creation";
-import { useRequireAdmin } from "@/context/AuthContext";
-import { useRouter } from "next/navigation";
-
-
-const COLUMNS = ["Nom", "Description", "Action"];
-
-export default function RessourcesPage() {
-  const [items, setItems] = useState<CategorieItems[]>(CATEGORIE);
-  const [editTarget, setEditTarget] = useState<CategorieItems | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CategorieItems | null>(null);
-  const [showCreate, setShowCreate] = useState(false);
-  const [search, setSearch] = useState("");
-
-  const {user, loading}= useRequireAdmin()
-  const router = useRouter()
-
+'use client';
+ 
+import { useEffect, useState, useCallback } from 'react';
+import { categories, Category } from '@/lib/api';
+import { useRequireAdmin } from '@/context/AuthContext';
+import CategoryForm from '@/components/format/categoryForma';
+import s from '@/style/categoryAdminStyle';
+ 
+export default function CategoriesPage() {
+  const { user, loading } = useRequireAdmin();
+  const [list, setList] = useState<Category[]>([]);
+  const [search, setSearch] = useState('');
+  const [pageLoading, setPageLoading] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
+  const [editTarget, setEditTarget] = useState<Category | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const [error, setError] = useState('');
+ 
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await categories.list();
+      setList(res);
+    } catch {
+      setError('Erreur lors du chargement.');
+    } finally {
+      setPageLoading(false);
+    }
+  }, []);
+ 
   useEffect(() => {
-    if (loading || user && user.role === "citoyen") router.replace("/dashboard");
-  }, [user,loading,router])
-
-  const filtered = items.filter((item) =>
-    [item.nom].some((v) =>
-      v.toLowerCase().includes(search.toLowerCase())
-    )
-  );
-
-  const handleSave = (updated: CategorieItems) => {
-    setItems((prev) => prev.map((i) => (i.id === updated.id ? updated : i)));
-    setEditTarget(null);
-  };
-
-  const handleDelete = () => {
+    if (user) fetchCategories();
+  }, [user, fetchCategories]);
+ 
+  function handleSaved(cat: Category) {
+    setList((prev) => {
+      const exists = prev.find((c) => c.id === cat.id);
+      return exists ? prev.map((c) => c.id === cat.id ? cat : c) : [...prev, cat];
+    });
+  }
+ 
+  async function handleDelete() {
     if (!deleteTarget) return;
-    setItems((prev) => prev.filter((i) => i.id !== deleteTarget.id));
-    setDeleteTarget(null);
-  };
-  
-  const handleCreate = (newUser: CategorieItems) => {
-    setItems((prev) => [...prev, newUser]);
-  };
-
-  const nextId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
-
-  
-  return (<div style={{ padding: "40px 24px", minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-
-        {/* En-tête */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
+    setDeleting(true);
+    setError('');
+    try {
+      await categories.delete(deleteTarget.id);
+      setList((prev) => prev.filter((c) => c.id !== deleteTarget.id));
+      setDeleteTarget(null);
+    } catch {
+      setError('Erreur lors de la suppression.');
+    } finally {
+      setDeleting(false);
+    }
+  }
+ 
+  const filtered = list.filter((c) =>
+    c.name.toLowerCase().includes(search.toLowerCase())
+  );
+ 
+  if (loading || !user) return null;
+ 
+  return (
+    <div style={s.page}>
+      <div style={s.container}>
+        <div style={s.pageHeader}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#0f172a" }}>Utilisateurs</h1>
-            <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 14 }}>
-              {filtered.length} Categorie{filtered.length > 1 ? "s" : ""}
-            </p>
+            <h1 style={s.pageTitle}>Catégories</h1>
+            <p style={s.pageSubtitle}>{filtered.length} catégorie{filtered.length > 1 ? 's' : ''}</p>
           </div>
-
-          {/* Recherche + bouton créer */}
-          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <div style={{
-              display: "flex", alignItems: "center", gap: 8,
-              background: "#fff", border: "1px solid #e2e8f0",
-              borderRadius: 10, padding: "8px 14px",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-            }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
-              </svg>
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Rechercher..."
-                style={{ border: "none", outline: "none", fontSize: 14, color: "#0f172a", width: 200, background: "transparent" }}
-              />
-            </div>
-
+          <div style={s.toolbar}>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Rechercher..."
+              style={s.searchInput}
+            />
             <button
-              onClick={() => setShowCreate(true)}
-              style={{ background: "#10b981", color: "#fff", border: "none", padding: "9px 18px", borderRadius: 10, fontSize: 14, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap", transition: "background 0.15s" }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = "#059669")}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "#10b981")}
+              onClick={() => { setEditTarget(null); setFormOpen(true); }}
+              style={s.btnCreate}
             >
-              ＋ Créer
+              + Créer
             </button>
           </div>
         </div>
-
-        {/* Tableau */}
-        <div style={{
-          background: "#fff", borderRadius: 16,
-          border: "1px solid #e2e8f0",
-          display: "table",
-          margin: "0 auto",
-          boxShadow: "0 4px 24px rgba(0,0,0,0.06)",
-        }}>
-          <table style={{ width: "", borderCollapse: "collapse", tableLayout: "auto" }}>
-            <thead>
-              <tr style={{ background: "#f1f5f9" }}>
-                {COLUMNS.map((h) => (
-                  <th key={h} style={{
-                    padding: "12px 16px", textAlign: "left",
-                    fontSize: 11, fontWeight: 700, color: "#94a3b8",
-                    letterSpacing: 1, textTransform: "uppercase",
-                    borderBottom: "1px solid #e2e8f0",
-                    whiteSpace: "nowrap",
-                  }}>
-                    {h}
-                  </th>
-                ))}
+ 
+        <div style={s.tableWrap}>
+          <table style={s.table}>
+            <thead style={s.thead}>
+              <tr>
+                <th style={s.th}>Nom</th>
+                <th style={s.th}>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {filtered.map((item, i) => (
-                <tr
-                  key={item.id}
-                  style={{ borderBottom: i < filtered.length - 1 ? "1px solid #f1f5f9" : "none", transition: "background 0.15s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
-                >
-                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
-                    <div style={{ display: "flex", width: 160, alignItems: "center", gap: 10 }}>
-                      <span style={{ fontWeight: 600, fontSize: 14, color: "#0f172a" }}>
-                        {item.nom}
-                      </span>
-                    </div>
-                  </td>
-
-                  
-                  {/* Catégorie (description) */}
-                  <td style={{ padding: "14px 16px", fontSize: 13, color: "#475569", whiteSpace: "nowrap" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
-                      {item.description}
-                    </div>
-                  </td>
-
-                  {/* Actions */}
-                  <td style={{ padding: "14px 16px", whiteSpace: "nowrap" }}>
-                    <div style={{ display: "flex", gap: 8 }}>
+              {pageLoading && <tr><td colSpan={2} style={s.emptyCell}>Chargement…</td></tr>}
+              {!pageLoading && filtered.length === 0 && <tr><td colSpan={2} style={s.emptyCell}>Aucune catégorie trouvée.</td></tr>}
+              {filtered.map((cat, i) => (
+                <tr key={cat.id} style={{ borderBottom: i < filtered.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                  <td style={{ ...s.td, fontWeight: 500 }}>{cat.name}</td>
+                  <td style={s.td}>
+                    <div style={s.actions}>
                       <button
-                        onClick={() => setEditTarget(item)}
-                        style={{ background: "#eef2ff", color: "#6366f1", border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#6366f1"; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#eef2ff"; e.currentTarget.style.color = "#6366f1"; }}
+                        onClick={() => { setEditTarget(cat); setFormOpen(true); }}
+                        style={s.btnEdit}
                       >
-                        ✏️
+                        Modifier
                       </button>
                       <button
-                        onClick={() => setDeleteTarget(item)}
-                        style={{ background: "#fef2f2", color: "#ef4444", border: "none", padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all 0.15s", whiteSpace: "nowrap" }}
-                        onMouseEnter={(e) => { e.currentTarget.style.background = "#ef4444"; e.currentTarget.style.color = "#fff"; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.background = "#fef2f2"; e.currentTarget.style.color = "#ef4444"; }}
+                        onClick={() => { setDeleteTarget(cat); setError(''); }}
+                        style={s.btnDelete}
                       >
-                        🗑️
+                        Supprimer
                       </button>
                     </div>
                   </td>
                 </tr>
               ))}
-
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                    Aucun utilisateur trouvé.
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
       </div>
-
-      {editTarget && (
-        <EditModal item={editTarget} onClose={() => setEditTarget(null)} onSave={handleSave} />
+ 
+      {formOpen && (
+        <CategoryForm
+          category={editTarget}
+          onClose={() => { setFormOpen(false); setEditTarget(null); }}
+          onSaved={handleSaved}
+          onError={setError}
+        />
       )}
+ 
       {deleteTarget && (
-        <DeleteModal item={deleteTarget} onClose={() => setDeleteTarget(null)} onConfirm={handleDelete} />
-      )}
-      {showCreate && (
-        <CreateModal onClose={() => setShowCreate(false)} onCreate={handleCreate} nextId={nextId} />
+        <div style={s.modalOverlay} onClick={() => setDeleteTarget(null)}>
+          <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>
+            <h2 style={s.modalTitle}>Confirmer la suppression</h2>
+            <p style={{ color: '#6b7280', fontSize: 15, marginBottom: 20 }}>
+              Supprimer <strong style={{ color: '#0f172a' }}> "{deleteTarget.name}" </strong> ? Cette action est irréversible.
+            </p>
+            {error && <p style={s.errorText}>{error}</p>}
+            <div style={s.actionsRow}>
+              <button onClick={() => setDeleteTarget(null)} style={s.btnCancel}>Annuler</button>
+              <button onClick={handleDelete} disabled={deleting} style={s.btnDanger}>
+                {deleting ? 'Suppression…' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

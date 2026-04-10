@@ -139,6 +139,13 @@ export interface Category {
  
 export const categories = {
   list: () => request<Category[]>('/categories'),
+  create: (name: string) =>
+    request<Category>('/admin/categories', { method: 'POST', body: JSON.stringify({ name }) }),
+  update: (id: number, name: string) =>
+    request<Category>(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+  delete: (id: number) =>
+    request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
+};
 };
  
 // ── Comments ─────────────────────────────────────────────────────────────────
@@ -194,6 +201,8 @@ export const admin = {
       method: 'PUT', 
       body: JSON.stringify({ status: 'published' }) 
     }),
+
+  
 };
  
 // ── Moderation ───────────────────────────────────────────────────────────────
