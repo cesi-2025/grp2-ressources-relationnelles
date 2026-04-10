@@ -2,26 +2,32 @@
  
 import Link from "next/link";
 import { sidebarAdminS, tokens } from "@/style/navAdminStyle";
+import { useAuth } from "@/context/AuthContext";
  
 const SECTIONS = [
   {
     label: "Navigation",
-    links: [
-      { href: "/administration",             label: "Accueil",      icon: "🏠", badge: null },
-      { href: "/administration/ressources",  label: "Ressources",   icon: "📚", badge: null },
-      { href: "/administration/stats",       label: "Statistiques", icon: "📊", badge: null },
+    role:["admin", "moderateur", "super_admin"],
+    links: [ 
+      { href: "/administration",            role:["admin", "moderateur", "super_admin"],   label: "Accueil",      icon: "🏠", badge: null },
+      { href: "/administration/ressources", role:["admin", "moderateur", "super_admin"],  label: "Ressources",   icon: "📚", badge: null },
+      { href: "/administration/stats",      role:["admin", "moderateur", "super_admin"],  label: "Statistiques", icon: "📊", badge: null },
+      { href: "/administration/stats",      role:["admin"],  label: "Statistiques", icon: "📊", badge: null },
     ],
   },
   {
     label: "Gestion",
+    role:["moderateur", "super_admin"],
     links: [
-      { href: "/administration/utilisateur", label: "Utilisateurs", icon: "👥", badge: { text: "12", color: tokens.colors.vertVitalite } },
-      { href: "/administration/moderation",  label: "Modération",   icon: "🛡️", badge: { text: "3",  color: tokens.colors.jauneRelation } },
+      { href: "/administration/utilisateur", role:["super_admin"], label: "Utilisateurs", icon: "👥", badge: { text: "12", color: tokens.colors.vertVitalite } },
+      { href: "/administration/moderation",  role:["moderateur"], label: "Modération",   icon: "🛡️", badge: { text: "3",  color: tokens.colors.jauneRelation } },
     ],
   },
 ];
  
 export default function SidebarAdmin() {
+  const {user} = useAuth()
+
   return (
     <aside style={sidebarAdminS.aside}>
  
@@ -33,35 +39,46 @@ export default function SidebarAdmin() {
  
       {/* ── Sections ───────────────────────────────────────────────────────── */}
       {SECTIONS.map((section, si) => (
-        <div key={si} style={sidebarAdminS.section}>
+        section.role.includes(user?.role) ? (
+          <div key={si} style={sidebarAdminS.section}>
+                  
+                    <div style={sidebarAdminS.sectionLabel}>{section.label}</div>
+                    
+                    {section.links.map((link) => (
+                      link.role.includes(user?.role) ?(
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          style={sidebarAdminS.link()}
+                          className="sidebar-admin-link"
+                        >
+                          <span style={sidebarAdminS.iconWrap}>{link.icon}</span>
+                          <span style={{
+                            fontFamily: tokens.fonts.body,
+                            fontSize:   14,
+                            fontWeight: 700,
+                          }}>
+                            {link.label}
+                          </span>
+                          {link.badge && (
+                            <span style={sidebarAdminS.badge(link.badge.color)}>
+                              {link.badge.text}
+                            </span>
+                          )}
+                        </Link>
+                      )
+                      :
+                      (
+                        ""
+                      )
+                    ))}
+            {si < SECTIONS.length - 1 && <div style={sidebarAdminS.divider} />}
+          </div>
+        )
+        :
+        ("")
+        
  
-          <div style={sidebarAdminS.sectionLabel}>{section.label}</div>
- 
-          {section.links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              style={sidebarAdminS.link()}
-              className="sidebar-admin-link"
-            >
-              <span style={sidebarAdminS.iconWrap}>{link.icon}</span>
-              <span style={{
-                fontFamily: tokens.fonts.body,
-                fontSize:   14,
-                fontWeight: 700,
-              }}>
-                {link.label}
-              </span>
-              {link.badge && (
-                <span style={sidebarAdminS.badge(link.badge.color)}>
-                  {link.badge.text}
-                </span>
-              )}
-            </Link>
-          ))}
- 
-          {si < SECTIONS.length - 1 && <div style={sidebarAdminS.divider} />}
-        </div>
       ))}
  
       {/* ── Citation inspirante ─────────────────────────────────────────────── */}

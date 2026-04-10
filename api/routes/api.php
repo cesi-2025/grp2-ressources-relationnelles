@@ -51,6 +51,11 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->
     Route::get('/statistics', [AdminController::class, 'statistics']);
     Route::get('/resources', [AdminController::class, 'indexResources']);
     Route::put('/resources/{resource}/suspend', [AdminController::class, 'suspendResource']);
+    
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 });
 
 Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,super_admin'])->group(function () {

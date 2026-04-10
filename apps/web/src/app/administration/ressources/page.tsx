@@ -1,8 +1,8 @@
 'use client';
  
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback} from 'react';
 import { useRouter } from 'next/navigation';
-import { resources, categories, admin, relationTypes, resourceTypes, Resource, Category, RelationType, ResourceType, moderation } from '@/lib/api';
+import { resources, categories, admin, Resource, Category, RelationType, ResourceType, moderation } from '@/lib/api';
 import { useAuth } from '@/context/AuthContext';
 import ResourceForm from '@/components/format/ressourceForma';
 import Toast, { ToastItem } from '@/components/toast/ressourceToast';
@@ -110,15 +110,6 @@ export default function AdminRessourcesPage() {
   }
 }
 
-  async function handleReactivate(r: Resource) {
-  try {
-    await admin.reactivateResource(r.id);
-    addToast(`Ressource "${r.title}" réactivée.`, 'success');
-    fetchResources();
-  } catch {
-    addToast('Erreur lors de la réactivation.', 'error');
-  }
-}
 
   async function handleDelete() {
     if (!deleteTarget) return;
@@ -239,29 +230,56 @@ export default function AdminRessourcesPage() {
                     </td>
                     <td style={s.td}>
                       <div style={s.actions}>
-                        <button
-                          style={s.btnEdit}
-                          onClick={() => { setEditResource(r); setFormOpen(true); }}
-                        >
-                          Éditer
-                        </button>
-                        {r.status === 'pending' && (
+                        {user && user.role === "admin" ?
+                        (
+                          <button
+                            style={s.btnEdit}
+                            onClick={() => { setEditResource(r); setFormOpen(true); }}
+                          >
+                            Éditer
+                          </button>
+                        )
+                        :
+                        ("")
+                        }
+                        
+                        {user && user.role === "moderateur" ? (
+                          r.status === 'pending' && (
                           <button style={s.btnValidate} onClick={() => handleValidate(r)}>
                             Valider
                           </button>
-                        )}
-                        {r.status !== 'suspended' ? (
-                          <button style={s.btnSuspend} onClick={() => handleSuspend(r)}>
-                            Suspendre
+                          )
+                        ):
+                        ("")
+                        }
+                        
+                        {user && user.role === "admin" ?
+                          (
+                          r.status !== 'suspended' ? (
+                            <button style={s.btnSuspend} onClick={() => handleSuspend(r)}>
+                              Suspendre
+                            </button>
+                          ) : (
+                            <button style={s.btnReactivate} onClick={() => handleSuspend(r)}>
+                              Réactiver
+                            </button>
+                          )
+                        )
+                        :
+                        ("")
+                        }
+                        
+                        {user && user.role === "admin" ?
+                          (
+                          <button style={s.btnDelete} onClick={() => setDeleteTarget(r)}>
+                            Supprimer
                           </button>
-                        ) : (
-                          <button style={s.btnReactivate} onClick={() => handleSuspend(r)}>
-                            Réactiver
-                          </button>
-                        )}
-                        <button style={s.btnDelete} onClick={() => setDeleteTarget(r)}>
-                          Supprimer
-                        </button>
+                        )
+                        :
+                        ("")
+                        }
+                        
+                        
                       </div>
                     </td>
                   </tr>
