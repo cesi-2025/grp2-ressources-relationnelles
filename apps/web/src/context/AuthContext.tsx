@@ -8,7 +8,7 @@ import React, {
   useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import { auth, tokenStorage, User, ApiError } from '@/lib/api';
+import { auth, tokenStorage, User } from '@/lib/api';
 import { authCookies } from '@/lib/cookies';
  
 interface AuthState {
@@ -131,13 +131,13 @@ export function useAuth(): AuthContextValue {
 export function useRequireAuth(): AuthContextValue {
   const authCtx = useAuth();
   const router = useRouter();
- 
-  useEffect(() => {
-    if (!authCtx.loading && !authCtx.isAuthenticated) {
-      router.replace('/auth/connexion');
-    }
-  }, [authCtx.loading, authCtx.isAuthenticated, router]);
- 
+  /**
+    useEffect(() => {
+      if (!authCtx.loading && authCtx.isAuthenticated) {
+        router.replace('/auth/connexion');
+      }
+    }, [authCtx.loading, authCtx.isAuthenticated, router]);
+    */
   return authCtx;
 }
  
@@ -146,7 +146,7 @@ export function useRequireAdmin(): AuthContextValue {
   const router = useRouter();
  
   useEffect(() => {
-    if (!authCtx.loading && !authCtx.isAdmin) {
+    if (!authCtx.loading && authCtx.isAdmin) {
       router.replace('/dashboard');
     }
   }, [authCtx.loading, authCtx.isAdmin, router]);
