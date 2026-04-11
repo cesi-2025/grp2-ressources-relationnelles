@@ -1,15 +1,24 @@
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { MOCK_USER } from "@/data/mockUser";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useMemo } from "react";
+import { Alert, Pressable, StyleSheet, View } from "react-native";
+import Animated from "react-native-reanimated";
 
 export default function ProfileScreen() {
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const user = MOCK_USER;
+
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
 
   const handleSignOut = () => {
     Alert.alert("Pas encore implémenté", "La déconnexion n’est pas disponible pour le moment.", [
@@ -26,7 +35,11 @@ export default function ProfileScreen() {
 
   return (
     <RootView>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Animated.ScrollView
+        contentContainerStyle={scrollContentStyle}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -122,7 +135,7 @@ export default function ProfileScreen() {
             </ThemedText>
           </Pressable>
         </Card>
-      </ScrollView>
+      </Animated.ScrollView>
     </RootView>
   );
 }

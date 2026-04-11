@@ -2,23 +2,25 @@ import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
 import { inputStyles } from "@/constants/styles";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 export default function LoginScreen() {
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const [isRegister, setIsRegister] = useState(false);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -60,15 +62,22 @@ export default function LoginScreen() {
     setError(null);
   }, []);
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
-        <ScrollView
+        <Animated.ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={scrollContentStyle}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
         >
           <Pressable
             onPress={() => router.back()}
@@ -204,7 +213,7 @@ export default function LoginScreen() {
               </Pressable>
             </View>
           </Card>
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </RootView>
   );

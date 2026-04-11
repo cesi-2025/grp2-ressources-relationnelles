@@ -1,6 +1,7 @@
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { getMockComments, getMockResourceById } from "@/data/mockResources";
 import { MOCK_PROGRESSION } from "@/data/mockProgression";
 import type { MockComment, MockResourceDetail } from "@/data/types";
@@ -13,11 +14,11 @@ import {
   Alert,
   Pressable,
   Share,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 function formatDate(iso: string): string {
   try {
@@ -56,6 +57,7 @@ export default function ResourceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const resourceId = Number(id);
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
 
   const [resource, setResource] = useState<MockResourceDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,9 +143,18 @@ export default function ResourceDetailScreen() {
 
   const hasActions = useMemo(() => Boolean(resource), [resource]);
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <Animated.ScrollView
+        contentContainerStyle={scrollContentStyle}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <Pressable
           onPress={() => router.back()}
           accessibilityRole="button"
@@ -377,7 +388,7 @@ export default function ResourceDetailScreen() {
             </Card>
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </RootView>
   );
 }

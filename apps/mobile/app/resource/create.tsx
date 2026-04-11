@@ -8,6 +8,7 @@ import {
   type ResourceMetaOption,
 } from "@/constants/resourceMeta";
 import { useCategory } from "@/contexts/CategoryContext";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
@@ -17,12 +18,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Switch,
   TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 function SelectRow({
   label,
@@ -70,6 +71,7 @@ function SelectRow({
 
 export default function CreateResourceScreen() {
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const { categoryOptions } = useCategory();
 
   const validCategories = useMemo(
@@ -102,15 +104,22 @@ export default function CreateResourceScreen() {
     );
   };
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
-        <ScrollView
+        <Animated.ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={scrollContentStyle}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
         >
           <Pressable
             onPress={() => router.back()}
@@ -248,7 +257,7 @@ export default function CreateResourceScreen() {
               </ThemedText>
             </Pressable>
           </Card>
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </RootView>
   );
