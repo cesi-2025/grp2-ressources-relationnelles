@@ -4,6 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
 import { useAuth } from "@/context/AuthContext";
+
+const data_admin_tab = {
+  "admin": "Administration",
+  "moderator": "Modération",
+  "super_admin": "Super Administrateur"
+}
+
  
 export default function NavbarAdmin() {
   const {logout} = useAuth()
@@ -26,7 +33,7 @@ export default function NavbarAdmin() {
           </Link>
  
           {/* ── Badge Administration ──────────────────────────────────────── */}
-          <span style={navbarAdminS.adminBadge}>Administration</span>
+          <span style={navbarAdminS.adminBadge}>{user?.role in data_admin_tab? data_admin_tab[user?.role] : ""}</span>
  
           <div style={navbarAdminS.spacer} />
  
