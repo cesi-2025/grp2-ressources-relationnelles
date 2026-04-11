@@ -169,7 +169,6 @@ export const comments = {
 // ── Favorites ────────────────────────────────────────────────────────────────
  
 export const favorites = {
-  list: () => request<Resource[]>('/favorites'),
   add: (resourceId: number) =>
     request<void>(`/resources/${resourceId}/favorite`, { method: 'POST' }),
   remove: (resourceId: number) =>

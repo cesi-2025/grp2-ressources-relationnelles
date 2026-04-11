@@ -6,7 +6,7 @@ import { resources, categories, admin, Resource, Category, RelationType, Resourc
 import { useRequireAdmin } from '@/context/AuthContext';
 import ResourceForm from '@/components/format/ressourceForma';
 import Toast, { ToastItem } from '@/components/toast/ressourceToast';
-import s from '@/style/ressourceAdminStyle';
+import s from '@/style/admin/ressourceAdminStyle';
  
 function StatusBadge({ status }: { status: Resource['status'] }) {
   const map: Record<string, { label: string; extra: React.CSSProperties }> = {

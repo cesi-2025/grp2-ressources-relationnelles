@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { SuperAdmin, superAdmin, ApiError } from '@/lib/api';
 import { useRequireSuperAdmin } from '@/context/AuthContext';
-import s from '@/style/userAdminStyle';
+import s from '@/style/admin/userAdminStyle';
  
 const ROLE_LABELS: Record<string, string> = {
   citizen: 'Citoyen',

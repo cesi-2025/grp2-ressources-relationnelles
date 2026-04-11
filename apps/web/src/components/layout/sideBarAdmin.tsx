@@ -1,7 +1,7 @@
 "use client";
  
 import Link from "next/link";
-import { sidebarAdminS, tokens } from "@/style/navAdminStyle";
+import { sidebarAdminS, tokens } from "@/style/admin/navAdminStyle";
 import { useAuth } from "@/context/AuthContext";
 import HomePicture from "@/style/picture/home.png"
 import RessourcesPicture from "@/style/picture/options.png"
