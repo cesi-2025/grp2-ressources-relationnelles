@@ -146,7 +146,7 @@ export function useRequireAdmin(): AuthContextValue {
   const router = useRouter();
  
   useEffect(() => {
-    if (!authCtx.loading && authCtx.isAdmin) {
+    if (!authCtx.loading && !authCtx.isAdmin) {
       router.replace('/dashboard');
     }
   }, [authCtx.loading, authCtx.isAdmin, router]);
