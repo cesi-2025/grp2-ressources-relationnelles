@@ -2,7 +2,7 @@
  
 import Link from "next/link";
 import { useState } from "react";
-import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
+import { navbarAdminS, responsiveCss } from "@/style/admin/navAdminStyle";
 import { useAuth } from "@/context/AuthContext";
 
 const data_admin_tab = {

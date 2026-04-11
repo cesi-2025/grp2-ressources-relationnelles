@@ -46,7 +46,6 @@ Route::delete('/resources/{id}/favorite', [FavoriteController::class, 'destroy']
 Route::post('/resources/{id}/exploit', [ProgressionController::class, 'exploit'])->middleware(['auth:sanctum']);
 Route::post('/resources/{id}/set-aside', [ProgressionController::class, 'setAside'])->middleware(['auth:sanctum']);
 Route::get('/progression', [ProgressionController::class, 'index'])->middleware(['auth:sanctum']);
-Route::get('/favorites', [FavoriteController::class, 'index'])->middleware(['auth:sanctum']);
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
     Route::get('/statistics', [AdminController::class, 'statistics']);
@@ -65,6 +64,7 @@ Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,s
     Route::put('/comments/{comment}/approve', [ModerationController::class, 'approveComment']);
     Route::delete('/comments/{comment}', [ModerationController::class, 'deleteComment']);
 });
+Route::delete('/resources/{resource}', [ResourceController::class, 'destroy'])->middleware(['auth:sanctum']);
 
 Route::prefix('super-admin')->middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
     Route::post('/users', [SuperAdminController::class, 'createPrivilegedUser']);
