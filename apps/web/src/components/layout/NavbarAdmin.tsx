@@ -40,12 +40,38 @@ export default function NavbarAdmin() {
           {/* ── Auth ─────────────────────────────────────────────────────── */}
           {isAuthenticated ? (
             <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
-              <div>
-                <div>
-                  <h3>{user?.name}</h3>
-                  <span>{user?.email}</span> 
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                {/* Infos utilisateur */}
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>
+                    {user?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    {user?.email}
+                  </div>
                 </div>
-                <button type="button" onClick={(() =>{alert("voulez vous vraiment quitter"); logout()})}>Déconnection  </button>
+
+                {/* Séparateur */}
+                <div style={{ width: 1, height: 32, background: '#e2e5ea' }} />
+
+                {/* Bouton déconnexion */}
+                <button
+                  type="button"
+                  onClick={() => { if (confirm('Voulez-vous vraiment vous déconnecter ?')) logout(); }}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    padding: '6px 14px',
+                    fontSize: 13,
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    fontFamily: "'Open Sans', sans-serif",
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Déconnexion
+                </button>
               </div>
             </div>
           ):
