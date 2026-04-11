@@ -10,11 +10,11 @@ const inter = Inter({
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <AuthProvider>
-        <body className={`${inter.className} antialiased`}>
-          {children}
+        <body className={`${inter.className} antialiased TotalExt-Lang-fr`}>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
         </body>
-      </AuthProvider>
     </html>
   );
 }

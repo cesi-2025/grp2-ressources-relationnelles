@@ -60,7 +60,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'citoyen' | 'moderateur' | 'admin' | 'super_admin';
+  role: 'citoyen' | 'moderator' | 'admin' | 'super_admin';
   created_at: string;
 }
  
@@ -146,7 +146,6 @@ export const categories = {
   delete: (id: number) =>
     request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
 };
-};
  
 // ── Comments ─────────────────────────────────────────────────────────────────
  
@@ -207,7 +206,11 @@ export const admin = {
  
 // ── Moderation ───────────────────────────────────────────────────────────────
  
-export const moderation = {
+export const moderator = {
+  listResources: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: Resource[] }>(`/moderation/resources${qs}`);
+  },
   validateResource: (resourceId: number) =>
     request<void>(`/moderation/resources/${resourceId}/validate`, { method: 'PUT' }),
   approveComment: (commentId: number) =>
@@ -217,8 +220,21 @@ export const moderation = {
 };
  
 // ── Super Admin ───────────────────────────────────────────────────────────────
- 
+export interface SuperAdmin {
+  id: number;
+  name: string;
+  email: string;
+  role: 'citizen' | 'moderator' | 'admin' | 'super_admin';
+  is_active: boolean;
+  created_at: string;
+}
 export const superAdmin = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: SuperAdmin[] }>(`/super-admin/users${qs}`); 
+  },
+  toggleActive: (userId: number) =>
+    request<{ user: SuperAdmin }>(`/super-admin/users/${userId}/toggle-active`, { method: 'PUT' }), 
   createPrivilegedUser: (data: { name: string; email: string; password: string; role: string }) =>
     request<User>('/super-admin/users', { method: 'POST', body: JSON.stringify(data) }),
 };

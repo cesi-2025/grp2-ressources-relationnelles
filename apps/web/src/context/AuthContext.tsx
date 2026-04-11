@@ -32,7 +32,7 @@ function getRedirectPath(role: User['role']): string {
   switch (role) {
     case 'admin':
     case 'super_admin':
-    case 'moderateur':
+    case 'moderator':
       return '/administration';
     default:
       return '/dashboard';
@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) setState({ user: null, loading: false });
       });
     return () => { cancelled = true; };
-  }, []);
+  }, [state.user]);
  
   const login = useCallback(async (email: string, password: string) => {
     const { token, user } = await auth.login({ email, password });
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logout,
     isAuthenticated: !!state.user,
     isAdmin: state.user?.role === 'admin' || state.user?.role === 'super_admin',
-    isModerator: ['moderateur', 'admin', 'super_admin'].includes(state.user?.role ?? ''),
+    isModerator: state.user?.role === 'moderator',
     isSuperAdmin: state.user?.role === 'super_admin',
   };
  
@@ -146,6 +146,19 @@ export function useRequireAdmin(): AuthContextValue {
   const router = useRouter();
  
   useEffect(() => {
+    if (!authCtx.loading && !authCtx.isAdmin && !authCtx.isModerator) {
+      router.replace('/dashboard');
+    }
+  }, [authCtx.loading, authCtx.isAdmin, authCtx.isModerator, router]);
+ 
+  return authCtx;
+}
+
+export function useRequireStrictAdmin(): AuthContextValue {
+  const authCtx = useAuth();
+  const router = useRouter();
+ 
+  useEffect(() => {
     if (!authCtx.loading && !authCtx.isAdmin) {
       router.replace('/dashboard');
     }
@@ -153,4 +166,16 @@ export function useRequireAdmin(): AuthContextValue {
  
   return authCtx;
 }
- 
+
+export function useRequireSuperAdmin(): AuthContextValue {
+  const authCtx = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!authCtx.loading && !authCtx.isSuperAdmin) {
+      router.replace('/administration');
+    }
+  }, [authCtx.loading, authCtx.isSuperAdmin, router]);
+
+  return authCtx;
+}

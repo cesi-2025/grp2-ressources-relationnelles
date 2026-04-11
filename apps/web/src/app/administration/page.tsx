@@ -10,6 +10,7 @@ export default function AdminHome() {
   const router = useRouter()
 
   useEffect(() => {
+    console.log('user role:', user?.role);
     if (loading || user && user.role === "citoyen") router.replace("/dashboard");
   }, [user,loading,router])
 
