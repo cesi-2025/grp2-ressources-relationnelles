@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreCategoryRequest;
+use App\Http\Requests\UpdateCategoryRequest;
 use Illuminate\Http\Request;
 use App\Models\Category;
 use Illuminate\Http\JsonResponse;
@@ -18,36 +20,26 @@ class CategoryController extends Controller
     }
 
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCategoryRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'min:2', 'max:255', 'unique:categories,name'],
-        ]);
+        
 
         $category = Category::query()->create([
-            'name' => trim($request->string('name')),
+            'name' => trim($request -> validated()['name']),
         ]);
-
         return response()->json($category, 201);
     }
 
-    public function update(Request $request, Category $category): JsonResponse
+    public function update(UpdateCategoryRequest $request, Category $category): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'min:2', 'max:255', 'unique:categories,name,' . $category->id],
-        ]);
 
-        $category->update([
-            'name' => trim($request->string('name')),
-        ]);
-
+        $category->update(["name" => trim($request->validated()["name"])]);
         return response()->json($category);
     }
 
     public function destroy(Category $category): JsonResponse
     {
         $category->delete();
-
         return response()->json(['message' => 'Catégorie supprimée.']);
     }
 }

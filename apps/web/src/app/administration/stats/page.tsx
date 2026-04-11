@@ -1,3 +1,4 @@
+"use client"
 import { USERS } from "@/data/user";
 import StatCard from "@/components/tableauDeBord/carteStats";
 import BarChart from "@/components/tableauDeBord/barChart";

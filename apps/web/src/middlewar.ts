@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
  
-const ADMIN_ROLES = ['admin', 'super_admin', 'moderateur'];
+const ADMIN_ROLES = ['admin', 'super_admin', 'moderator'];
 const CITIZEN_ROLES = ['citoyen'];
  
 const PROTECTED_ROUTES: Record<string, string[]> = {
   '/administration': ADMIN_ROLES,
-  '/moderation': ['moderateur', 'admin', 'super_admin'],
+  '/moderation': ['moderator', 'admin', 'super_admin'],
   '/dashboard': CITIZEN_ROLES,
 };
  

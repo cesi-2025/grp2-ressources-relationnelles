@@ -1,10 +1,10 @@
 'use client';
  
-import { AdminUser } from '@/lib/api';
-import s from '../utilisateurs.styles';
+import { SuperAdmin } from '@/lib/api';
+import s from '@/style/userAdminStyle';
  
 interface ToggleModalProps {
-  user: AdminUser;
+  user: SuperAdmin;
   onClose: () => void;
   onConfirm: () => void;
   loading: boolean;
@@ -20,9 +20,9 @@ export default function ToggleModal({ user, onClose, onConfirm, loading, error }
         </h2>
         <p style={{ color: '#6b7280', fontSize: 15, marginBottom: 20 }}>
           {user.is_active ? (
-            <>Désactiver le compte de <strong style={{ color: '#0f172a' }}>{user.name}</strong> ? L'utilisateur ne pourra plus se connecter.</>
+            <>Désactiver le compte de <strong style={{ color: '#0f172a' }}>{user.name}</strong> ? L&apos;utilisateur ne pourra plus se connecter.</>
           ) : (
-            <>Réactiver le compte de <strong style={{ color: '#0f172a' }}>{user.name}</strong> ? L'utilisateur pourra à nouveau se connecter.</>
+            <>Réactiver le compte de <strong style={{ color: '#0f172a' }}>{user.name}</strong> ? L&apos;utilisateur pourra à nouveau se connecter.</>
           )}
         </p>
         {error && <p style={s.errorText}>{error}</p>}

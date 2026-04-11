@@ -2,12 +2,12 @@
  
 import { useEffect, useState, useCallback } from 'react';
 import { categories, Category } from '@/lib/api';
-import { useRequireAdmin } from '@/context/AuthContext';
+import { useRequireStrictAdmin } from '@/context/AuthContext';
 import CategoryForm from '@/components/format/categoryForma';
 import s from '@/style/categoryAdminStyle';
  
 export default function CategoriesPage() {
-  const { user, loading } = useRequireAdmin();
+  const { user, loading } = useRequireStrictAdmin();
   const [list, setList] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [pageLoading, setPageLoading] = useState(true);

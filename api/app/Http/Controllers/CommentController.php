@@ -37,10 +37,20 @@ class CommentController extends Controller
     {
         $resource = Resource::query()->findOrFail($id);
 
-        if ($request->user()?->role !== Role::CITIZEN) {
+        
+        if (!in_array($request->user()?->role, [
+            Role::CITIZEN,
+            Role::ADMIN,
+            Role::SUPER_ADMIN,
+            Role::MODERATOR, // si tu as ce rôle
+        ])) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+        
         $comment = Comment::query()->create([
             'content' => $request->string('content')->toString(),
             'user_id' => $request->user()->id,

@@ -8,9 +8,9 @@ use App\Models\Comment;
 use App\Models\Favorite;
 use App\Models\Progression;
 use App\Models\Resource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 class AdminController extends Controller
 {
     public function statistics(Request $request): JsonResponse
@@ -95,5 +95,24 @@ class AdminController extends Controller
 
         return response()->json($resources);
     }
-        
+    
+    public function indexUsers(Request $request): JsonResponse
+    {
+        $users = User::query()
+            ->when($request->query('role'), fn($q, $r) => $q->where('role', $r))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($users);
+    }
+
+    public function toggleUserActive(User $user): JsonResponse
+    {
+        $user->update(['is_active' => !$user->is_active]);
+
+        return response()->json([
+            'message' => 'Statut mis à jour.',
+            'user' => $user,
+        ]);
+    }
 }

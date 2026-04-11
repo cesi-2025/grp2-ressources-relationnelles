@@ -2,24 +2,25 @@
  
 import { useEffect, useState, useCallback} from 'react';
 import { useRouter } from 'next/navigation';
-import { resources, categories, admin, Resource, Category, RelationType, ResourceType, moderation } from '@/lib/api';
-import { useAuth } from '@/context/AuthContext';
+import { resources, categories, admin, Resource, Category, RelationType, ResourceType, moderator } from '@/lib/api';
+import { useRequireAdmin } from '@/context/AuthContext';
 import ResourceForm from '@/components/format/ressourceForma';
 import Toast, { ToastItem } from '@/components/toast/ressourceToast';
 import s from '@/style/ressourceAdminStyle';
  
 function StatusBadge({ status }: { status: Resource['status'] }) {
   const map: Record<string, { label: string; extra: React.CSSProperties }> = {
-    validated: { label: 'Validée',    extra: s.badgeValidated },
-    pending:   { label: 'En attente', extra: s.badgePending },
-    suspended: { label: 'Suspendue',  extra: s.badgeSuspended },
+    validated: { label: 'validated',    extra: s.badgeValidated },
+    pending:   { label: 'published', extra: s.badgePending },
+    suspended: { label: 'suspended',  extra: s.badgeSuspended },
+    archived: { label: 'archived',  extra: s.badgeSuspended },
   };
   const badge = map[status] ?? { label: status, extra: s.badgePending };
   return <span style={{ ...s.badge, ...badge.extra }}>{badge.label}</span>;
 }
  
 export default function AdminRessourcesPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useRequireAdmin();
   const router = useRouter();
  
   const [list, setList] = useState<Resource[]>([]);
@@ -40,7 +41,7 @@ export default function AdminRessourcesPage() {
  
   // ── Auth guard ────────────────────────────────────────
   useEffect(() => {
-    if (!authLoading && (!user || !['admin', 'super_admin', 'moderateur'].includes(user.role))) {
+    if (!authLoading && (!user || !['admin', 'super_admin', 'moderator'].includes(user.role))) {
       router.replace('/dashboard');
     }
   }, [authLoading, user, router]);
@@ -58,16 +59,20 @@ export default function AdminRessourcesPage() {
   const fetchResources = useCallback(async () => {
     try {
       const params: Record<string, string> = {};
+
       if (filterStatus) params.status = filterStatus;
       if (filterCategory) params.category_id = filterCategory;
-      const res = await admin.listResources(params);
+      const res = user?.role === 'moderator'  
+              ? await moderator.listResources(params)
+              : await admin.listResources(params);
+
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
     } catch {
       addToast('Erreur lors du chargement.', 'error');
     } finally {
       setPageLoading(false); // ← manquait ici
     }
-  }, [filterStatus, filterCategory, addToast]);
+  }, [filterStatus, filterCategory, user?.role, addToast]);
  
   useEffect(() => {
     categories.list().then(setCatList).catch(console.error);
@@ -129,7 +134,7 @@ export default function AdminRessourcesPage() {
  
   async function handleValidate(r: Resource) {
   try {
-    await moderation.validateResource(r.id);
+    await moderator.validateResource(r.id);
     setList((prev) => prev.map((item) =>
       item.id === r.id ? { ...item, status: 'validated' as const } : item
     ));
@@ -169,9 +174,10 @@ export default function AdminRessourcesPage() {
               onChange={(e) => setFilterStatus(e.target.value)}
             >
               <option value="">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="validated">Validées</option>
-              <option value="suspended">Suspendues</option>
+              <option value="pending">published</option>
+              <option value="validated">validated</option>
+              <option value="suspended">suspended</option>
+              <option value="archived">archived</option>
             </select>
  
             <select
@@ -185,10 +191,18 @@ export default function AdminRessourcesPage() {
               ))}
             </select>
           </div>
- 
-          <button style={s.btnAdd} onClick={() => { setEditResource(null); setFormOpen(true); }}>
-            + Ajouter une ressource
-          </button>
+          {user.role !== "citoyen" && user.role !== "moderator" ? 
+          (
+            <button style={s.btnAdd} onClick={() => { setEditResource(null); setFormOpen(true); }}>
+              + Ajouter une ressource
+            </button>
+          )
+          :
+          (
+            ""
+          )
+          }
+          
         </div>
  
         {/* Table */}
@@ -243,7 +257,7 @@ export default function AdminRessourcesPage() {
                         ("")
                         }
                         
-                        {user && user.role === "moderateur" ? (
+                        {user && user.role === "moderator" ? (
                           r.status === 'pending' && (
                           <button style={s.btnValidate} onClick={() => handleValidate(r)}>
                             Valider

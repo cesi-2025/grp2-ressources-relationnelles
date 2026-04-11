@@ -1,82 +1,35 @@
-import React from "react";
-
-export const overlayStyle: React.CSSProperties = {
-  position: "fixed",
-  inset: 0,
-  background: "rgba(15, 23, 42, 0.5)",
-  backdropFilter: "blur(4px)",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  zIndex: 1000,
+import React from 'react';
+ 
+const s: Record<string, React.CSSProperties> = {
+  page: { padding: '40px 24px', minHeight: '100vh', background: '#F6F7F9', fontFamily: "'Open Sans', sans-serif" },
+  container: { maxWidth: 1000, margin: '0 auto' },
+  pageHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  pageTitle: { margin: 0, fontSize: 26, fontWeight: 700, color: '#0f172a', fontFamily: "'Poppins', sans-serif" },
+  pageSubtitle: { margin: '4px 0 0', color: '#64748b', fontSize: 14 },
+  toolbar: { display: 'flex', gap: 12, alignItems: 'center' },
+  searchInput: { height: 38, padding: '0 14px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, outline: 'none', background: '#fff', fontFamily: "'Open Sans', sans-serif" },
+  filterSelect: { height: 38, padding: '0 12px', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, outline: 'none', background: '#fff', cursor: 'pointer', fontFamily: "'Open Sans', sans-serif" },
+  tableWrap: { background: '#fff', borderRadius: 12, border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.07)' },
+  table: { width: '100%', borderCollapse: 'collapse' as const, fontSize: 14 },
+  thead: { background: '#f1f5f9' },
+  th: { padding: '12px 16px', textAlign: 'left' as const, fontSize: 11, fontWeight: 700, color: '#94a3b8', letterSpacing: 1, textTransform: 'uppercase' as const, borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' as const },
+  td: { padding: '14px 16px', color: '#0f172a', verticalAlign: 'middle' as const },
+  tdMuted: { padding: '14px 16px', color: '#64748b', fontSize: 13, verticalAlign: 'middle' as const },
+  emptyCell: { padding: 48, textAlign: 'center' as const, color: '#94a3b8', fontSize: 14 },
+  actions: { display: 'flex', gap: 8 },
+  badge: { display: 'inline-flex', alignItems: 'center', padding: '3px 10px', borderRadius: 20, fontSize: '0.6875rem', fontWeight: 600, whiteSpace: 'nowrap' as const },
+  badgeActive: { background: '#dcf5e0', color: '#1a5c1e' },
+  badgeInactive: { background: '#fde8e8', color: '#8b1a1a' },
+  btnDeactivate: { background: '#fef9e0', color: '#7a6200', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' },
+  btnActivate: { background: '#dcf5e0', color: '#1a5c1e', border: 'none', padding: '6px 12px', borderRadius: 6, fontSize: 12, fontWeight: 600, cursor: 'pointer' },
+  modalOverlay: { position: 'fixed' as const, inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+  modalBox: { background: '#fff', borderRadius: 12, padding: '28px 32px', width: '100%', maxWidth: 420 },
+  modalTitle: { margin: '0 0 12px', fontFamily: "'Poppins', sans-serif", fontSize: '1.1rem', fontWeight: 700, color: '#0f172a' },
+  actionsRow: { display: 'flex', justifyContent: 'flex-end', gap: 10, marginTop: 20 },
+  btnCancel: { padding: '8px 16px', background: 'transparent', border: '1px solid #d1d5db', borderRadius: 6, cursor: 'pointer', fontSize: 14, fontFamily: "'Open Sans', sans-serif" },
+  btnSave: { padding: '8px 20px', background: '#5BA4CF', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 14, fontFamily: "'Poppins', sans-serif" },
+  btnDanger: { padding: '8px 16px', background: '#e53e3e', color: '#fff', border: 'none', borderRadius: 6, fontWeight: 600, cursor: 'pointer', fontSize: 14, fontFamily: "'Poppins', sans-serif" },
+  errorText: { color: '#dc2626', fontSize: 13, marginBottom: 12 },
 };
-
-export const modalStyle: React.CSSProperties = {
-  background: "#fff",
-  borderRadius: 20,
-  padding: 32,
-  width: "100%",
-  maxWidth: 480,
-  boxShadow: "0 24px 64px rgba(0,0,0,0.15)",
-};
-
-export const closeBtnStyle: React.CSSProperties = {
-  background: "#f1f5f9",
-  border: "none",
-  borderRadius: 8,
-  width: 32,
-  height: 32,
-  cursor: "pointer",
-  fontSize: 16,
-  color: "#64748b",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexShrink: 0,
-};
-
-export const primaryBtnStyle: React.CSSProperties = {
-  flex: 1,
-  background: "#6366f1",
-  color: "#fff",
-  border: "none",
-  padding: "11px 0",
-  borderRadius: 10,
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-export const secondaryBtnStyle: React.CSSProperties = {
-  flex: 1,
-  background: "#f1f5f9",
-  color: "#475569",
-  border: "none",
-  padding: "11px 0",
-  borderRadius: 10,
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-
-export const inputStyle: React.CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "9px 12px",
-  borderRadius: 8,
-  border: "1px solid #e2e8f0",
-  fontSize: 14,
-  outline: "none",
-  background: "#f8fafc",
-  color: "#0f172a",
-};
-
-export const labelStyle: React.CSSProperties = {
-  display: "block",
-  fontSize: 12,
-  fontWeight: 600,
-  color: "#64748b",
-  marginBottom: 6,
-  textTransform: "uppercase",
-  letterSpacing: 0.5,
-};
+ 
+export default s;
