@@ -60,7 +60,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'citoyen' | 'moderateur' | 'admin' | 'super_admin';
+  role: 'citoyen' | 'moderator' | 'admin' | 'super_admin';
   created_at: string;
 }
  
@@ -91,14 +91,33 @@ export const auth = {
 export interface Resource {
   id: number;
   title: string;
-  description: string;
   content: string;
   category_id: number;
+  relation_type_id: number;
+  resource_type_id: number;
   user_id: number;
   status: 'pending' | 'validated' | 'suspended';
+  is_public: boolean;
   created_at: string;
 }
  
+export interface RelationType {
+  id: number;
+  name: string;
+}
+ 
+export interface ResourceType {
+  id: number;
+  name: string;
+}
+ 
+export const relationTypes = {
+  list: () => request<RelationType[]>('/relation-types'),
+};
+ 
+export const resourceTypes = {
+  list: () => request<ResourceType[]>('/resource-types'),
+};
 export const resources = {
   list: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
@@ -120,6 +139,12 @@ export interface Category {
  
 export const categories = {
   list: () => request<Category[]>('/categories'),
+  create: (name: string) =>
+    request<Category>('/admin/categories', { method: 'POST', body: JSON.stringify({ name }) }),
+  update: (id: number, name: string) =>
+    request<Category>(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
+  delete: (id: number) =>
+    request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
 };
  
 // ── Comments ─────────────────────────────────────────────────────────────────
@@ -164,13 +189,28 @@ export const progression = {
  
 export const admin = {
   statistics: () => request<Record<string, number>>('/admin/statistics'),
+  listResources: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: Resource[] }>(`/admin/resources${qs}`);
+  },
   suspendResource: (resourceId: number) =>
-    request<void>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
+    request<Resource>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
+  reactivateResource: (resourceId: number) =>
+    request<Resource>(`/resources/${resourceId}`, { 
+      method: 'PUT', 
+      body: JSON.stringify({ status: 'published' }) 
+    }),
+
+  
 };
  
 // ── Moderation ───────────────────────────────────────────────────────────────
  
-export const moderation = {
+export const moderator = {
+  listResources: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: Resource[] }>(`/moderation/resources${qs}`);
+  },
   validateResource: (resourceId: number) =>
     request<void>(`/moderation/resources/${resourceId}/validate`, { method: 'PUT' }),
   approveComment: (commentId: number) =>
@@ -180,8 +220,21 @@ export const moderation = {
 };
  
 // ── Super Admin ───────────────────────────────────────────────────────────────
- 
+export interface SuperAdmin {
+  id: number;
+  name: string;
+  email: string;
+  role: 'citizen' | 'moderator' | 'admin' | 'super_admin';
+  is_active: boolean;
+  created_at: string;
+}
 export const superAdmin = {
+  list: (params?: Record<string, string>) => {
+    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
+    return request<{ data: SuperAdmin[] }>(`/super-admin/users${qs}`); 
+  },
+  toggleActive: (userId: number) =>
+    request<{ user: SuperAdmin }>(`/super-admin/users/${userId}/toggle-active`, { method: 'PUT' }), 
   createPrivilegedUser: (data: { name: string; email: string; password: string; role: string }) =>
     request<User>('/super-admin/users', { method: 'POST', body: JSON.stringify(data) }),
 };

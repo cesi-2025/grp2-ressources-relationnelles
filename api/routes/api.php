@@ -49,10 +49,17 @@ Route::get('/progression', [ProgressionController::class, 'index'])->middleware(
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
     Route::get('/statistics', [AdminController::class, 'statistics']);
+    Route::get('/resources', [AdminController::class, 'indexResources']);
     Route::put('/resources/{resource}/suspend', [AdminController::class, 'suspendResource']);
+    
+    Route::get('/categories', [CategoryController::class, 'index']);
+    Route::post('/categories', [CategoryController::class, 'store']);
+    Route::put('/categories/{category}', [CategoryController::class, 'update']);
+    Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 });
 
 Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,super_admin'])->group(function () {
+    Route::get('/resources', [AdminController::class, 'indexResources']);
     Route::put('/resources/{resource}/validate', [ModerationController::class, 'validateResource']);
     Route::put('/comments/{comment}/approve', [ModerationController::class, 'approveComment']);
     Route::delete('/comments/{comment}', [ModerationController::class, 'deleteComment']);
@@ -60,4 +67,6 @@ Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,s
 
 Route::prefix('super-admin')->middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
     Route::post('/users', [SuperAdminController::class, 'createPrivilegedUser']);
+    Route::get('/users', [AdminController::class, 'indexUsers']);                            // ← ici
+    Route::put('/users/{user}/toggle-active', [AdminController::class, 'toggleUserActive']); // ← ici
 });

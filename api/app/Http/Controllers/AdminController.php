@@ -8,9 +8,9 @@ use App\Models\Comment;
 use App\Models\Favorite;
 use App\Models\Progression;
 use App\Models\Resource;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-
 class AdminController extends Controller
 {
     public function statistics(Request $request): JsonResponse
@@ -72,13 +72,47 @@ class AdminController extends Controller
 
     public function suspendResource(Resource $resource): JsonResponse
     {
-        $resource->update([
-            'status' => ResourceStatus::ARCHIVED->value,
-        ]);
+        $newStatus = $resource->status === ResourceStatus::ARCHIVED
+            ? ResourceStatus::PUBLISHED->value
+            : ResourceStatus::ARCHIVED->value;
+
+        $resource->update(['status' => $newStatus]);
 
         return response()->json([
-            'message' => 'Resource suspended successfully.',
+            'message' => 'Status updated.',
             'resource' => $resource,
+        ]);
+    }
+    
+    public function indexResources(Request $request): JsonResponse
+    {
+        $resources = Resource::query()
+            ->with(['category', 'relationType', 'resourceType'])
+            ->when($request->query('status'), fn($q, $s) => $q->where('status', $s))
+            ->when($request->query('category_id'), fn($q, $c) => $q->where('category_id', $c))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($resources);
+    }
+    
+    public function indexUsers(Request $request): JsonResponse
+    {
+        $users = User::query()
+            ->when($request->query('role'), fn($q, $r) => $q->where('role', $r))
+            ->orderByDesc('created_at')
+            ->paginate(20);
+
+        return response()->json($users);
+    }
+
+    public function toggleUserActive(User $user): JsonResponse
+    {
+        $user->update(['is_active' => !$user->is_active]);
+
+        return response()->json([
+            'message' => 'Statut mis à jour.',
+            'user' => $user,
         ]);
     }
 }
