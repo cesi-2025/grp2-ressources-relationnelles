@@ -2,15 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "../ui/Button";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
-  const { user, loading, isAuthenticated, logout } = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
   const mobileMenuId = "main-mobile-menu";
-
-  if(loading) return null;
 
   const navLinks = [
     { href: "/", label: "Accueil" },
@@ -18,6 +18,11 @@ export default function Navbar() {
     { href: "/presentation", label: "Présentation" },
     { href: "/aide", label: "Aide" },
   ];
+
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+  }
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50" aria-label="Navigation principale">
@@ -47,36 +52,36 @@ export default function Navbar() {
           </div>
 
           {/* Desktop Auth Buttons */}
-          {isAuthenticated ? 
-          (
-            <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-              <div>
-                <div>
-                  <h3>{user?.name}</h3>
-                  <span>{user?.email}</span>
-                  <span>{user?.role}</span>
-                </div>
-                <button onClick={logout} >Déconnection</button>
-              </div>
-            </div> 
-          )
-          : 
-          (
-            <div className="hidden md:flex items-center space-x-4">
-              <Link href="/auth/connexion">
-                <Button variant="outline" size="sm">
-                  Connexion
+          <div className="hidden md:flex items-center space-x-4">
+            {loading ? null : user ? (
+              <>
+                <span className="text-sm text-gray-700 font-medium">{user.name}</span>
+                {(user.role === "admin" || user.role === "super_admin") && (
+                  <Link href="/administration">
+                    <Button variant="outline" size="sm">
+                      Administration
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Déconnexion
                 </Button>
-              </Link>
-              <Link href="/auth/inscription">
-                <Button variant="primary" size="sm">
-                  Inscription
-                </Button>
-              </Link>
-            </div>
-          )
-          }
-          
+              </>
+            ) : (
+              <>
+                <Link href="/auth/connexion">
+                  <Button variant="outline" size="sm">
+                    Connexion
+                  </Button>
+                </Link>
+                <Link href="/auth/inscription">
+                  <Button variant="primary" size="sm">
+                    Inscription
+                  </Button>
+                </Link>
+              </>
+            )}
+          </div>
 
           {/* Mobile Menu Button */}
           <button
@@ -126,30 +131,36 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
-              {isAuthenticated ? (
-                <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-                  <div>
-                    <h3>{user?.name}</h3>
-                    <span>{user?.email}</span>
-                  </div>
-                  <button onClick={logout} >Déconnection</button>
-                </div> 
-              ): (
-
               <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-                <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" size="md" className="w-full">
-                    Connexion
-                  </Button>
-                </Link>
-                <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="primary" size="md" className="w-full">
-                    Inscription
-                  </Button>
-                </Link>
-              </div>)
-            }
-              
+                {user ? (
+                  <>
+                    <span className="text-sm text-gray-700 font-medium px-2">{user.name}</span>
+                    {(user.role === "admin" || user.role === "super_admin") && (
+                      <Link href="/administration" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="md" className="w-full">
+                          Administration
+                        </Button>
+                      </Link>
+                    )}
+                    <Button variant="outline" size="md" className="w-full" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
+                      Déconnexion
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="md" className="w-full">
+                        Connexion
+                      </Button>
+                    </Link>
+                    <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="primary" size="md" className="w-full">
+                        Inscription
+                      </Button>
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         )}

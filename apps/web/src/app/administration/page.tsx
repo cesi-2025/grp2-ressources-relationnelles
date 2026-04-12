@@ -1,16 +1,15 @@
 "use client"
-
+ 
 import { useEffect, useState, useCallback } from "react"
-import { useRequireAdmin } from "@/context/AuthContext"
-import { admin, categories, Category, moderator, RelationType, ResourceType } from "@/lib/api"
+import { useRequireAdmin } from "@/contexts/AuthContext"
+import { api, getCategories, getResources, Category, Resource, RelationType, ResourceType } from "@/lib/api"
 import s from "@/style/admin/dashboardAdminStyle";
-import Stats,{ STAT_CARDS } from "@/data/admin/admonStats"
-
+import Stats, { STAT_CARDS } from "@/data/admin/admonStats"
+ 
 export default function AdminDashboardPage() {
   const { user, loading } = useRequireAdmin();
-
-  
-  const [stats, setStats] = useState<Stats | null>(null);
+ 
+  const [stats, setStats] = useState<any | null>(null);
   const [catList, setCatList] = useState<Category[]>([]);
   const [relTL, setRelTL] = useState<RelationType[]>([]);
   const [resTL, setResTypeList] = useState<ResourceType[]>([]);
@@ -20,63 +19,51 @@ export default function AdminDashboardPage() {
   const [filterC, setFilterC] = useState('');
   const [filterRelT, setFilterRelT] = useState('');
   const [filterResT, setFilterResT] = useState('');
-
+ 
+  // ✅ FIX — isAdmin extrait pour corriger le bug opérateur virgule dans l'useEffect
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+ 
   const fetchStats = useCallback(async () => {
+    if (!user) return;
     setStatsLoad(true);
-    if(user && (user.role ==="admin" || user.role === "super_admin")){
-      try {
-        const params: Record<string, string> = { period: filterP };
-        if (filterC) params.category = filterC;
-        if (filterRelT) params.relation_type = filterRelT;
-        if (filterResT) params.resource_type = filterResT;
-        const res: any = await admin.statistics();
-        setStats(res.statistics ?? res);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setStatsLoad(false);
-      }
-    }else{
-      try {
-        const params: Record<string, string> = { period: filterP };
-        if (filterC) params.category = filterC;
-        if (filterRelT) params.relation_type = filterRelT;
-        if (filterResT) params.resource_type = filterResT;
-        const res: any = await moderator.statistics();
-        setStats(res.statistics ?? res);
-      } catch (e) {
-        console.error(e);
-      } finally {
-        setStatsLoad(false);
-      }
+    try {
+      // ✅ Remplace admin.statistics() / moderator.statistics() inexistants
+      // → appel direct via api() vers /admin/statistics avec les filtres
+      const params: Record<string, string> = { period: filterP };
+      if (filterC) params.category = filterC;
+      if (filterRelT) params.relation_type = filterRelT;
+      if (filterResT) params.resource_type = filterResT;
+      const query = "?" + new URLSearchParams(params).toString();
+      const res: any = await api(`/admin/statistics${query}`);
+      setStats(res.statistics ?? res);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setStatsLoad(false);
     }
   }, [user, filterP, filterC, filterRelT, filterResT]);
+ 
   useEffect(() => {
-    categories.list().then(setCatList).catch(console.error);
-
-    // Récupére les ressources est relations stocké
-    if(user && (user.role === "admin", user.role === "super_admin")){
-      admin.listResources().then((res: any) => {
-        const list = Array.isArray(res) ? res : res.data ?? [];
-        const relTypes = list.map((r: any) => r.relation_type).filter(Boolean)
-          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-        const resTypes = list.map((r: any) => r.resource_type).filter(Boolean)
-          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-        setRelTL(relTypes);
-        setResTypeList(resTypes);
-      }).catch(console.error);
-    }else{
-      moderator.listResources().then((res: any) => {
-        const list = Array.isArray(res) ? res : res.data ?? [];
-        const relTypes = list.map((r: any) => r.relation_type).filter(Boolean)
-          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-        const resTypes = list.map((r: any) => r.resource_type).filter(Boolean)
-          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-        setRelTL(relTypes);
-        setResTypeList(resTypes);
-      }).catch(console.error);
-    }
-  }, [user]);
+    // ✅ Remplace categories.list() → getCategories() (existe dans api.ts)
+    getCategories().then(setCatList).catch(console.error);
+ 
+    if (!user) return;
+ 
+    // ✅ Remplace admin.listResources() / moderator.listResources() inexistants
+    // → getResources() (existe dans api.ts), retourne les ressources publiques publiées
+    // ✅ FIX — condition corrigée : isAdmin au lieu de l'opérateur virgule bugué
+    getResources().then((res) => {
+      const list = res.data ?? [];
+      const relTypes = list
+        .map((r: any) => r.relation_type).filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+      const resTypes = list
+        .map((r: any) => r.resource_type).filter(Boolean)
+        .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+      setRelTL(relTypes);
+      setResTypeList(resTypes);
+    }).catch(console.error);
+  }, [user, isAdmin]);
  
   useEffect(() => {
     if (user) fetchStats();
@@ -175,7 +162,7 @@ export default function AdminDashboardPage() {
                     {key === 'creations' && 'Total des ressources créées'}
                     {key === 'resources_published' && 'Ressources validées et visibles publiquement'}
                     {key === 'resources_pending' && 'Ressources en attente de modération'}
-                    {key === 'exploitations' && 'Nombre de fois qu\'une ressource a été exploitée'}
+                    {key === 'exploitations' && "Nombre de fois qu'une ressource a été exploitée"}
                     {key === 'favoris' && 'Total des ressources ajoutées en favori'}
                     {key === 'commentaires' && 'Total des commentaires postés'}
                   </td>
@@ -185,11 +172,12 @@ export default function AdminDashboardPage() {
           </table>
         </div>
  
-        {stats && stats.pending_ressources > 0 && (
+        {/* ✅ FIX — pending_ressources → resources_pending (clé exacte de AdminController) */}
+        {stats && stats.resources_pending > 0 && (
           <div style={{ background: '#fef9e0', border: '1px solid #F5E497', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <p style={{ margin: 0, fontWeight: 600, color: '#7a6200', fontFamily: "'Poppins', sans-serif", fontSize: 14 }}>
-                {stats.pending_ressources} ressource{stats.pending_ressources > 1 ? 's' : ''} en attente
+                {stats.resources_pending} ressource{stats.resources_pending > 1 ? 's' : ''} en attente
               </p>
               <p style={{ margin: '2px 0 0', color: '#9a7a00', fontSize: 13 }}>Des ressources nécessitent votre validation.</p>
             </div>

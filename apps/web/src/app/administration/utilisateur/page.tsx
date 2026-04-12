@@ -1,21 +1,33 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
-import { CreateUser, createUser, ApiError } from '@/lib/api';
-import { useRequireSuperAdmin } from '@/context/AuthContext';
+// ✅ FIX — api.ts exporte ApiRequestError (pas ApiError)
+// ✅ Plus d'import de createUser inexistant — on utilise api() directement
+import { api, ApiRequestError } from '@/lib/api';
+import { useRequireSuperAdmin } from '@/contexts/AuthContext';
 import s from '@/style/admin/userAdminStyle';
  
+// Interface locale (était dans api.ts corrigé, on la définit ici)
+interface CreateUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+ 
 const ROLE_LABELS: Record<string, string> = {
-  citizen: 'Citoyen',
-  moderator: 'Modérateur',
-  admin: 'Admin',
+  citizen:     'Citoyen',
+  moderator:   'Modérateur',
+  admin:       'Admin',
   super_admin: 'Super Admin',
 };
  
 const ROLE_BADGE: Record<string, React.CSSProperties> = {
-  citizen: { background: '#e0f0ff', color: '#1a56a0' },
-  moderator: { background: '#faeeda', color: '#854f0b' },
-  admin: { background: '#f0e8fe', color: '#534ab7' },
+  citizen:     { background: '#e0f0ff', color: '#1a56a0' },
+  moderator:   { background: '#faeeda', color: '#854f0b' },
+  admin:       { background: '#f0e8fe', color: '#534ab7' },
   super_admin: { background: '#fde8e8', color: '#8b1a1a' },
 };
  
@@ -30,27 +42,26 @@ export default function UtilisateursPage() {
   const [filterRole, setFilterRole] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
  
-  //Activer ou désactivé la l'élement
   const [toggleTarget, setToggleTarget] = useState<CreateUser | null>(null);
   const [toggling, setToggling] = useState(false);
  
-  // Création d'un utilisateur
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [globalError, setGlobalError] = useState('');
   const [saving, setSaving] = useState(false);
- 
   const [error, setError] = useState('');
  
   const fetchUsers = useCallback(async () => {
     try {
+      // ✅ Remplace createUser.list() inexistant → api() direct vers /super-admin/users
       const params: Record<string, string> = {};
       if (filterRole) params.role = filterRole;
-      const res = await createUser.list(params);
+      const query = Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : "";
+      const res = await api<CreateUser[]>(`/super-admin/users${query}`);
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
     } catch (err) {
-      setError(`Erreur lors du chargement des roles ${err}.`);
+      setError(`Erreur lors du chargement des rôles ${err}.`);
     } finally {
       setPageLoading(false);
     }
@@ -65,11 +76,12 @@ export default function UtilisateursPage() {
     setToggling(true);
     setError('');
     try {
-      const res = await createUser.toggleActive(toggleTarget.id);
+      // ✅ Remplace createUser.toggleActive() inexistant → api() direct
+      const res = await api<{ user: CreateUser }>(`/super-admin/users/${toggleTarget.id}/toggle`, { method: 'PUT' });
       setList((prev) => prev.map((u) => u.id === res.user.id ? res.user : u));
       setToggleTarget(null);
     } catch (err) {
-      setError(`Erreur lors de l'activation des utilisateur ${err}`);
+      setError(`Erreur lors de l'activation de l'utilisateur ${err}`);
     } finally {
       setToggling(false);
     }
@@ -90,23 +102,28 @@ export default function UtilisateursPage() {
     }
     setSaving(true);
     try {
-      await createUser.createPrivilegedUser({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        password_confirmation: form.password_confirmation,
-        role: form.role,
+      // ✅ Remplace createUser.createPrivilegedUser() → api() direct vers /super-admin/users
+      await api<CreateUser>('/super-admin/users', {
+        method: 'POST',
+        body: {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          password_confirmation: form.password_confirmation,
+          role: form.role,
+        },
       });
       setFormOpen(false);
       setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' });
       fetchUsers();
     } catch (err) {
-      if (err instanceof ApiError && err.errors) {
+      // ✅ FIX — instanceof ApiRequestError (nom correct dans api.ts)
+      if (err instanceof ApiRequestError && err.errors) {
         const flat: Record<string, string> = {};
         Object.entries(err.errors).forEach(([k, v]) => (flat[k] = v[0]));
         setFormErrors(flat);
       } else {
-        setGlobalError(err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+        setGlobalError(err instanceof ApiRequestError ? err.message : 'Une erreur est survenue.');
       }
     } finally {
       setSaving(false);
@@ -138,7 +155,10 @@ export default function UtilisateursPage() {
               <option value="admin">Admin</option>
               <option value="super_admin">Super Admin</option>
             </select>
-            <button onClick={() => { setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' }); setFormErrors({}); setGlobalError(''); setFormOpen(true); }} style={s.btnCreate}>
+            <button
+              onClick={() => { setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' }); setFormErrors({}); setGlobalError(''); setFormOpen(true); }}
+              style={s.btnCreate}
+            >
               + Créer un compte
             </button>
           </div>

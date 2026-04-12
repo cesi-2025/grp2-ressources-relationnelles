@@ -1,235 +1,200 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
- 
-const TOKEN_KEY = 'sanctum_token';
- 
-export const tokenStorage = {
-  get: (): string | null => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem(TOKEN_KEY);
-  },
-  set: (token: string): void => {
-    if (typeof window === 'undefined') return;
-    localStorage.setItem(TOKEN_KEY, token);
-  },
-  remove: (): void => {
-    localStorage.removeItem(TOKEN_KEY);
-  },
-};
- 
-async function request<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = tokenStorage.get();
- 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    Accept: 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...(options.headers ?? {}),
-  };
- 
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers,
-  });
- 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: 'Erreur réseau' }));
-    throw new ApiError(res.status, error.message ?? 'Une erreur est survenue', error.errors);
-  }
- 
-  if (res.status === 204) return undefined as T;
-  return res.json();
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+interface ApiOptions {
+  method?: string;
+  body?: unknown;
+  headers?: Record<string, string>;
 }
- 
-export class ApiError extends Error {
-  constructor(
-    public status: number,
-    message: string,
-    public errors?: Record<string, string[]>
-  ) {
+
+interface ApiError {
+  message: string;
+  errors?: Record<string, string[]>;
+  status: number;
+}
+
+export class ApiRequestError extends Error {
+  status: number;
+  errors?: Record<string, string[]>;
+
+  constructor({ message, errors, status }: ApiError) {
     super(message);
-    this.name = 'ApiError';
+    this.status = status;
+    this.errors = errors;
   }
 }
 
-// Méthod de gestion et d'activation de l'authentification
+function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem("auth_token");
+}
+
+export function setToken(token: string): void {
+  localStorage.setItem("auth_token", token);
+}
+
+export function removeToken(): void {
+  localStorage.removeItem("auth_token");
+}
+
+export async function api<T = unknown>(endpoint: string, options: ApiOptions = {}): Promise<T> {
+  const { method = "GET", body, headers = {} } = options;
+
+  const token = getToken();
+  const requestHeaders: Record<string, string> = {
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    ...headers,
+  };
+
+  if (token) {
+    requestHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  const response = await fetch(`${API_BASE_URL}/api${endpoint}`, {
+    method,
+    headers: requestHeaders,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({ message: "Erreur réseau" }));
+    throw new ApiRequestError({
+      message: errorData.message || `Erreur ${response.status}`,
+      errors: errorData.errors,
+      status: response.status,
+    });
+  }
+
+  if (response.status === 204) return undefined as T;
+  return response.json();
+}
+// --- Auth ---
+
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'citizen' | 'moderator' | 'admin' | 'super_admin';
-  created_at: string;
+  role: string;
+  is_active: boolean;
 }
- 
-export interface AuthResponse {
+
+interface AuthResponse {
   token: string;
+  token_type: string;
   user: User;
 }
- 
-export const auth = {
-  register: (data: { name: string; email: string; password: string; password_confirmation: string }) =>
-    request<AuthResponse>('/register', { method: 'POST', body: JSON.stringify(data) }),
- 
-  login: (data: { email: string; password: string }) =>
-    request<AuthResponse>('/login', { method: 'POST', body: JSON.stringify(data) }),
- 
-  logout: () =>
-    request<void>('/logout', { method: 'POST' }),
- 
-  me: () =>
-    request<User>('/user'),
- 
-  deleteAccount: () =>
-    request<void>('/user', { method: 'DELETE' }),
-};
- 
 
-// Communication avec la base pour les ressources
+export function login(email: string, password: string) {
+  return api<AuthResponse>("/login", { method: "POST", body: { email, password } });
+}
+
+export function register(name: string, email: string, password: string, password_confirmation: string) {
+  return api<AuthResponse>("/register", { method: "POST", body: { name, email, password, password_confirmation } });
+}
+
+export function logout() {
+  return api<{ message: string }>("/logout", { method: "POST" });
+}
+
+export function getMe() {
+  return api<User>("/user");
+}
+
+// --- Resources ---
+
 export interface Resource {
   id: number;
   title: string;
   content: string;
+  status: string;
+  is_public: boolean;
+  user_id: number;
   category_id: number;
   relation_type_id: number;
   resource_type_id: number;
-  user_id: number;
-  status: 'pending' | 'validated' | 'suspended';
-  is_public: boolean;
   created_at: string;
+  updated_at: string;
+  user?: { id: number; name: string };
+  category?: { id: number; name: string };
+  relation_type?: { id: number; name: string };
+  resource_type?: { id: number; name: string };
 }
- 
-export interface RelationType {
-  id: number;
-  name: string;
-}
- 
-export interface ResourceType {
-  id: number;
-  name: string;
-}
- 
-export const relationTypes = {
-  list: () => request<RelationType[]>('/relation-types'),
-};
- 
-export const resourceTypes = {
-  list: () => request<ResourceType[]>('/resource-types'),
-};
-export const resources = {
-  list: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<{data: Resource[]}>(`/resources${qs}`);
-  },
-  get: (id: number) => request<Resource>(`/resources/${id}`),
-  create: (data: Partial<Resource>) =>
-    request<Resource>('/resources', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: number, data: Partial<Resource>) =>
-    request<Resource>(`/resources/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
-};
- 
 
-// Communication avec la base pour les categories
+export interface PaginatedResources {
+  current_page: number;
+  data: Resource[];
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export function getResources(params?: Record<string, string>) {
+  const query = params ? "?" + new URLSearchParams(params).toString() : "";
+  return api<PaginatedResources>(`/resources${query}`);
+}
+
+export function getResource(id: number) {
+  return api<Resource>(`/resources/${id}`);
+}
+
+export function createResource(data: { title: string; description: string; category_id: number; relation_type_id: number; resource_type_id: number; is_public?: boolean }) {
+  return api<Resource>("/resources", { method: "POST", body: data });
+}
+
+// --- Categories ---
+
 export interface Category {
   id: number;
   name: string;
 }
- 
-export const categories = {
-  list: () => request<Category[]>('/categories'),
-  create: (name: string) =>
-    request<Category>('/admin/categories', { method: 'POST', body: JSON.stringify({ name }) }),
-  update: (id: number, name: string) =>
-    request<Category>(`/admin/categories/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
-  delete: (id: number) =>
-    request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
-};
- 
 
-// Communication avec la base pour les commentaires
- 
+export function getCategories() {
+  return api<Category[]>("/categories");
+}
+
+// --- Comments ---
+
 export interface Comment {
   id: number;
   content: string;
-  user: User;
-  approved: boolean;
+  user_id: number;
+  resource_id: number;
+  parent_id: number | null;
+  is_approved: boolean;
   created_at: string;
+  updated_at: string;
+  user?: { id: number; name: string };
   replies?: Comment[];
 }
- 
-export const comments = {
-  byResource: (resourceId: number) => request<Comment[]>(`/resources/${resourceId}/comments`),
-  create: (resourceId: number, content: string) =>
-    request<Comment>(`/resources/${resourceId}/comments`, { method: 'POST', body: JSON.stringify({ content }) }),
-  reply: (commentId: number, content: string) =>
-    request<Comment>(`/comments/${commentId}/reply`, { method: 'POST', body: JSON.stringify({ content }) }),
-};
 
-
-// Communication avec la base pour des favories 
-export const favorites = {
-  add: (resourceId: number) =>
-    request<void>(`/resources/${resourceId}/favorite`, { method: 'POST' }),
-  remove: (resourceId: number) =>
-    request<void>(`/resources/${resourceId}/favorite`, { method: 'DELETE' }),
-};
- 
-
-// Communication avec la base pour la progression
- 
-export const progression = {
-  list: () => request<Resource[]>('/progression'),
-  exploit: (resourceId: number) =>
-    request<void>(`/resources/${resourceId}/exploit`, { method: 'POST' }),
-  setAside: (resourceId: number) =>
-    request<void>(`/resources/${resourceId}/set-aside`, { method: 'POST' }),
-};
- 
-
-// Communication avec la base pour les requéte lier a l'administration
-export const admin = {
-  statistics: () => request<Record<string, number>>('/admin/statistics'),
-  listResources: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<{ data: Resource[] }>(`/admin/resources${qs}`);
-  },
-  suspendResource: (resourceId: number) =>
-    request<Resource>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
-
-  
-};
- 
-// gestion des service de modération
-export const moderator = {
-  statistics: () => request<Record<string, number>>('/moderation/statistics'),
-  listResources: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<{ data: Resource[] }>(`/moderation/resources${qs}`);
-  },
-  listComments: () =>
-    request<any[]>('/moderation/comments'),
-  validateResource: (resourceId: number) =>
-    request<void>(`/moderation/resources/${resourceId}/validate`, { method: 'PUT' }),
-  approveComment: (commentId: number) =>
-    request<void>(`/moderation/comments/${commentId}/approve`, { method: 'PUT' }),
-  deleteComment: (commentId: number) =>
-    request<void>(`/moderation/comments/${commentId}`, { method: 'DELETE' }),
-};
- 
-
-// Communication avec la base pour les requéte lier au Super Admin uniquement
-export interface CreateUser {
-  id: number;
-  name: string;
-  email: string;
-  role: 'citizen' | 'moderator' | 'admin' | 'super_admin';
-  is_active: boolean;
-  created_at: string;
+export function getComments(resourceId: number) {
+  return api<Comment[]>(`/resources/${resourceId}/comments`);
 }
-export const createUser = {
-  toggleActive: (userId: number) =>
-    request<{ user: CreateUser }>(`/super-admin/users/${userId}/toggle-active`, { method: 'PUT' }),
-  createPrivilegedUser: (data: { name: string; email: string; password: string; role: string }) =>
-    request<User>('/super-admin/users', { method: 'POST', body: JSON.stringify(data) }),
-};
+
+export function createComment(resourceId: number, content: string) {
+  return api<Comment>(`/resources/${resourceId}/comments`, { method: "POST", body: { content } });
+}
+
+// --- Favorites ---
+
+export function addFavorite(resourceId: number) {
+  return api(`/resources/${resourceId}/favorite`, { method: "POST" });
+}
+
+export function removeFavorite(resourceId: number) {
+  return api(`/resources/${resourceId}/favorite`, { method: "DELETE" });
+}
+
+// --- Progression ---
+
+export function markExploited(resourceId: number) {
+  return api(`/resources/${resourceId}/exploit`, { method: "POST" });
+}
+
+export function markSetAside(resourceId: number) {
+  return api(`/resources/${resourceId}/set-aside`, { method: "POST" });
+}
+
+export function getProgression() {
+  return api("/progression");
+}

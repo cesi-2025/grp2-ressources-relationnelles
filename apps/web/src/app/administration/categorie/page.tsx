@@ -1,8 +1,10 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
-import { categories, Category } from '@/lib/api';
-import { useRequireStrictAdmin } from '@/context/AuthContext';
+// ✅ Remplace categories.list() / categories.delete() inexistants
+// → getCategories() (existe) + api() direct pour create/update/delete
+import { api, getCategories, Category } from '@/lib/api';
+import { useRequireStrictAdmin } from '@/contexts/AuthContext';
 import CategoryForm from '@/components/format/categoryForma';
 import s from '@/style/admin/categoryAdminStyle';
  
@@ -19,7 +21,8 @@ export default function CategoriesPage() {
  
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await categories.list();
+      // ✅ Remplace categories.list() → getCategories() (existe dans api.ts)
+      const res = await getCategories();
       setList(res);
     } catch (err) {
       setError(`Erreur lors du chargement: ${err}.`);
@@ -44,13 +47,12 @@ export default function CategoriesPage() {
     setDeleting(true);
     setError('');
     try {
-      await categories.delete(deleteTarget.id);
+      // ✅ Remplace categories.delete() inexistant → api() direct vers /categories/{id}
+      await api(`/categories/${deleteTarget.id}`, { method: 'DELETE' });
       setList((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch (err){
-      setError(`Erreur lors de la suppression.
-        ${err}
-        `);
+    } catch (err) {
+      setError(`Erreur lors de la suppression. ${err}`);
     } finally {
       setDeleting(false);
     }

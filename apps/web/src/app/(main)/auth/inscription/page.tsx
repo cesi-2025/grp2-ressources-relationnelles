@@ -1,61 +1,55 @@
-"use client"
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
+import { useAuth } from "@/contexts/AuthContext";
+import { ApiRequestError } from "@/lib/api";
 
 import { FormEvent, useState } from 'react';
 import { ApiError } from '@/lib/api';
 import { useAuth } from "@/context/AuthContext";
 
 export default function InscriptionPage() {
-  
+  const router = useRouter();
   const { register } = useAuth();
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    passwordConfirmation: '',
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [globalError, setGlobalError] = useState('');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
- 
-  function set(field: keyof typeof form) {
-    return (e: React.ChangeEvent<HTMLInputElement>) =>
-      setForm((f) => ({ ...f, [field]: e.target.value }));
-  }
- 
-  async function handleSubmit(e: FormEvent) {
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setErrors({});
-    setGlobalError('');
- 
-    if (form.password !== form.passwordConfirmation) {
-      setErrors({ passwordConfirmation: 'Les mots de passe ne correspondent pas.' });
+    setError("");
+    setFieldErrors({});
+
+    if (password !== passwordConfirmation) {
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
- 
+
     setLoading(true);
+
     try {
-      await register(form.name, form.email, form.password, form.passwordConfirmation);
+      await register(name, email, password, passwordConfirmation);
+      router.push("/ressources");
     } catch (err) {
-      if (err instanceof ApiError) {
-        if (err.errors) {
-          const flat: Record<string, string> = {};
-          Object.entries(err.errors).forEach(([k, v]) => (flat[k] = v[0]));
-          setErrors(flat);
-        } else {
-          setGlobalError(err.message);
-        }
+      if (err instanceof ApiRequestError) {
+        setError(err.message);
+        if (err.errors) setFieldErrors(err.errors);
       } else {
-        setGlobalError('Une erreur inattendue est survenue.');
+        setError("Une erreur est survenue. Veuillez réessayer.");
       }
     } finally {
       setLoading(false);
     }
   }
-  
   return (
     <div className="bg-gray-50 min-h-screen py-12 flex items-center justify-center">
       <div className="max-w-md w-full px-4">
@@ -68,6 +62,12 @@ export default function InscriptionPage() {
 
         <Card>
           <form className="space-y-4" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm" role="alert">
+                {error}
+              </div>
+            )}
+
             <Input
               name="name"
               label="Nom complet"
@@ -77,6 +77,9 @@ export default function InscriptionPage() {
               value={form.name}
               onChange={set('name')}
               required
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              error={fieldErrors.name?.[0]}
             />
             <Input
               name="email"
@@ -87,6 +90,9 @@ export default function InscriptionPage() {
               placeholder="jean.dupont@example.com"
               autoComplete="email"
               required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              error={fieldErrors.email?.[0]}
             />
             <Input
               name="password"
@@ -97,6 +103,9 @@ export default function InscriptionPage() {
               placeholder="••••••••"
               autoComplete="new-password"
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              error={fieldErrors.password?.[0]}
             />
             <Input
               name="password_confirme"
@@ -107,6 +116,8 @@ export default function InscriptionPage() {
               placeholder="••••••••"
               autoComplete="new-password"
               required
+              value={passwordConfirmation}
+              onChange={(e) => setPasswordConfirmation(e.target.value)}
             />
 
             <div className="flex items-start">
@@ -124,9 +135,8 @@ export default function InscriptionPage() {
               </label>
             </div>
 
-            {globalError && <p className="text-red-500 text-sm">{globalError}</p>}
             <Button variant="primary" className="w-full" type="submit" disabled={loading}>
-              S&apos;inscrire
+              {loading ? "Inscription en cours..." : "S'inscrire"}
             </Button>
           </form>
 

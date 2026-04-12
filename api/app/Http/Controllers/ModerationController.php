@@ -20,16 +20,7 @@ class ModerationController extends Controller
             'resource' => $resource,
         ]);
     }
-    public function indexComments(): JsonResponse
-    {
-        $comments = Comment::query()
-            ->with(['user', 'resource'])
-            ->where('is_approved', false)
-            ->orderByDesc('created_at')
-            ->paginate(20);
 
-        return response()->json($comments);
-    }
     public function approveComment(Comment $comment): JsonResponse
     {
         $comment->update([

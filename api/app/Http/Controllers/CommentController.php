@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Enums\Role;
 use App\Http\Requests\CommentRequest;
 use App\Models\Comment;
 use App\Models\Resource;
@@ -11,17 +10,6 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    
-    public function indexComments(): JsonResponse
-    {
-        $comments = Comment::query()
-            ->with(['user', 'resource'])
-            ->where('is_approved', false)
-            ->orderByDesc('created_at')
-            ->paginate(20);
-
-        return response()->json($comments);
-    }
     public function indexByResource(int $id): JsonResponse
     {
         Resource::query()->findOrFail($id);
@@ -48,18 +36,10 @@ class CommentController extends Controller
     {
         $resource = Resource::query()->findOrFail($id);
 
-        
-        if (!in_array($request->user()?->role, [
-            Role::CITIZEN,
-            Role::MODERATOR, 
-        ])) {
-            return response()->json(['message' => 'Forbidden.'], 403);
-        }
-
         if (!$request->user()) {
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
-        
+
         $comment = Comment::query()->create([
             'content' => $request->string('content')->toString(),
             'user_id' => $request->user()->id,
@@ -74,12 +54,8 @@ class CommentController extends Controller
 
     public function reply(CommentRequest $request, int $id): JsonResponse
     {
-        
-        if (!in_array($request->user()?->role, [
-            Role::CITIZEN,
-            Role::MODERATOR,
-        ])) {
-            return response()->json(['message' => 'Forbidden.'], 403);
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
         $parentComment = Comment::query()->findOrFail($id);

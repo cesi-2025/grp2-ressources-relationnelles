@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   keywords: ["admin", "modération", "modification", "bannissement"],
 };
 
-export default function RootLayout({
+export default function AdminLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
