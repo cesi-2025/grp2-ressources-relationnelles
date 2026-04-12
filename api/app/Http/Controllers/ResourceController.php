@@ -52,8 +52,8 @@ class ResourceController extends Controller
 
     public function store(StoreResourceRequest $request): JsonResponse
     {
-        if ($request->user()?->role !== Role::CITIZEN) {
-            return response()->json(['message' => 'Forbidden.'], 403);
+        if (!$request->user()) {
+            return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
         $resource = Resource::query()->create([
