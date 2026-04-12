@@ -15,6 +15,7 @@ export const Colors = {
     gray700: "#374151",
     gray800: "#1F2937",
     gray900: "#111827",
+    danger: "#B91C1C",
   },
 
   dark: {
@@ -33,5 +34,6 @@ export const Colors = {
     gray700: "#374151",
     gray800: "#1F2937",
     gray900: "#111827",
+    danger: "#F87171",
   },
 } as const;

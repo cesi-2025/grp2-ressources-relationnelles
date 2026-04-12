@@ -1,23 +1,25 @@
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { getMockComments, getMockResourceById } from "@/data/mockResources";
 import { MOCK_PROGRESSION } from "@/data/mockProgression";
 import type { MockComment, MockResourceDetail } from "@/data/types";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { router, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
   Share,
-  ScrollView,
   StyleSheet,
   TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 function formatDate(iso: string): string {
   try {
@@ -56,6 +58,7 @@ export default function ResourceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const resourceId = Number(id);
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
 
   const [resource, setResource] = useState<MockResourceDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -141,20 +144,19 @@ export default function ResourceDetailScreen() {
 
   const hasActions = useMemo(() => Boolean(resource), [resource]);
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Retour"
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.foreground} />
-          <ThemedText variant="subtitle1" color="foreground">
-            Retour
-          </ThemedText>
-        </Pressable>
+      <Animated.ScrollView
+        contentContainerStyle={scrollContentStyle}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
+        <BackButton />
 
         {loading ? (
           <View style={styles.centered}>
@@ -281,7 +283,10 @@ export default function ResourceDetailScreen() {
                 </ThemedText>
               ) : (
                 comments.map((comment) => (
-                  <View key={comment.id} style={styles.commentBlock}>
+                  <View
+                    key={comment.id}
+                    style={[styles.commentBlock, { borderBottomColor: colors.gray300 }]}
+                  >
                     <ThemedText variant="body1" color="foreground">
                       {comment.content}
                     </ThemedText>
@@ -332,7 +337,10 @@ export default function ResourceDetailScreen() {
                     {comment.replies?.length ? (
                       <View style={styles.repliesWrap}>
                         {comment.replies.map((reply) => (
-                          <View key={reply.id} style={styles.replyItem}>
+                          <View
+                            key={reply.id}
+                            style={[styles.replyItem, { borderLeftColor: colors.gray300 }]}
+                          >
                             <ThemedText variant="body2" color="foreground">
                               {reply.content}
                             </ThemedText>
@@ -377,7 +385,7 @@ export default function ResourceDetailScreen() {
             </Card>
           </>
         )}
-      </ScrollView>
+      </Animated.ScrollView>
     </RootView>
   );
 }
@@ -385,12 +393,6 @@ export default function ResourceDetailScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
   },
   centered: {
     paddingVertical: 48,
@@ -434,7 +436,6 @@ const styles = StyleSheet.create({
     marginBottom: 14,
     paddingBottom: 14,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#D1D5DB",
   },
   commentMeta: {
     marginTop: 4,
@@ -447,7 +448,6 @@ const styles = StyleSheet.create({
   },
   replyItem: {
     borderLeftWidth: 2,
-    borderLeftColor: "#D1D5DB",
     paddingLeft: 10,
   },
   commentComposer: {

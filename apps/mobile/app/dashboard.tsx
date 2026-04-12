@@ -1,6 +1,7 @@
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { MOCK_PROGRESSION } from "@/data/mockProgression";
 import type { MockProgressionRow } from "@/data/types";
 import { useThemeColors } from "@/hooks/useThemeColors";
@@ -10,10 +11,10 @@ import { useCallback, useMemo, useState } from "react";
 import {
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 type ResourceItem = { id: number; title: string; content?: string };
 
@@ -77,6 +78,7 @@ function ResourceListSection({
 
 export default function DashboardScreen() {
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const [refreshing, setRefreshing] = useState(false);
 
   const onRefresh = useCallback(() => {
@@ -84,10 +86,17 @@ export default function DashboardScreen() {
     setTimeout(() => setRefreshing(false), 400);
   }, []);
 
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
+      <Animated.ScrollView
+        contentContainerStyle={scrollContentStyle}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -135,7 +144,7 @@ export default function DashboardScreen() {
           rows={MOCK_PROGRESSION.set_aside}
           emptyLabel="Aucune ressource mise de côté."
         />
-      </ScrollView>
+      </Animated.ScrollView>
     </RootView>
   );
 }

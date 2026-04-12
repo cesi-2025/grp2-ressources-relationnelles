@@ -1,14 +1,13 @@
 import { Card } from "@/components/Card";
-import { Footer, FooterNavItem } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
 import { getCategoryLabel } from "@/constants/categories";
 import { useCategory } from "@/contexts/CategoryContext";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { MOCK_RESOURCES } from "@/data/mockResources";
 import type { MockResourceListItem } from "@/data/types";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useCallback, useMemo, useState } from "react";
 import {
@@ -18,14 +17,15 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
+
+type Section = { title: string; data: MockResourceListItem[] };
 
 function previewText(text: string, max = 320): string {
   const t = text.trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max).trim()}…`;
 }
-
-type Section = { title: string; data: MockResourceListItem[] };
 
 function buildSections(items: MockResourceListItem[]): Section[] {
   const map = new Map<string, MockResourceListItem[]>();
@@ -40,8 +40,13 @@ function buildSections(items: MockResourceListItem[]): Section[] {
     .map(([title, data]) => ({ title, data }));
 }
 
+const AnimatedSectionList = Animated.createAnimatedComponent(
+  SectionList<MockResourceListItem, Section>,
+);
+
 export default function Index() {
   const colors = useThemeColors();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const { selectedCategoryId, categoryOptions, sortBy } = useCategory();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -70,18 +75,6 @@ export default function Index() {
   const onRefresh = useCallback(() => {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 400);
-  }, []);
-
-  const navigateToProfile = useCallback(() => {
-    router.push({ pathname: "/profile" });
-  }, []);
-
-  const navigateToCreate = useCallback(() => {
-    router.push({ pathname: "/resource/create" });
-  }, []);
-
-  const navigateToDashboard = useCallback(() => {
-    router.push({ pathname: "/dashboard" });
   }, []);
 
   const renderSectionHeader = useCallback(
@@ -155,16 +148,23 @@ export default function Index() {
     );
   }, [filteredSorted.length, selectedCategoryId, categoryOptions]);
 
+  const listContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
   return (
     <RootView>
       <Header />
-      <SectionList
+      <AnimatedSectionList
         sections={sections}
         keyExtractor={keyExtractor}
         renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         ListHeaderComponent={listHeader}
         ListEmptyComponent={listEmpty}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -175,23 +175,9 @@ export default function Index() {
         }
         stickySectionHeadersEnabled={false}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={listContentStyle}
         style={styles.scroll}
       />
-      <Footer>
-        <FooterNavItem accessibilityLabel="Accueil">
-          <Ionicons name="home" size={26} color={colors.foreground} />
-        </FooterNavItem>
-        <FooterNavItem accessibilityLabel="Créer une ressource" onPress={navigateToCreate}>
-          <Ionicons name="add-circle-outline" size={26} color={colors.foreground} />
-        </FooterNavItem>
-        <FooterNavItem accessibilityLabel="Tableau de bord" onPress={navigateToDashboard}>
-          <Ionicons name="stats-chart-outline" size={26} color={colors.foreground} />
-        </FooterNavItem>
-        <FooterNavItem accessibilityLabel="Mon profil" onPress={navigateToProfile}>
-          <Ionicons name="person" size={26} color={colors.foreground} />
-        </FooterNavItem>
-      </Footer>
     </RootView>
   );
 }

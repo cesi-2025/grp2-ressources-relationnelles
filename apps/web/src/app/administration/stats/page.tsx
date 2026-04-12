@@ -12,7 +12,7 @@ export default function DashboardPage() {
   const disconnectedUsers = USERS.filter((u) => u.status === "Désactivé" );
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: 48 }}>
+    <div style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "var(--font-sans)", paddingBottom: 48 }}>
 
       {/* ── HEADER ──────────────────────────────────────────────────────────── */}
       <div style={{
