@@ -5,7 +5,6 @@ import { sidebarAdminS, tokens } from "@/style/admin/navAdminStyle";
 import { useAuth } from "@/context/AuthContext";
 import HomePicture from "@/style/picture/home.png"
 import RessourcesPicture from "@/style/picture/options.png"
-import StatsPicture from "@/style/picture/pie-chart.png"
 import CategoriePicture from "@/style/picture/menu.png"
 import UserPicture from "@/style/picture/team.png"
 import ModerationPicture from "@/style/picture/moderator.png"
@@ -18,7 +17,6 @@ const SECTIONS = [
     links: [ 
       { href: "/administration",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
       { href: "/administration/ressources", role:["admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
-      { href: "/administration/stats",      role:["admin", "moderator", "super_admin"],  label: "Statistiques", icon: StatsPicture, badge: null },
       { href: "/administration/categorie",      role:["admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
     ],
   },
