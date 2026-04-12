@@ -1,14 +1,14 @@
 "use client";
- 
+
 import ResourceCard from "@/components/resources/ResourceCard";
-import { ResourceItem } from "@/data/resources";
- 
+import type { Resource } from "@/lib/api";
+
 interface ResourceCardWithActionsProps {
-  resource: ResourceItem;
-  onEdit: (resource: ResourceItem) => void;
-  onDelete: (resource: ResourceItem) => void;
+  resource: Resource;
+  onEdit: (resource: Resource) => void;
+  onDelete: (resource: Resource) => void;
 }
- 
+
 export default function ResourceCardWithActions({
   resource,
   onEdit,
@@ -41,9 +41,9 @@ export default function ResourceCardWithActions({
             e.currentTarget.style.borderColor = "#e2e8f0";
           }}
         >
-          ✏️    
+          ✏️
         </button>
- 
+
         <button
           onClick={() => onDelete(resource)}
           style={{
@@ -70,7 +70,7 @@ export default function ResourceCardWithActions({
           🗑️
         </button>
       </div>
- 
+
       <ResourceCard resource={resource} />
     </div>
   );

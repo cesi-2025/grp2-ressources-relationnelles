@@ -1,77 +1,90 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ResourceCard from "@/components/resources/ResourceCard";
-import { RESOURCES } from "@/data/resources";
+import { getResources, getCategories, type Resource, type Category } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function RessourcesPage() {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [relationTypeFilter, setRelationTypeFilter] = useState("all");
-  const [resourceTypeFilter, setResourceTypeFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date-recent");
   const [page, setPage] = useState(1);
 
-  const categories = useMemo(
-    () => ["all", ...Array.from(new Set(RESOURCES.map((resource) => resource.category)))],
-    []
-  );
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const fetchResources = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const params: Record<string, string> = {};
+      if (categoryFilter !== "all") params.category = categoryFilter;
+      if (sortBy === "date-recent") params.sort = "date";
+      if (sortBy === "date-old") params.sort = "date-old";
+      if (sortBy === "category") params.sort = "category";
+
+      const data = await getResources(params);
+      setResources(data.data);
+    } catch {
+      setError("Impossible de charger les ressources. Vérifiez que le serveur API est lancé.");
+    } finally {
+      setLoading(false);
+    }
+  }, [categoryFilter, sortBy]);
+
+  useEffect(() => {
+    fetchResources();
+  }, [fetchResources]);
+
+  useEffect(() => {
+    getCategories()
+      .then(setCategories)
+      .catch(() => {});
+  }, []);
+
+  const filteredResources = useMemo(() => {
+    if (!search.trim()) return resources;
+    const normalizedSearch = search.trim().toLowerCase();
+    return resources.filter(
+      (r) =>
+        r.title.toLowerCase().includes(normalizedSearch) ||
+        r.content.toLowerCase().includes(normalizedSearch)
+    );
+  }, [resources, search]);
 
   const relationTypes = useMemo(
-    () => ["all", ...Array.from(new Set(RESOURCES.map((resource) => resource.relationType)))],
-    []
+    () => Array.from(new Set(resources.map((r) => r.relation_type?.name).filter(Boolean))),
+    [resources]
   );
 
   const resourceTypes = useMemo(
-    () => ["all", ...Array.from(new Set(RESOURCES.map((resource) => resource.resourceType)))],
-    []
+    () => Array.from(new Set(resources.map((r) => r.resource_type?.name).filter(Boolean))),
+    [resources]
   );
 
-  const filteredAndSortedResources = useMemo(() => {
-    const filtered = RESOURCES.filter((resource) => {
-      const normalizedSearch = search.trim().toLowerCase();
-      const matchSearch =
-        normalizedSearch.length === 0 ||
-        resource.title.toLowerCase().includes(normalizedSearch) ||
-        resource.excerpt.toLowerCase().includes(normalizedSearch);
+  const [relationTypeFilter, setRelationTypeFilter] = useState("all");
+  const [resourceTypeFilter, setResourceTypeFilter] = useState("all");
 
-      const matchCategory = categoryFilter === "all" || resource.category === categoryFilter;
-      const matchRelationType =
-        relationTypeFilter === "all" || resource.relationType === relationTypeFilter;
-      const matchResourceType =
-        resourceTypeFilter === "all" || resource.resourceType === resourceTypeFilter;
-
-      return matchSearch && matchCategory && matchRelationType && matchResourceType;
+  const fullyFiltered = useMemo(() => {
+    return filteredResources.filter((r) => {
+      const matchRelation = relationTypeFilter === "all" || r.relation_type?.name === relationTypeFilter;
+      const matchType = resourceTypeFilter === "all" || r.resource_type?.name === resourceTypeFilter;
+      return matchRelation && matchType;
     });
+  }, [filteredResources, relationTypeFilter, resourceTypeFilter]);
 
-    const sorted = [...filtered];
-
-    if (sortBy === "date-recent") {
-      sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    }
-
-    if (sortBy === "date-old") {
-      sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    }
-
-    if (sortBy === "category") {
-      sorted.sort((a, b) => a.category.localeCompare(b.category, "fr"));
-    }
-
-    return sorted;
-  }, [search, categoryFilter, relationTypeFilter, resourceTypeFilter, sortBy]);
-
-  const pageCount = Math.max(1, Math.ceil(filteredAndSortedResources.length / ITEMS_PER_PAGE));
+  const pageCount = Math.max(1, Math.ceil(fullyFiltered.length / ITEMS_PER_PAGE));
 
   const paginatedResources = useMemo(() => {
     const start = (page - 1) * ITEMS_PER_PAGE;
-    const end = start + ITEMS_PER_PAGE;
-    return filteredAndSortedResources.slice(start, end);
-  }, [page, filteredAndSortedResources]);
+    return fullyFiltered.slice(start, start + ITEMS_PER_PAGE);
+  }, [page, fullyFiltered]);
 
   function onFilterChange(resetFilter: () => void) {
     resetFilter();
@@ -93,7 +106,7 @@ export default function RessourcesPage() {
             <div className="xl:col-span-2">
               <Input
                 label="Recherche"
-                placeholder="Rechercher par titre ou extrait..."
+                placeholder="Rechercher par titre ou description..."
                 value={search}
                 onChange={(event) => onFilterChange(() => setSearch(event.target.value))}
               />
@@ -107,13 +120,11 @@ export default function RessourcesPage() {
               onChange={(event) => onFilterChange(() => setCategoryFilter(event.target.value))}
             >
               <option value="all">Toutes catégories</option>
-              {categories
-                .filter((category) => category !== "all")
-                .map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
+              {categories.map((cat) => (
+                <option key={cat.id} value={String(cat.id)}>
+                  {cat.name}
+                </option>
+              ))}
             </select>
 
             <select
@@ -124,13 +135,11 @@ export default function RessourcesPage() {
               onChange={(event) => onFilterChange(() => setRelationTypeFilter(event.target.value))}
             >
               <option value="all">Tous types de relation</option>
-              {relationTypes
-                .filter((type) => type !== "all")
-                .map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
+              {relationTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
 
             <select
@@ -141,19 +150,17 @@ export default function RessourcesPage() {
               onChange={(event) => onFilterChange(() => setResourceTypeFilter(event.target.value))}
             >
               <option value="all">Tous types de ressource</option>
-              {resourceTypes
-                .filter((type) => type !== "all")
-                .map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
+              {resourceTypes.map((type) => (
+                <option key={type} value={type}>
+                  {type}
+                </option>
+              ))}
             </select>
           </div>
 
           <div className="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="text-sm text-gray-600">
-              {filteredAndSortedResources.length} résultat(s)
+              {fullyFiltered.length} résultat(s)
             </div>
 
             <div className="flex items-center gap-2">
@@ -174,7 +181,16 @@ export default function RessourcesPage() {
           </div>
         </div>
 
-        {paginatedResources.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+            <p className="text-gray-600">Chargement des ressources...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button variant="outline" onClick={fetchResources}>Réessayer</Button>
+          </div>
+        ) : paginatedResources.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-10 text-center">
             <h2 className="text-xl font-semibold text-gray-900 mb-2">Aucune ressource trouvée</h2>
             <p className="text-gray-600 mb-5">Modifiez les filtres ou la recherche pour afficher des résultats.</p>
@@ -223,8 +239,8 @@ export default function RessourcesPage() {
                         ? "bg-primary text-white"
                         : "bg-white border border-gray-200 text-gray-700 hover:bg-gray-50"
                     }`}
-                      aria-label={`Aller à la page ${pageNumber}`}
-                      aria-current={pageNumber === page ? "page" : undefined}
+                    aria-label={`Aller à la page ${pageNumber}`}
+                    aria-current={pageNumber === page ? "page" : undefined}
                     onClick={() => setPage(pageNumber)}
                   >
                     {pageNumber}
