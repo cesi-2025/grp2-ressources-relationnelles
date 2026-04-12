@@ -1,7 +1,8 @@
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
+import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import { inputStyles } from "@/constants/styles";
 import {
   RELATION_TYPE_OPTIONS,
   RESOURCE_TYPE_OPTIONS,
@@ -10,7 +11,6 @@ import {
 import { useCategory } from "@/contexts/CategoryContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
@@ -20,7 +20,6 @@ import {
   Pressable,
   StyleSheet,
   Switch,
-  TextInput,
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
@@ -121,58 +120,35 @@ export default function CreateResourceScreen() {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.foreground} />
-            <ThemedText variant="subtitle1" color="foreground">
-              Retour
-            </ThemedText>
-          </Pressable>
+          <BackButton />
 
           <ThemedText variant="headline" color="foreground" style={styles.pageTitle}>
             Proposer une ressource
           </ThemedText>
 
           <Card>
-            <ThemedText variant="subtitle2" color="gray600">
-              Titre
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Titre"
               value={title}
               onChangeText={(text) => {
                 setTitle(text);
                 setError(null);
               }}
               placeholder="Titre de la ressource"
-              placeholderTextColor={colors.gray400}
-              style={[
-                inputStyles.base,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
             />
 
-            <ThemedText variant="subtitle2" color="gray600" style={styles.fieldLabel}>
-              Contenu
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Contenu"
+              labelStyle={styles.fieldLabel}
               value={content}
               onChangeText={(text) => {
                 setContent(text);
                 setError(null);
               }}
               placeholder="Décrivez votre ressource"
-              placeholderTextColor={colors.gray400}
               multiline
               textAlignVertical="top"
-              style={[
-                inputStyles.base,
-                styles.multiline,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
+              inputStyle={styles.multiline}
             />
 
             <ThemedText variant="subtitle2" color="gray600" style={styles.fieldLabel}>
@@ -241,7 +217,7 @@ export default function CreateResourceScreen() {
             </View>
 
             {error ? (
-              <ThemedText variant="body2" color="gray600" style={styles.errorText}>
+              <ThemedText variant="body2" color="danger" style={styles.errorText}>
                 {error}
               </ThemedText>
             ) : null}
@@ -269,12 +245,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
   },
   pageTitle: {
     marginTop: 16,
@@ -306,7 +276,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: 12,
-    color: "#B91C1C",
   },
   submitButton: {
     marginTop: 20,

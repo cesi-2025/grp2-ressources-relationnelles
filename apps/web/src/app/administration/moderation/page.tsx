@@ -52,7 +52,7 @@ export default function ModerationPage() {
   }
  
   return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "var(--font-sans)" }}>
  
  
       {/* ── Contenu ─────────────────────────────────────────────────────────── */}
