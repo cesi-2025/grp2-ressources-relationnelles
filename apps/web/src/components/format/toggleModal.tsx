@@ -1,10 +1,10 @@
 'use client';
  
-import { SuperAdmin } from '@/lib/api';
-import s from '@/style/userAdminStyle';
+import { CreateUser } from '@/lib/api';
+import s from '@/style/admin/userAdminStyle';
  
 interface ToggleModalProps {
-  user: SuperAdmin;
+  user: CreateUser;
   onClose: () => void;
   onConfirm: () => void;
   loading: boolean;

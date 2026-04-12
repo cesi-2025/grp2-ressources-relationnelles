@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { categories, Category } from '@/lib/api';
 import { useRequireStrictAdmin } from '@/context/AuthContext';
 import CategoryForm from '@/components/format/categoryForma';
-import s from '@/style/categoryAdminStyle';
+import s from '@/style/admin/categoryAdminStyle';
  
 export default function CategoriesPage() {
   const { user, loading } = useRequireStrictAdmin();
@@ -21,8 +21,8 @@ export default function CategoriesPage() {
     try {
       const res = await categories.list();
       setList(res);
-    } catch {
-      setError('Erreur lors du chargement.');
+    } catch (err) {
+      setError(`Erreur lors du chargement: ${err}.`);
     } finally {
       setPageLoading(false);
     }
@@ -47,8 +47,10 @@ export default function CategoriesPage() {
       await categories.delete(deleteTarget.id);
       setList((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
-    } catch {
-      setError('Erreur lors de la suppression.');
+    } catch (err){
+      setError(`Erreur lors de la suppression.
+        ${err}
+        `);
     } finally {
       setDeleting(false);
     }

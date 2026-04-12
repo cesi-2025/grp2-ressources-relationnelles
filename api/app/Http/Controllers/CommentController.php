@@ -51,9 +51,7 @@ class CommentController extends Controller
         
         if (!in_array($request->user()?->role, [
             Role::CITIZEN,
-            Role::ADMIN,
-            Role::SUPER_ADMIN,
-            Role::MODERATOR, // si tu as ce rôle
+            Role::MODERATOR, 
         ])) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
@@ -76,7 +74,11 @@ class CommentController extends Controller
 
     public function reply(CommentRequest $request, int $id): JsonResponse
     {
-        if ($request->user()?->role !== Role::CITIZEN) {
+        
+        if (!in_array($request->user()?->role, [
+            Role::CITIZEN,
+            Role::MODERATOR,
+        ])) {
             return response()->json(['message' => 'Forbidden.'], 403);
         }
 

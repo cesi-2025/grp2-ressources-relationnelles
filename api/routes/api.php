@@ -48,7 +48,6 @@ Route::post('/resources/{id}/set-aside', [ProgressionController::class, 'setAsid
 Route::get('/progression', [ProgressionController::class, 'index'])->middleware(['auth:sanctum']);
 
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
-    Route::get('/statistics', [AdminController::class, 'statistics']);
     Route::get('/resources', [AdminController::class, 'indexResources']);
     Route::put('/resources/{resource}/suspend', [AdminController::class, 'suspendResource']);
     
@@ -58,7 +57,9 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
 });
 
-Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,super_admin'])->group(function () {
+Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator'])->group(function () {
+    Route::get('/statistics', [AdminController::class, 'statistics']);
+    Route::get('/comments', [ModerationController::class, 'indexComments']);
     Route::get('/resources', [AdminController::class, 'indexResources']);
     Route::put('/resources/{resource}/validate', [ModerationController::class, 'validateResource']);
     Route::put('/comments/{comment}/approve', [ModerationController::class, 'approveComment']);
@@ -68,6 +69,6 @@ Route::delete('/resources/{resource}', [ResourceController::class, 'destroy'])->
 
 Route::prefix('super-admin')->middleware(['auth:sanctum', 'role:super_admin'])->group(function () {
     Route::post('/users', [SuperAdminController::class, 'createPrivilegedUser']);
-    Route::get('/users', [AdminController::class, 'indexUsers']);                            // ← ici
-    Route::put('/users/{user}/toggle-active', [AdminController::class, 'toggleUserActive']); // ← ici
+    Route::get('/users', [AdminController::class, 'indexUsers']);                            
+    Route::put('/users/{user}/toggle-active', [AdminController::class, 'toggleUserActive']); 
 });

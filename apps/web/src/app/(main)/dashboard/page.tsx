@@ -18,7 +18,7 @@ export default function DashboardPage() {
       ]);
 
       const favList = Array.isArray(favRes) ? favRes : (favRes as any).data ?? [];
-      setFavoriteList(favList);  // ← ajoute
+      setFavoriteList(favList);
 
       const progList: any[] = Array.isArray(progRes) ? progRes : (progRes as any).data ?? [];
       setExploitedList(progList.filter((r) => r.progression_status === 'exploited' || r.pivot?.status === 'exploited'));
@@ -85,7 +85,6 @@ export default function DashboardPage() {
       isAuthenticated ? 
       (
         <div style={{ background: '#F6F7F9', minHeight: '100vh' }}>
-          {/* Navbar */}
           <nav style={s.navbar}>
             <span style={s.navBrand}>Ressources+</span>
             <div style={s.navRight}>
@@ -96,11 +95,9 @@ export default function DashboardPage() {
     
           <main style={s.page}>
     
-            {/* Greeting */}
             <h1 style={s.greeting}>Bonjour, {user.name}</h1>
             <p style={s.greetingSub}>Voici un aperçu de votre activité sur la plateforme.</p>
     
-            {/* Compteurs visuels */}
             <div style={s.statsGrid}>
               <div style={s.statCard}>
                 <div style={s.statLabel}>Favoris</div>
@@ -116,7 +113,6 @@ export default function DashboardPage() {
               </div>
             </div>
     
-           { /* Section Favoris */}
             <div style={s.sectionHeader}>
               <h2 style={s.sectionTitle}>Mes favoris</h2>
               <span style={{ ...s.badge, ...s.badgeValidated }}>{favoriteList.length}</span>
@@ -139,7 +135,6 @@ export default function DashboardPage() {
               )}
             </div>
     
-            {/* Section Ressources exploitées */}
             <div style={s.sectionHeader}>
               <h2 style={s.sectionTitle}>Ressources exploitées</h2>
               <span style={{ ...s.badge, ...s.badgeValidated }}>{exploitedList.length}</span>
@@ -162,7 +157,6 @@ export default function DashboardPage() {
               )}
             </div>
     
-           { /* Section Mises de côté */}
             <div style={s.sectionHeader}>
               <h2 style={s.sectionTitle}>Mises de côté</h2>
               <span style={{ ...s.badge, ...s.badgePending }}>{asideList.length}</span>
@@ -185,7 +179,6 @@ export default function DashboardPage() {
               )}
             </div>
     
-            {/* Citation */}
             <blockquote style={s.quote}>
               Mieux comprendre les autres, c&apos;est déjà mieux vivre ensemble.
             </blockquote>

@@ -1,7 +1,7 @@
 'use client';
  
 import { useEffect } from 'react';
-import s from '@/style/ressourceAdminStyle';
+import s from '@/style/admin/ressourceAdminStyle';
  
 export interface ToastItem {
   id: number;
