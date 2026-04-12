@@ -16,9 +16,9 @@ export const tokens = {
     shadowColor:   "rgba(91,164,207,0.12)",
   },
   fonts: {
-    title: "'Poppins', sans-serif",
-    body:  "'Open Sans', sans-serif",
-    quote: "'Lora', serif",
+    title: "var(--font-sans)",
+    body:  "var(--font-sans)",
+    quote: "var(--font-sans)",
   },
   transition: "all 0.2s ease",
   radius: { sm: 6, md: 10, lg: 14 },
@@ -324,8 +324,6 @@ export const sidebarAdminS = {
  
 // ── Responsive CSS ────────────────────────────────────────────────────────────
 export const responsiveCss = `
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Open+Sans:wght@400;600;700&family=Lora:ital@0;1&display=swap');
- 
   .nav-admin-link:hover  { background: ${tokens.colors.bleuLight} !important; color: ${tokens.colors.bleuDark} !important; }
   .btn-admin-outline:hover { background: ${tokens.colors.bleuLight} !important; }
   .btn-admin-primary:hover { background: ${tokens.colors.bleuDark} !important; border-color: ${tokens.colors.bleuDark} !important; }

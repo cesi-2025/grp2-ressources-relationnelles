@@ -13,7 +13,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_email_unique');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropUnique(['email']);
+        });
 
         Schema::table('users', function (Blueprint $table) {
             $table->text('name')->change();
