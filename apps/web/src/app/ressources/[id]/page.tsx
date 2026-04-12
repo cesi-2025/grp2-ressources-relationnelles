@@ -30,6 +30,7 @@ export default function ResourceDetailPage() {
   const resource = useMemo(() => getResourceById(resourceId), [resourceId]);
   const comments = useMemo(() => getCommentsByResourceId(resourceId), [resourceId]);
 
+
   if (!resource) {
     return (
       <div className="bg-gray-50 min-h-screen py-14">
