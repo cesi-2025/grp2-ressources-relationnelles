@@ -2,7 +2,7 @@
  
 import { useState, useEffect } from 'react';
 import { categories, Category } from '@/lib/api';
-import s from '@/style/categoryAdminStyle';
+import s from '@/style/admin/categoryAdminStyle';
  
 interface CategoryFormProps {
   category?: Category | null;
@@ -35,8 +35,8 @@ export default function CategoryForm({ category, onClose, onSaved, onError }: Ca
         onSaved(created);
       }
       onClose();
-    } catch {
-      const msg = isEdit ? 'Erreur lors de la modification.' : 'Erreur lors de la création.';
+    } catch (err) {
+      const msg = isEdit ? `Erreur lors de la modification de ${category.name}: ${err}.` : 'Erreur lors de la création.';
       setError(msg);
       onError(msg);
     } finally {

@@ -2,7 +2,7 @@
  
 import { useState, useEffect } from 'react';
 import { Resource, Category, resources } from '@/lib/api';
-import s from '@/style/ressourceAdminStyle';
+import s from '@/style/admin/ressourceAdminStyle';
  
 interface RelationType { id: number; name: string; }
 interface ResourceType { id: number; name: string; }
@@ -76,8 +76,8 @@ export default function ResourceForm({
         onSaved('Ressource créée avec succès.');
       }
       onClose();
-    } catch {
-      onError('Une erreur est survenue.');
+    } catch (err) {
+      onError(`Une erreur est survenue durant la mise a jout/création 'une ressources.s`);
     } finally {
       setSaving(false);
     }

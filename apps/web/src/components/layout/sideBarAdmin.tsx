@@ -17,7 +17,7 @@ const SECTIONS = [
     role:["admin", "moderator", "super_admin"],
     links: [ 
       { href: "/administration",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
-      { href: "/administration/ressources", role:["admin", "moderator"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
+      { href: "/administration/ressources", role:["admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
       { href: "/administration/stats",      role:["admin", "moderator", "super_admin"],  label: "Statistiques", icon: StatsPicture, badge: null },
       { href: "/administration/categorie",      role:["admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
     ],
@@ -38,13 +38,10 @@ export default function SidebarAdmin() {
   return (
     <aside style={sidebarAdminS.aside}>
  
-      {/* ── En-tête sidebar ────────────────────────────────────────────────── */}
       <div style={sidebarAdminS.header}>
         <div style={sidebarAdminS.headerTitle}>Espace Admin</div>
         <div style={sidebarAdminS.headerSub}>Mode administration</div>
       </div>
- 
-      {/* ── Sections ───────────────────────────────────────────────────────── */}
       {SECTIONS.map((section, si) => (
         section.role.includes(user?.role) ? (
           <div key={si} style={sidebarAdminS.section}>
@@ -88,7 +85,6 @@ export default function SidebarAdmin() {
  
       ))}
  
-      {/* ── Citation inspirante ─────────────────────────────────────────────── */}
       <div style={sidebarAdminS.footer}>
         <div style={sidebarAdminS.quoteBox}>
           <p style={sidebarAdminS.quoteText}>

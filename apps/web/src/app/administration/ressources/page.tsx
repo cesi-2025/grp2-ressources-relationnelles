@@ -25,28 +25,28 @@ export default function AdminRessourcesPage() {
  
   const [list, setList] = useState<Resource[]>([]);
   const [catList, setCatList] = useState<Category[]>([]);
-  const [relTypeList, setRelTypeList] = useState<RelationType[]>([]);
-  const [resTypeList, setResTypeList] = useState<ResourceType[]>([]);
-  const [filterStatus, setFilterStatus] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [pageLoading, setPageLoading] = useState(true);
+  const [relTL, setRelTL] = useState<RelationType[]>([]);
+  const [resTL, setResTL] = useState<ResourceType[]>([]);
+  const [filterStats, setFilterStats] = useState('');
+  const [filterC, setFilterC] = useState('');
+  const [pageLoad, setPageLoading] = useState(true);
  
   const [formOpen, setFormOpen] = useState(false);
-  const [editResource, setEditResource] = useState<Resource | null>(null);
+  const [editRes, setEditRes] = useState<Resource | null>(null);
  
-  const [deleteTarget, setDeleteTarget] = useState<Resource | null>(null);
+  const [deleteItem, setDeleteItem] = useState<Resource | null>(null);
   const [deleting, setDeleting] = useState(false);
  
   const [toasts, setToasts] = useState<ToastItem[]>([]);
  
-  // ── Auth guard ────────────────────────────────────────
+  // Protection accées
   useEffect(() => {
     if (!authLoading && (!user || !['admin', 'super_admin', 'moderator'].includes(user.role))) {
       router.replace('/dashboard');
     }
   }, [authLoading, user, router]);
  
-  // ── Toast helpers ─────────────────────────────────────
+  // Renvois des erreur écrit
   const addToast = useCallback((message: string, type: 'success' | 'error') => {
     setToasts((t) => [...t, { id: Date.now(), message, type }]);
   }, []);
@@ -55,33 +55,33 @@ export default function AdminRessourcesPage() {
     setToasts((t) => t.filter((x) => x.id !== id));
   }, []);
  
-  // ── Fetch data ────────────────────────────────────────
-  const fetchResources = useCallback(async () => {
+  // recherche des ressources en base
+  const fetchRes = useCallback(async () => {
     try {
       const params: Record<string, string> = {};
 
-      if (filterStatus) params.status = filterStatus;
-      if (filterCategory) params.category_id = filterCategory;
+      if (filterStats) params.status = filterStats;
+      if (filterC) params.category_id = filterC;
       const res = user?.role === 'moderator'  
               ? await moderator.listResources(params)
               : await admin.listResources(params);
 
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
-    } catch {
-      addToast('Erreur lors du chargement.', 'error');
+    } catch (err) {
+      addToast(`Erreur lors du chargement ${err}.`, `error`);
     } finally {
-      setPageLoading(false); // ← manquait ici
+      setPageLoading(false);
     }
-  }, [filterStatus, filterCategory, user?.role, addToast]);
+  }, [filterStats, filterC, user?.role, addToast]);
  
   useEffect(() => {
     categories.list().then(setCatList).catch(console.error);
   
-    // Charge une ressource pour extraire les types disponibles
+    // récupération des list des relation dans la base
     resources.list().then((res: any) => {
       const list = Array.isArray(res) ? res : res.data ?? [];
       
-      // Extrait les relation_types uniques
+      // Récupérer les relation spécifique
       const relTypes = list
         .map((r: any) => r.relation_type)
         .filter(Boolean)
@@ -92,16 +92,16 @@ export default function AdminRessourcesPage() {
         .filter(Boolean)
         .filter((v: any, i: number, a: any[]) => a.findIndex(x => x.id === v.id) === i);
       
-      setRelTypeList(relTypes);
-      setResTypeList(resTypes);
+      setRelTL(relTypes);
+      setResTL(resTypes);
     }).catch(console.error);
   }, []);
  
   useEffect(() => {
-    if (user) fetchResources();
-  }, [user, fetchResources]);
+    if (user) fetchRes();
+  }, [user, fetchRes]);
  
-  // ── Actions ───────────────────────────────────────────
+  // Suspendre une ressource selon un changement
   async function handleSuspend(r: Resource) {
   try {
     await admin.suspendResource(r.id);
@@ -110,23 +110,23 @@ export default function AdminRessourcesPage() {
       item.id === r.id ? { ...item, status: newStatus as Resource['status'] } : item
     ));
     addToast(newStatus === 'suspended' ? `Ressource suspendue.` : `Ressource réactivée.`, 'success');
-  } catch {
-    addToast('Erreur.', 'error');
+  } catch (err){
+    addToast(`Erreur durant la suspenstion d'une ressource ${err}.`, 'error');
   }
 }
 
 
   async function handleDelete() {
-    if (!deleteTarget) return;
+    if (!deleteItem) return;
     setDeleting(true);
     try {
-      // DELETE n'est pas dans l'API admin — on suspend à la place
-      await admin.suspendResource(deleteTarget.id);
-      addToast(`Ressource "${deleteTarget.title}" supprimée.`, 'success');
-      setDeleteTarget(null);
-      fetchResources();
-    } catch {
-      addToast('Erreur lors de la suppression.', 'error');
+      // Suspendre la ressource
+      await admin.suspendResource(deleteItem.id);
+      addToast(`Ressource "${deleteItem.title}" supprimée.`, 'success');
+      setDeleteItem(null);
+      fetchRes();
+    } catch (err) {
+      addToast(`Erreur lors de la suppression ${err}.`, 'error');
     } finally {
       setDeleting(false);
     }
@@ -139,16 +139,16 @@ export default function AdminRessourcesPage() {
       item.id === r.id ? { ...item, status: 'validated' as const } : item
     ));
     addToast(`Ressource "${r.title}" validée.`, 'success');
-  } catch {
-    addToast('Erreur lors de la validation.', 'error');
+  } catch (err) {
+    addToast(`Erreur lors de la validation ${err}.`, 'error');
   }
 }
 
 
-  // ── Filtered list ─────────────────────────────────────
+  // Filtrage des élement de la base au site
   const filtered = list.filter((r) => {
-    if (filterStatus && r.status !== filterStatus) return false;
-    if (filterCategory && String(r.category_id) !== filterCategory) return false;
+    if (filterStats && r.status !== filterStats) return false;
+    if (filterC && String(r.category_id) !== filterC) return false;
     return true;
   });
  
@@ -156,7 +156,6 @@ export default function AdminRessourcesPage() {
  
   return (
     <div style={s.page}>
-      {/* Header */}
       <div style={s.header}>
         <h1 style={s.headerTitle}>Gestion des ressources</h1>
         <button style={s.headerBack} onClick={() => router.push('/administration')}>
@@ -165,13 +164,12 @@ export default function AdminRessourcesPage() {
       </div>
  
       <div style={s.content}>
-        {/* Toolbar */}
         <div style={s.toolbar}>
           <div style={s.filters}>
             <select
               style={s.select}
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
+              value={filterStats}
+              onChange={(e) => setFilterStats(e.target.value)}
             >
               <option value="">Tous les statuts</option>
               <option value="pending">published</option>
@@ -182,8 +180,8 @@ export default function AdminRessourcesPage() {
  
             <select
               style={s.select}
-              value={filterCategory}
-              onChange={(e) => setFilterCategory(e.target.value)}
+              value={filterC}
+              onChange={(e) => setFilterC(e.target.value)}
             >
               <option value="">Toutes les catégories</option>
               {catList.map((c) => (
@@ -193,7 +191,7 @@ export default function AdminRessourcesPage() {
           </div>
           {user.role !== "citoyen" && user.role !== "moderator" ? 
           (
-            <button style={s.btnAdd} onClick={() => { setEditResource(null); setFormOpen(true); }}>
+            <button style={s.btnAdd} onClick={() => { setEditRes(null); setFormOpen(true); }}>
               + Ajouter une ressource
             </button>
           )
@@ -204,8 +202,6 @@ export default function AdminRessourcesPage() {
           }
           
         </div>
- 
-        {/* Table */}
         <div style={s.tableWrap}>
           <table style={s.table}>
             <thead style={s.thead}>
@@ -218,12 +214,12 @@ export default function AdminRessourcesPage() {
               </tr>
             </thead>
             <tbody>
-              {pageLoading && (
+              {pageLoad && (
                 <tr>
                   <td colSpan={5} style={s.emptyRow}>Chargement…</td>
                 </tr>
               )}
-              {!pageLoading && filtered.length === 0 && (
+              {!pageLoad && filtered.length === 0 && (
                 <tr>
                   <td colSpan={5} style={s.emptyRow}>Aucune ressource trouvée.</td>
                 </tr>
@@ -248,7 +244,7 @@ export default function AdminRessourcesPage() {
                         (
                           <button
                             style={s.btnEdit}
-                            onClick={() => { setEditResource(r); setFormOpen(true); }}
+                            onClick={() => { setEditRes(r); setFormOpen(true); }}
                           >
                             Éditer
                           </button>
@@ -285,7 +281,7 @@ export default function AdminRessourcesPage() {
                         
                         {user && user.role === "admin" ?
                           (
-                          <button style={s.btnDelete} onClick={() => setDeleteTarget(r)}>
+                          <button style={s.btnDelete} onClick={() => setDeleteItem(r)}>
                             Supprimer
                           </button>
                         )
@@ -303,32 +299,29 @@ export default function AdminRessourcesPage() {
           </table>
         </div>
       </div>
- 
-      {/* Modal formulaire */}
       {formOpen && (
         <ResourceForm
-          resource={editResource}
+          resource={editRes}
           categoriesList={catList}
-          relationTypes={relTypeList}
-          resourceTypes={resTypeList}
-          onClose={() => { setFormOpen(false); setEditResource(null); }}
-          onSaved={(msg) => { addToast(msg, 'success'); fetchResources(); }}
+          relationTypes={relTL}
+          resourceTypes={resTL}
+          onClose={() => { setFormOpen(false); setEditRes(null); }}
+          onSaved={(msg) => { addToast(msg, 'success'); fetchRes(); }}
           onError={(msg) => addToast(msg, 'error')}
         />
       )}
  
-      {/* Modal confirmation suppression */}
-      {deleteTarget && (
-        <div style={s.modalOverlay} onClick={() => setDeleteTarget(null)}>
+      {deleteItem && (
+        <div style={s.modalOverlay} onClick={() => setDeleteItem(null)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
             <h2 style={s.modalTitle}>Confirmer la suppression</h2>
             <p style={{ color: '#6b7280', fontSize: '0.9375rem', lineHeight: 1.6 }}>
               Êtes-vous sûr de vouloir supprimer{' '}
-              <strong style={{ color: '#3A3A3A' }}>"{deleteTarget.title}"</strong> ?
+              <strong style={{ color: '#3A3A3A' }}>"{deleteItem.title}"</strong> ?
               Cette action est irréversible.
             </p>
             <div style={s.modalActions}>
-              <button style={s.btnCancel} onClick={() => setDeleteTarget(null)}>Annuler</button>
+              <button style={s.btnCancel} onClick={() => setDeleteItem(null)}>Annuler</button>
               <button style={s.btnConfirmDelete} onClick={handleDelete} disabled={deleting}>
                 {deleting ? 'Suppression…' : 'Supprimer'}
               </button>
@@ -336,8 +329,6 @@ export default function AdminRessourcesPage() {
           </div>
         </div>
       )}
- 
-      {/* Toasts */}
       <Toast toasts={toasts} onRemove={removeToast} />
     </div>
   );

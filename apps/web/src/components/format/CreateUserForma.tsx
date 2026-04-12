@@ -1,8 +1,8 @@
 'use client';
  
 import { useState } from 'react';
-import { superAdmin, ApiError } from '@/lib/api';
-import s from '@/style/userAdminStyle';
+import { createUser, ApiError } from '@/lib/api';
+import s from '@/style/admin/userAdminStyle';
  
 interface CreateUserFormProps {
   onClose: () => void;
@@ -38,7 +38,7 @@ export default function CreateUserForm({ onClose, onCreated }: CreateUserFormPro
  
     setSaving(true);
     try {
-      await superAdmin.createPrivilegedUser({
+      await createUser.createPrivilegedUser({
         name: form.name,
         email: form.email,
         password: form.password,

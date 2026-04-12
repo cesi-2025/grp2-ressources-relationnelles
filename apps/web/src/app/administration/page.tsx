@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRequireAdmin } from "@/context/AuthContext"
-import { admin, categories, Category, RelationType, ResourceType } from "@/lib/api"
+import { admin, categories, Category, moderator, RelationType, ResourceType } from "@/lib/api"
 import s from "@/style/admin/dashboardAdminStyle";
 import Stats,{ STAT_CARDS } from "@/data/admin/admonStats"
 
@@ -12,44 +12,71 @@ export default function AdminDashboardPage() {
   
   const [stats, setStats] = useState<Stats | null>(null);
   const [catList, setCatList] = useState<Category[]>([]);
-  const [relTypeList, setRelTypeList] = useState<RelationType[]>([]);
-  const [resTypeList, setResTypeList] = useState<ResourceType[]>([]);
-  const [statsLoading, setStatsLoading] = useState(true);
+  const [relTL, setRelTL] = useState<RelationType[]>([]);
+  const [resTL, setResTypeList] = useState<ResourceType[]>([]);
+  const [statsLoading, setStatsLoad] = useState(true);
  
-  const [filterPeriod, setFilterPeriod] = useState('all');
-  const [filterCategory, setFilterCategory] = useState('');
-  const [filterRelationType, setFilterRelationType] = useState('');
-  const [filterResourceType, setFilterResourceType] = useState('');
+  const [filterP, setFilterP] = useState('all');
+  const [filterC, setFilterC] = useState('');
+  const [filterRelT, setFilterRelT] = useState('');
+  const [filterResT, setFilterResT] = useState('');
 
   const fetchStats = useCallback(async () => {
-    setStatsLoading(true);
-    try {
-      const params: Record<string, string> = { period: filterPeriod };
-      if (filterCategory) params.category = filterCategory;
-      if (filterRelationType) params.relation_type = filterRelationType;
-      if (filterResourceType) params.resource_type = filterResourceType;
-      const res: any = await admin.statistics();
-      setStats(res.statistics ?? res);
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setStatsLoading(false);
+    setStatsLoad(true);
+    if(user && (user.role ==="admin" || user.role === "super_admin")){
+      try {
+        const params: Record<string, string> = { period: filterP };
+        if (filterC) params.category = filterC;
+        if (filterRelT) params.relation_type = filterRelT;
+        if (filterResT) params.resource_type = filterResT;
+        const res: any = await admin.statistics();
+        setStats(res.statistics ?? res);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setStatsLoad(false);
+      }
+    }else{
+      try {
+        const params: Record<string, string> = { period: filterP };
+        if (filterC) params.category = filterC;
+        if (filterRelT) params.relation_type = filterRelT;
+        if (filterResT) params.resource_type = filterResT;
+        const res: any = await moderator.statistics();
+        setStats(res.statistics ?? res);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setStatsLoad(false);
+      }
     }
-  }, [filterPeriod, filterCategory, filterRelationType, filterResourceType]);
- 
+  }, [user, filterP, filterC, filterRelT, filterResT]);
   useEffect(() => {
     categories.list().then(setCatList).catch(console.error);
-    // Charge relation_types et resource_types depuis les ressources existantes
-    admin.listResources().then((res: any) => {
-      const list = Array.isArray(res) ? res : res.data ?? [];
-      const relTypes = list.map((r: any) => r.relation_type).filter(Boolean)
-        .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-      const resTypes = list.map((r: any) => r.resource_type).filter(Boolean)
-        .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
-      setRelTypeList(relTypes);
-      setResTypeList(resTypes);
-    }).catch(console.error);
-  }, []);
+
+    // Récupére les ressources est relations stocké
+    if(user && (user.role === "admin", user.role === "super_admin")){
+      admin.listResources().then((res: any) => {
+        const list = Array.isArray(res) ? res : res.data ?? [];
+        const relTypes = list.map((r: any) => r.relation_type).filter(Boolean)
+          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+        const resTypes = list.map((r: any) => r.resource_type).filter(Boolean)
+          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+        setRelTL(relTypes);
+        setResTypeList(resTypes);
+      }).catch(console.error);
+    }else{
+      moderator.listResources().then((res: any) => {
+        const list = Array.isArray(res) ? res : res.data ?? [];
+        const relTypes = list.map((r: any) => r.relation_type).filter(Boolean)
+          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+        const resTypes = list.map((r: any) => r.resource_type).filter(Boolean)
+          .filter((v: any, i: number, a: any[]) => a.findIndex((x: any) => x.id === v.id) === i);
+        setRelTL(relTypes);
+        setResTypeList(resTypes);
+      }).catch(console.error);
+    }
+  }, [user]);
  
   useEffect(() => {
     if (user) fetchStats();
@@ -63,32 +90,30 @@ export default function AdminDashboardPage() {
         <h1 style={s.pageTitle}>Tableau de bord</h1>
         <p style={s.pageSubtitle}>Vue d&apos;ensemble de l&apos;activité de la plateforme.</p>
  
-        {/* Filtres */}
         <div style={s.filtersBar}>
-          <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} style={s.filterSelect}>
+          <select value={filterP} onChange={(e) => setFilterP(e.target.value)} style={s.filterSelect}>
             <option value="all">Toute la période</option>
             <option value="day">Aujourd&apos;hui</option>
             <option value="week">Cette semaine</option>
             <option value="month">Ce mois</option>
           </select>
-          <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)} style={s.filterSelect}>
+          <select value={filterC} onChange={(e) => setFilterC(e.target.value)} style={s.filterSelect}>
             <option value="">Toutes les catégories</option>
             {catList.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
-          <select value={filterRelationType} onChange={(e) => setFilterRelationType(e.target.value)} style={s.filterSelect}>
+          <select value={filterRelT} onChange={(e) => setFilterRelT(e.target.value)} style={s.filterSelect}>
             <option value="">Tous les types de relation</option>
-            {relTypeList.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            {relTL.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
-          <select value={filterResourceType} onChange={(e) => setFilterResourceType(e.target.value)} style={s.filterSelect}>
+          <select value={filterResT} onChange={(e) => setFilterResT(e.target.value)} style={s.filterSelect}>
             <option value="">Tous les types de ressource</option>
-            {resTypeList.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+            {resTL.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
           </select>
           <button onClick={fetchStats} style={{ ...s.filterSelect, background: '#5BA4CF', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
             Actualiser
           </button>
         </div>
  
-        {/* Stats cards */}
         {statsLoading ? (
           <p style={{ color: '#94a3b8', fontSize: 14, marginBottom: 32 }}>Chargement des statistiques…</p>
         ) : (
@@ -102,7 +127,6 @@ export default function AdminDashboardPage() {
           </div>
         )}
  
-        {/* Graphique barres */}
         {!statsLoading && stats && (
           <>
             <div style={s.sectionHeader}>
@@ -128,7 +152,6 @@ export default function AdminDashboardPage() {
           </>
         )}
  
-        {/* Tableau récapitulatif */}
         <div style={s.sectionHeader}>
           <h2 style={s.sectionTitle}>Récapitulatif</h2>
         </div>
@@ -162,7 +185,6 @@ export default function AdminDashboardPage() {
           </table>
         </div>
  
-        {/* Alerte ressources en attente */}
         {stats && stats.pending_ressources > 0 && (
           <div style={{ background: '#fef9e0', border: '1px solid #F5E497', borderRadius: 10, padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>

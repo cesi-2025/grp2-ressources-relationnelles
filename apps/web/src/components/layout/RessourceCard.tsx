@@ -1,5 +1,5 @@
 import { Resource } from "@/lib/api";
-import s from "@/style/ressourceStyle";
+import s from "@/style/dashboardStyle";
 
 export default function ResourceCard({
   resource,

@@ -23,7 +23,6 @@ export default function NavbarAdmin() {
       <nav style={navbarAdminS.nav}>
         <div style={navbarAdminS.inner}>
  
-          {/* ── Logo ──────────────────────────────────────────────────────── */}
           <Link href="/admin" style={navbarAdminS.logoWrap}>
             <div style={navbarAdminS.logoIcon}>MA</div>
             <div>
@@ -32,16 +31,13 @@ export default function NavbarAdmin() {
             </div>
           </Link>
  
-          {/* ── Badge Administration ──────────────────────────────────────── */}
           <span style={navbarAdminS.adminBadge}>{user?.role in data_admin_tab? data_admin_tab[user?.role] : ""}</span>
  
           <div style={navbarAdminS.spacer} />
  
-          {/* ── Auth ─────────────────────────────────────────────────────── */}
           {isAuthenticated ? (
             <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                {/* Infos utilisateur */}
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>
                     {user?.name}
@@ -50,11 +46,8 @@ export default function NavbarAdmin() {
                     {user?.email}
                   </div>
                 </div>
-
-                {/* Séparateur */}
                 <div style={{ width: 1, height: 32, background: '#e2e5ea' }} />
 
-                {/* Bouton déconnexion */}
                 <button
                   type="button"
                   onClick={() => { if (confirm('Voulez-vous vraiment vous déconnecter ?')) logout(); }}
@@ -86,8 +79,6 @@ export default function NavbarAdmin() {
             </div>
           )}
           
- 
-          {/* ── Burger mobile ─────────────────────────────────────────────── */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menu"
@@ -104,7 +95,6 @@ export default function NavbarAdmin() {
           </button>
         </div>
  
-        {/* ── Mobile menu ───────────────────────────────────────────────────── */}
         {isMenuOpen && (
           <div style={navbarAdminS.mobileMenu}>
             <div style={navbarAdminS.mobileAuthRow}>

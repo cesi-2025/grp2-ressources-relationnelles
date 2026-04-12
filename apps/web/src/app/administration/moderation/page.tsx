@@ -6,7 +6,8 @@ import { moderator as moderationApi, admin, Resource } from '@/lib/api';
 import ResourceTable from '@/components/moderation/ressourceTable';
 import CommentTable from '@/components/moderation/commentTable';
 import ConfirmModal from '@/components/moderation/confirmModal';
-import s from '@/style/admin/dashboardAdminStyle';
+import ms from '@/style/admin/dashboardAdminStyle';
+import mbs from '@/style/admin/moderatorButtonStyle';
  
 type ConfirmType = 'validate' | 'refuse' | 'approve-comment' | 'delete-comment';
  
@@ -21,11 +22,11 @@ interface CommentItem {
 export default function ModerationPage() {
   const { user, loading } = useRequireAdmin();
   const { isModerator } = useAuth();
- 
+  const  [table, setTable]  = useState("resource")
   const [resources, setResources] = useState<Resource[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
-  const [resLoading, setResLoading] = useState(true);
-  const [comLoading, setComLoading] = useState(true);
+  const [resLoad, setResLoad] = useState(true);
+  const [comLoad, setComLoad] = useState(true);
  
   const [confirmModal, setConfirmModal] = useState<{
     type: ConfirmType;
@@ -35,7 +36,7 @@ export default function ModerationPage() {
   const [acting, setActing] = useState(false);
  
   const fetchResources = useCallback(async () => {
-    setResLoading(true);
+    setResLoad(true);
     try {
       const endpoint = isModerator
         ? moderationApi.listResources({ status: 'pending' })
@@ -43,22 +44,23 @@ export default function ModerationPage() {
       const res: any = await endpoint;
       setResources(Array.isArray(res) ? res : res.data ?? []);
     } catch (e) { console.error(e); }
-    finally { setResLoading(false); }
+    finally { setResLoad(false); }
   }, [isModerator]);
  
   const fetchComments = useCallback(async () => {
-    setComLoading(true);
+    setComLoad(true);
     try {
       const res: any = await moderationApi.listComments();
       setComments(Array.isArray(res) ? res : res.data ?? []);
     } catch (e) { console.error(e); }
-    finally { setComLoading(false); }
+    finally { setComLoad(false); }
   }, []);
  
   useEffect(() => {
     if (user) { fetchResources(); fetchComments(); }
   }, [user, fetchResources, fetchComments]);
  
+
   async function handleConfirm() {
     if (!confirmModal) return;
     setActing(true);
@@ -83,40 +85,61 @@ export default function ModerationPage() {
   }
  
   if (loading || !user) return null;
- 
+
   return (
-    <div style={s.page}>
-      <div style={s.container}>
-        <h1 style={s.pageTitle}>Modération</h1>
-        <p style={s.pageSubtitle}>Validez ou refusez les ressources et commentaires en attente.</p>
- 
-        {/* Ressources en attente */}
-        <div style={s.sectionHeader}>
-          <h2 style={s.sectionTitle}>Ressources en attente</h2>
-          <span style={{ ...s.badge, ...s.badgePending }}>{resources.length}</span>
+    <div style={ms.page}>
+      <div style={ms.container}>
+      <div style={ms.tabBar}>
+          <button
+            style={{ ...mbs.tab, ...(table === "resource" ? mbs.tabActive : {}) }}
+            onClick={() => setTable("resource")}
+          >
+            Ressources {resources.length > 0 && `(${resources.length})`}
+          </button>
+          <button
+            style={{ ...mbs.tab, ...(table === "comments" ? mbs.tabActive : {}) }}
+            onClick={() => setTable("comments")}
+          >
+            Commentaires {comments.filter(c => !c.is_approved).length > 0 && `(${comments.filter(c => !c.is_approved).length})`}
+          </button>
         </div>
-        <ResourceTable
-          resources={resources}
-          loading={resLoading}
-          onValidate={(id: any, title: any) => setConfirmModal({ type: 'validate', id, label: `Valider "${title}" ?` })}
-          onRefuse={(id: any, title: any) => setConfirmModal({ type: 'refuse', id, label: `Refuser "${title}" ?` })}
-        />
- 
-        {/* Commentaires à modérer */}
-        <div style={{ ...s.sectionHeader, marginTop: 8 }}>
-          <h2 style={s.sectionTitle}>Commentaires à modérer</h2>
-          <span style={{ ...s.badge, ...s.badgePending }}>
-            {comments.filter((c) => !c.is_approved).length}
-          </span>
+        <h1 style={ms.pageTitle}>Modération</h1>
+        <p style={ms.pageSubtitle}>Validez ou refusez les ressources et commentaires en attente.</p>
+        {table === "resource"? 
+          (
+            <>
+            <div style={ms.sectionHeader}>
+              <h2 style={ms.sectionTitle}>Ressources en attente</h2>
+              <span style={{ ...ms.badge, ...ms.badgePending }}>{resources.length}</span>
+            </div>
+
+            <ResourceTable
+              resources={resources}
+              loading={resLoad}
+              onValidate={(id: any, title: any) => setConfirmModal({ type: 'validate', id, label: `Valider "${title}" ?` })}
+              onRefuse={(id: any, title: any) => setConfirmModal({ type: 'refuse', id, label: `Refuser "${title}" ?` })}
+            />
+            </>
+          )
+          :
+          (
+            <>
+              <div style={{ ...ms.sectionHeader, marginTop: 8 }}>
+                <h2 style={ms.sectionTitle}>Commentaires à modérer</h2>
+                <span style={{ ...ms.badge, ...ms.badgePending }}>
+                  {comments.filter((c) => !c.is_approved).length}
+                </span>
+              </div>
+              <CommentTable
+                comments={comments}
+                loading={comLoad}
+                onApprove={(id) => setConfirmModal({ type: 'approve-comment', id, label: 'Approuver ce commentaire ?' })}
+                onDelete={(id) => setConfirmModal({ type: 'delete-comment', id, label: 'Supprimer ce commentaire définitivement ?' })}
+              />
+            </>
+          )
+        }
         </div>
-        <CommentTable
-          comments={comments}
-          loading={comLoading}
-          onApprove={(id) => setConfirmModal({ type: 'approve-comment', id, label: 'Approuver ce commentaire ?' })}
-          onDelete={(id) => setConfirmModal({ type: 'delete-comment', id, label: 'Supprimer ce commentaire définitivement ?' })}
-        />
-      </div>
- 
       {confirmModal && (
         <ConfirmModal
           label={confirmModal.label}

@@ -1,7 +1,7 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
-import { SuperAdmin, superAdmin, ApiError } from '@/lib/api';
+import { CreateUser, createUser, ApiError } from '@/lib/api';
 import { useRequireSuperAdmin } from '@/context/AuthContext';
 import s from '@/style/admin/userAdminStyle';
  
@@ -25,16 +25,16 @@ function getInitials(name: string): string {
  
 export default function UtilisateursPage() {
   const { user, loading } = useRequireSuperAdmin();
-  const [list, setList] = useState<SuperAdmin[]>([]);
+  const [list, setList] = useState<CreateUser[]>([]);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
  
-  // ── Toggle actif/inactif ──────────────────────────────
-  const [toggleTarget, setToggleTarget] = useState<SuperAdmin | null>(null);
+  //Activer ou désactivé la l'élement
+  const [toggleTarget, setToggleTarget] = useState<CreateUser | null>(null);
   const [toggling, setToggling] = useState(false);
  
-  // ── Créer utilisateur privilégié ──────────────────────
+  // Création d'un utilisateur
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
@@ -47,10 +47,10 @@ export default function UtilisateursPage() {
     try {
       const params: Record<string, string> = {};
       if (filterRole) params.role = filterRole;
-      const res = await superAdmin.list(params);
+      const res = await createUser.list(params);
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
-    } catch {
-      setError('Erreur lors du chargement.');
+    } catch (err) {
+      setError(`Erreur lors du chargement des roles ${err}.`);
     } finally {
       setPageLoading(false);
     }
@@ -65,11 +65,11 @@ export default function UtilisateursPage() {
     setToggling(true);
     setError('');
     try {
-      const res = await superAdmin.toggleActive(toggleTarget.id);
+      const res = await createUser.toggleActive(toggleTarget.id);
       setList((prev) => prev.map((u) => u.id === res.user.id ? res.user : u));
       setToggleTarget(null);
-    } catch {
-      setError('Erreur lors de la mise à jour.');
+    } catch (err) {
+      setError(`Erreur lors de l'activation des utilisateur ${err}`);
     } finally {
       setToggling(false);
     }
@@ -90,7 +90,7 @@ export default function UtilisateursPage() {
     }
     setSaving(true);
     try {
-      await superAdmin.createPrivilegedUser({
+      await createUser.createPrivilegedUser({
         name: form.name,
         email: form.email,
         password: form.password,
@@ -202,7 +202,6 @@ export default function UtilisateursPage() {
         </div>
       </div>
  
-      {/* Modal toggle actif/inactif */}
       {toggleTarget && (
         <div style={s.modalOverlay} onClick={() => setToggleTarget(null)}>
           <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>
@@ -224,7 +223,6 @@ export default function UtilisateursPage() {
         </div>
       )}
  
-      {/* Modal créer compte privilégié */}
       {formOpen && (
         <div style={s.modalOverlay} onClick={() => setFormOpen(false)}>
           <div style={s.modalBox} onClick={(e) => e.stopPropagation()}>

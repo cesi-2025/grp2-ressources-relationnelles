@@ -53,14 +53,13 @@ export class ApiError extends Error {
     this.name = 'ApiError';
   }
 }
- 
-// ── Auth ─────────────────────────────────────────────────────────────────────
- 
+
+// Méthod de gestion et d'activation de l'authentification
 export interface User {
   id: number;
   name: string;
   email: string;
-  role: 'citoyen' | 'moderator' | 'admin' | 'super_admin';
+  role: 'citizen' | 'moderator' | 'admin' | 'super_admin';
   created_at: string;
 }
  
@@ -86,8 +85,8 @@ export const auth = {
     request<void>('/user', { method: 'DELETE' }),
 };
  
-// ── Resources ────────────────────────────────────────────────────────────────
- 
+
+// Communication avec la base pour les ressources
 export interface Resource {
   id: number;
   title: string;
@@ -130,8 +129,8 @@ export const resources = {
     request<Resource>(`/resources/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 };
  
-// ── Categories ───────────────────────────────────────────────────────────────
- 
+
+// Communication avec la base pour les categories
 export interface Category {
   id: number;
   name: string;
@@ -147,7 +146,8 @@ export const categories = {
     request<void>(`/admin/categories/${id}`, { method: 'DELETE' }),
 };
  
-// ── Comments ─────────────────────────────────────────────────────────────────
+
+// Communication avec la base pour les commentaires
  
 export interface Comment {
   id: number;
@@ -165,9 +165,9 @@ export const comments = {
   reply: (commentId: number, content: string) =>
     request<Comment>(`/comments/${commentId}/reply`, { method: 'POST', body: JSON.stringify({ content }) }),
 };
- 
-// ── Favorites ────────────────────────────────────────────────────────────────
- 
+
+
+// Communication avec la base pour des favories 
 export const favorites = {
   add: (resourceId: number) =>
     request<void>(`/resources/${resourceId}/favorite`, { method: 'POST' }),
@@ -175,7 +175,8 @@ export const favorites = {
     request<void>(`/resources/${resourceId}/favorite`, { method: 'DELETE' }),
 };
  
-// ── Progression ──────────────────────────────────────────────────────────────
+
+// Communication avec la base pour la progression
  
 export const progression = {
   list: () => request<Resource[]>('/progression'),
@@ -185,8 +186,8 @@ export const progression = {
     request<void>(`/resources/${resourceId}/set-aside`, { method: 'POST' }),
 };
  
-// ── Admin ────────────────────────────────────────────────────────────────────
- 
+
+// Communication avec la base pour les requéte lier a l'administration
 export const admin = {
   statistics: () => request<Record<string, number>>('/admin/statistics'),
   listResources: (params?: Record<string, string>) => {
@@ -195,22 +196,19 @@ export const admin = {
   },
   suspendResource: (resourceId: number) =>
     request<Resource>(`/admin/resources/${resourceId}/suspend`, { method: 'PUT' }),
-  reactivateResource: (resourceId: number) =>
-    request<Resource>(`/resources/${resourceId}`, { 
-      method: 'PUT', 
-      body: JSON.stringify({ status: 'published' }) 
-    }),
 
   
 };
  
-// ── Moderation ───────────────────────────────────────────────────────────────
- 
+// gestion des service de modération
 export const moderator = {
+  statistics: () => request<Record<string, number>>('/moderation/statistics'),
   listResources: (params?: Record<string, string>) => {
     const qs = params ? '?' + new URLSearchParams(params).toString() : '';
     return request<{ data: Resource[] }>(`/moderation/resources${qs}`);
   },
+  listComments: () =>
+    request<any[]>('/moderation/comments'),
   validateResource: (resourceId: number) =>
     request<void>(`/moderation/resources/${resourceId}/validate`, { method: 'PUT' }),
   approveComment: (commentId: number) =>
@@ -219,8 +217,9 @@ export const moderator = {
     request<void>(`/moderation/comments/${commentId}`, { method: 'DELETE' }),
 };
  
-// ── Super Admin ───────────────────────────────────────────────────────────────
-export interface SuperAdmin {
+
+// Communication avec la base pour les requéte lier au Super Admin uniquement
+export interface CreateUser {
   id: number;
   name: string;
   email: string;
@@ -228,13 +227,9 @@ export interface SuperAdmin {
   is_active: boolean;
   created_at: string;
 }
-export const superAdmin = {
-  list: (params?: Record<string, string>) => {
-    const qs = params ? '?' + new URLSearchParams(params).toString() : '';
-    return request<{ data: SuperAdmin[] }>(`/super-admin/users${qs}`); 
-  },
+export const createUser = {
   toggleActive: (userId: number) =>
-    request<{ user: SuperAdmin }>(`/super-admin/users/${userId}/toggle-active`, { method: 'PUT' }), 
+    request<{ user: CreateUser }>(`/super-admin/users/${userId}/toggle-active`, { method: 'PUT' }),
   createPrivilegedUser: (data: { name: string; email: string; password: string; role: string }) =>
     request<User>('/super-admin/users', { method: 'POST', body: JSON.stringify(data) }),
 };

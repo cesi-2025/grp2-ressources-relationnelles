@@ -12,10 +12,10 @@ export default interface Stats{
 }
 
 export const STAT_CARDS = [
-  { key: 'creations',           label: 'Ressources créées',    style: s.statCard },
-  { key: 'resources_published', label: 'Ressources publiées',  style: { ...s.statCard, ...s.statCardGreen } },
-  { key: 'resources_pending',   label: 'En attente',           style: { ...s.statCard, ...s.statCardYellow } },
-  { key: 'exploitations',       label: 'Exploitations',        style: { ...s.statCard, ...s.statCardPurple } },
-  { key: 'favoris',             label: 'Favoris',              style: { ...s.statCard, ...s.statCardCoral } },
-  { key: 'commentaires',        label: 'Commentaires',         style: { ...s.statCard, ...s.statCardGray } },
+  { key: 'created',             label: 'Ressources créées',    style: s.statCard },
+  { key: 'published_ressource', label: 'Ressources publiées',  style: { ...s.statCard, ...s.statCardGreen } },
+  { key: 'pending_ressourecs',  label: 'En attente',           style: { ...s.statCard, ...s.statCardYellow } },
+  { key: 'exploite',            label: 'Exploitations',        style: { ...s.statCard, ...s.statCardPurple } },
+  { key: 'favorite',            label: 'Favoris',              style: { ...s.statCard, ...s.statCardCoral } },
+  { key: 'commente',            label: 'Commentaires',         style: { ...s.statCard, ...s.statCardGray } },
 ];
