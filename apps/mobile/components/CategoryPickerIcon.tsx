@@ -1,5 +1,7 @@
 import { ThemedText } from "@/components/ThemedText";
-import { useCategory, type SortOption } from "@/contexts/CategoryContext";
+import {
+  useCategory,
+} from "@/contexts/CategoryContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useState } from "react";
@@ -11,19 +13,15 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "date", label: "Plus récentes" },
-  { value: "title", label: "Titre (A → Z)" },
-];
-
 export function CategoryPickerIcon() {
   const colors = useThemeColors();
   const {
     selectedCategoryId,
     setSelectedCategoryId,
     categoryOptions,
-    sortBy,
-    setSortBy,
+    relationTypeId,
+    setRelationTypeId,
+    relationTypeOptions,
   } = useCategory();
   const [open, setOpen] = useState(false);
 
@@ -75,10 +73,7 @@ export function CategoryPickerIcon() {
               return (
                 <Pressable
                   key={item.id}
-                  onPress={() => {
-                    setSelectedCategoryId(item.id);
-                    close();
-                  }}
+                  onPress={() => setSelectedCategoryId(item.id)}
                   style={({ pressed }) => [
                     styles.row,
                     { backgroundColor: pressed ? colors.gray100 : "transparent" },
@@ -108,31 +103,28 @@ export function CategoryPickerIcon() {
               color="foreground"
               style={styles.sectionLabel}
             >
-              Trier par
+              Type de relation
             </ThemedText>
-            {SORT_OPTIONS.map((opt) => {
-              const selected = sortBy === opt.value;
+            {relationTypeOptions.map((item) => {
+              const selected = relationTypeId === item.id;
               return (
                 <Pressable
-                  key={opt.value}
-                  onPress={() => {
-                    setSortBy(opt.value);
-                    close();
-                  }}
+                  key={item.id}
+                  onPress={() => setRelationTypeId(item.id)}
                   style={({ pressed }) => [
                     styles.row,
                     { backgroundColor: pressed ? colors.gray100 : "transparent" },
                   ]}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  accessibilityLabel={opt.label}
+                  accessibilityLabel={item.name}
                 >
                   <ThemedText
                     variant="body1"
                     color={selected ? "primary" : "foreground"}
                     style={{ flex: 1, fontWeight: selected ? "600" : "400" }}
                   >
-                    {opt.label}
+                    {item.name}
                   </ThemedText>
                   {selected ? (
                     <Ionicons name="checkmark" size={22} color={colors.primary} />
@@ -140,6 +132,19 @@ export function CategoryPickerIcon() {
                 </Pressable>
               );
             })}
+
+            <View style={styles.footerActions}>
+              <Pressable
+                onPress={close}
+                accessibilityRole="button"
+                accessibilityLabel="Fermer les filtres"
+                style={[styles.closeButton, { backgroundColor: colors.primary }]}
+              >
+                <ThemedText variant="subtitle1" color="gray50">
+                  Fermer
+                </ThemedText>
+              </Pressable>
+            </View>
           </SafeAreaView>
         </View>
       </Modal>
@@ -179,5 +184,15 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     marginVertical: 10,
     marginHorizontal: 8,
+  },
+  footerActions: {
+    marginTop: 8,
+    marginBottom: 12,
+    paddingHorizontal: 8,
+  },
+  closeButton: {
+    borderRadius: 10,
+    alignItems: "center",
+    paddingVertical: 12,
   },
 });

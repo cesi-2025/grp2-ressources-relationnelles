@@ -1,14 +1,15 @@
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
-import { MOCK_PROGRESSION } from "@/data/mockProgression";
-import type { MockProgressionRow } from "@/data/types";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { apiGetProgression } from "@/lib/resourceApi";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  ActivityIndicator,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -16,9 +17,9 @@ import {
 } from "react-native";
 import Animated from "react-native-reanimated";
 
-type ResourceItem = { id: number; title: string; content?: string };
+type ResourceItem = { id: number; title: string };
 
-function resolveResource(row: MockProgressionRow): ResourceItem | null {
+function resolveResource(row: { resource_id?: number; resource?: { id: number; title: string } }): ResourceItem | null {
   if (row.resource) {
     return { id: row.resource.id, title: row.resource.title };
   }
@@ -34,7 +35,7 @@ function ResourceListSection({
   emptyLabel,
 }: {
   title: string;
-  rows: MockProgressionRow[];
+  rows: { resource_id?: number; resource?: { id: number; title: string } }[];
   emptyLabel: string;
 }) {
   const colors = useThemeColors();
@@ -53,12 +54,7 @@ function ResourceListSection({
         resources.map((resource) => (
           <Pressable
             key={`${title}-${resource.id}`}
-            onPress={() =>
-              router.push({
-                pathname: "/resource/[id]",
-                params: { id: String(resource.id) },
-              })
-            }
+            onPress={() => router.push({ pathname: "/resource/[id]", params: { id: String(resource.id) } })}
             accessibilityRole="button"
             style={[styles.itemRow, { borderBottomColor: colors.gray200 }]}
           >
@@ -68,7 +64,9 @@ function ResourceListSection({
                 {resource.title}
               </ThemedText>
             </View>
-            <Ionicons name="chevron-forward" size={18} color={colors.gray500} />
+            <View style={styles.itemActions}>
+              <Ionicons name="chevron-forward" size={18} color={colors.gray500} />
+            </View>
           </Pressable>
         ))
       )}
@@ -79,12 +77,38 @@ function ResourceListSection({
 export default function DashboardScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const { token, isLoggedIn } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [progression, setProgression] = useState<Awaited<ReturnType<typeof apiGetProgression>> | null>(null);
+
+  const loadData = useCallback(async (showRefreshing: boolean) => {
+    if (!token) {
+      setLoading(false);
+      setRefreshing(false);
+      return;
+    }
+    if (showRefreshing) setRefreshing(true);
+    else setLoading(true);
+    try {
+      setProgression(await apiGetProgression(token));
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chargement impossible.");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadData(false);
+  }, [loadData]);
 
   const onRefresh = useCallback(() => {
-    setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 400);
-  }, []);
+    void loadData(true);
+  }, [loadData]);
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
@@ -119,31 +143,35 @@ export default function DashboardScreen() {
         </Pressable>
 
         <ThemedText variant="headline" color="foreground" style={styles.pageTitle}>
-          Ma progression
+          Tableau de bord
         </ThemedText>
 
-        <ThemedText variant="body2" color="gray600" style={styles.banner}>
-          La synchronisation de votre progression n’est pas encore implémentée ; les
-          listes ci-dessous servent d’aperçu.
-        </ThemedText>
+        {error ? (
+          <ThemedText variant="body2" color="danger" style={styles.banner}>
+            {error}
+          </ThemedText>
+        ) : null}
 
-        <ResourceListSection
-          title="Favoris"
-          rows={MOCK_PROGRESSION.favorites}
-          emptyLabel="Aucune ressource en favoris."
-        />
-        <View style={styles.sectionGap} />
-        <ResourceListSection
-          title="Exploitées"
-          rows={MOCK_PROGRESSION.exploited}
-          emptyLabel="Aucune ressource exploitée."
-        />
-        <View style={styles.sectionGap} />
-        <ResourceListSection
-          title="Mises de côté"
-          rows={MOCK_PROGRESSION.set_aside}
-          emptyLabel="Aucune ressource mise de côté."
-        />
+        {!isLoggedIn ? (
+          <Card title="Connexion requise">
+            <ThemedText variant="body2" color="gray600">
+              Connectez-vous pour voir votre progression.
+            </ThemedText>
+          </Card>
+        ) : loading ? (
+          <View style={styles.loader}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : (
+          <>
+            <ResourceListSection
+              title="Favoris"
+              rows={progression?.favorites ?? []}
+              emptyLabel="Aucune ressource en favoris."
+            />
+          </>
+        )}
+
       </Animated.ScrollView>
     </RootView>
   );
@@ -169,6 +197,10 @@ const styles = StyleSheet.create({
   sectionGap: {
     height: 12,
   },
+  loader: {
+    paddingVertical: 18,
+    alignItems: "center",
+  },
   itemRow: {
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -181,5 +213,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     flexShrink: 1,
+  },
+  itemActions: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
   },
 });

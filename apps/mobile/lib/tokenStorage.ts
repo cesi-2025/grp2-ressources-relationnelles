@@ -1,10 +1,16 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { getPlatformOS } from "@/lib/platformRuntime";
 
 const KEY = "rr_sanctum_token";
+type SecureStoreLike = {
+  getItemAsync: (key: string) => Promise<string | null>;
+  setItemAsync: (key: string, value: string) => Promise<void>;
+  deleteItemAsync: (key: string) => Promise<void>;
+};
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const SecureStore = require("expo-secure-store") as SecureStoreLike;
 
 export async function getStoredToken(): Promise<string | null> {
-  if (Platform.OS === "web") {
+  if (getPlatformOS() === "web") {
     if (typeof globalThis.localStorage === "undefined") return null;
     return globalThis.localStorage.getItem(KEY);
   }
@@ -12,7 +18,7 @@ export async function getStoredToken(): Promise<string | null> {
 }
 
 export async function setStoredToken(token: string): Promise<void> {
-  if (Platform.OS === "web") {
+  if (getPlatformOS() === "web") {
     globalThis.localStorage?.setItem(KEY, token);
     return;
   }
@@ -20,7 +26,7 @@ export async function setStoredToken(token: string): Promise<void> {
 }
 
 export async function clearStoredToken(): Promise<void> {
-  if (Platform.OS === "web") {
+  if (getPlatformOS() === "web") {
     globalThis.localStorage?.removeItem(KEY);
     return;
   }

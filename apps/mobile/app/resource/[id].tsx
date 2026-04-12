@@ -2,18 +2,32 @@ import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
-import { getMockComments, getMockResourceById } from "@/data/mockResources";
-import { MOCK_PROGRESSION } from "@/data/mockProgression";
-import type { MockComment, MockResourceDetail } from "@/data/types";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import {
+  canManageFavorites as canManageFavoritesPermission,
+  canComment as canCommentPermission,
+  canEditResource as canEditResourcePermission,
+} from "@/lib/resourcePermissions";
+import {
+  apiCreateComment,
+  apiGetProgression,
+  apiGetResource,
+  apiListComments,
+  apiReplyComment,
+  apiSetFavorite,
+  type ApiComment,
+  type ApiResource,
+} from "@/lib/resourceApi";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Pressable,
+  RefreshControl,
   Share,
   StyleSheet,
   TextInput,
@@ -33,6 +47,20 @@ function formatDate(iso: string): string {
   }
 }
 
+function formatDateTime(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return iso;
+  }
+}
+
 function rowMatchesResource(
   row: { resource_id?: number; resource?: { id: number } },
   resourceId: number,
@@ -40,18 +68,61 @@ function rowMatchesResource(
   return row.resource_id === resourceId || row.resource?.id === resourceId;
 }
 
-function progressionFlags(resourceId: number) {
+function progressionFlags(
+  resourceId: number,
+  progression: Awaited<ReturnType<typeof apiGetProgression>>,
+) {
   return {
-    favorited: MOCK_PROGRESSION.favorites.some((r) =>
-      rowMatchesResource(r, resourceId),
-    ),
-    exploited: MOCK_PROGRESSION.exploited.some((r) =>
-      rowMatchesResource(r, resourceId),
-    ),
-    setAside: MOCK_PROGRESSION.set_aside.some((r) =>
-      rowMatchesResource(r, resourceId),
-    ),
+    favorited: progression.favorites.some((r) => rowMatchesResource(r, resourceId)),
   };
+}
+
+function normalizeCommentsTree(list: ApiComment[]): ApiComment[] {
+  const deduped = new Map<number, ApiComment>();
+
+  const collect = (comment: ApiComment) => {
+    if (!deduped.has(comment.id)) {
+      deduped.set(comment.id, { ...comment, replies: [] });
+    }
+    if (comment.replies?.length) {
+      comment.replies.forEach(collect);
+    }
+  };
+
+  list.forEach(collect);
+
+  const roots: ApiComment[] = [];
+  const all = Array.from(deduped.values());
+  all.forEach((comment) => {
+    if (comment.parent_id && deduped.has(comment.parent_id)) {
+      const parent = deduped.get(comment.parent_id);
+      if (parent) {
+        parent.replies = [...(parent.replies ?? []), comment];
+      }
+      return;
+    }
+    roots.push(comment);
+  });
+
+  return roots;
+}
+
+function appendCommentInTree(list: ApiComment[], comment: ApiComment): ApiComment[] {
+  if (!comment.parent_id) {
+    return [...list, { ...comment, replies: comment.replies ?? [] }];
+  }
+
+  return list.map((parent) => {
+    if (parent.id !== comment.parent_id) return parent;
+    return {
+      ...parent,
+      replies: [...(parent.replies ?? []), { ...comment, replies: comment.replies ?? [] }],
+    };
+  });
+}
+
+function isPendingModeration(comment: ApiComment): boolean {
+  return !comment.is_approved;
 }
 
 export default function ResourceDetailScreen() {
@@ -59,50 +130,120 @@ export default function ResourceDetailScreen() {
   const resourceId = Number(id);
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const { token, user, isLoggedIn } = useAuth();
+  const canComment = canCommentPermission({ isLoggedIn, token });
+  const canManageFavorites = canManageFavoritesPermission({ isLoggedIn, token });
 
-  const [resource, setResource] = useState<MockResourceDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [comments, setComments] = useState<MockComment[]>([]);
+  const [resource, setResource] = useState<ApiResource | null>(null);
+  const [resourceLoading, setResourceLoading] = useState(true);
+  const [commentsLoading, setCommentsLoading] = useState(true);
+  const [comments, setComments] = useState<ApiComment[]>([]);
   const [commentDraft, setCommentDraft] = useState("");
   const [replyToCommentId, setReplyToCommentId] = useState<number | null>(null);
   const [replyDraft, setReplyDraft] = useState("");
+  const [busyAction, setBusyAction] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [commentsError, setCommentsError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
-  const [isExploited, setIsExploited] = useState(false);
-  const [isSetAside, setIsSetAside] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const refreshFavoriteStatus = useCallback(async () => {
+    if (!token || !resourceId) {
+      setIsFavorited(false);
+      return;
+    }
+    try {
+      const progression = await apiGetProgression(token);
+      const flags = progressionFlags(resourceId, progression);
+      setIsFavorited(flags.favorited);
+    } catch {
+      setIsFavorited(false);
+    }
+  }, [resourceId, token]);
+
+  const refreshComments = useCallback(async () => {
+    setCommentsLoading(true);
+    try {
+      const list = await apiListComments(resourceId);
+      setComments(normalizeCommentsTree(list));
+      setCommentsError(null);
+    } catch (e) {
+      setCommentsError(e instanceof Error ? e.message : "Chargement des commentaires impossible.");
+      throw e;
+    } finally {
+      setCommentsLoading(false);
+    }
+  }, [resourceId]);
 
   useEffect(() => {
     if (!resourceId) {
       setResource(null);
-      setLoading(false);
+      setResourceLoading(false);
+      setCommentsLoading(false);
       return;
     }
-    setLoading(true);
-    const t = setTimeout(() => {
-      const r = getMockResourceById(resourceId);
-      setResource(r ?? null);
-      setComments(getMockComments(resourceId));
-      const flags = progressionFlags(resourceId);
-      setIsFavorited(flags.favorited);
-      setIsExploited(flags.exploited);
-      setIsSetAside(flags.setAside);
-      setLoading(false);
-    }, 200);
-    return () => clearTimeout(t);
-  }, [resourceId]);
+    let cancelled = false;
+    setResourceLoading(true);
+    setCommentsLoading(true);
+    setError(null);
+    setCommentsError(null);
+    setComments([]);
+    void (async () => {
+      try {
+        const resourceData = await apiGetResource(resourceId);
+        if (cancelled) return;
+        setResource(resourceData);
+      } catch (e) {
+        if (!cancelled) {
+          setError(e instanceof Error ? e.message : "Chargement impossible.");
+          setResource(null);
+        }
+      } finally {
+        if (!cancelled) setResourceLoading(false);
+      }
 
-  const handleFavoriteToggle = useCallback(() => {
-    setIsFavorited((v) => !v);
-  }, []);
+      if (!cancelled) {
+        void refreshComments().catch(() => {});
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [resourceId, refreshComments]);
 
-  const handleSetProgression = useCallback((next: "exploited" | "set_aside") => {
-    if (next === "exploited") {
-      setIsExploited((v) => !v);
-      setIsSetAside(false);
-    } else {
-      setIsSetAside((v) => !v);
-      setIsExploited(false);
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await refreshFavoriteStatus();
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshFavoriteStatus]);
+
+  const resolveCreatedComment = useCallback(
+    async (created: ApiComment): Promise<"appended" | "pending"> => {
+      if (isPendingModeration(created)) {
+        return "pending";
+      }
+      setComments((prev) => appendCommentInTree(prev, created));
+      return "appended";
+    },
+    [],
+  );
+
+  const handleFavoriteToggle = useCallback(async () => {
+    if (!canManageFavorites || !token) return;
+    const next = !isFavorited;
+    setIsFavorited(next);
+    try {
+      await apiSetFavorite(token, resourceId, next);
+    } catch (e) {
+      setIsFavorited(!next);
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Action impossible.");
     }
-  }, []);
+  }, [canManageFavorites, isFavorited, resourceId, token]);
 
   const handleShare = useCallback(async () => {
     if (!resource) return;
@@ -116,33 +257,82 @@ export default function ResourceDetailScreen() {
     }
   }, [resource]);
 
-  const handlePostComment = useCallback(() => {
+  const handlePostComment = useCallback(async () => {
+    if (!canComment || !token) {
+      router.push({ pathname: "/login" });
+      return;
+    }
     if (commentDraft.trim().length < 2) {
       Alert.alert("Commentaire trop court", "Ajoutez un peu plus de contenu.");
       return;
     }
-    Alert.alert(
-      "Pas encore implémenté",
-      "L’envoi de commentaires n’est pas disponible pour le moment.",
-    );
-    setCommentDraft("");
-  }, [commentDraft]);
+    setBusyAction(true);
+    try {
+      const created = await apiCreateComment(token, resourceId, commentDraft.trim());
+      const status = await resolveCreatedComment(created);
+      if (status === "pending") {
+        Alert.alert("Commentaire envoyé", "Votre commentaire est en attente de modération.");
+      }
+      setCommentDraft("");
+    } catch (e) {
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Publication impossible.");
+    } finally {
+      setBusyAction(false);
+    }
+  }, [canComment, commentDraft, resolveCreatedComment, resourceId, token]);
 
-  const handleReply = useCallback(() => {
+  const handleReply = useCallback(async () => {
+    if (!canComment || !token) {
+      router.push({ pathname: "/login" });
+      return;
+    }
     if (!replyToCommentId) return;
     if (replyDraft.trim().length < 2) {
       Alert.alert("Réponse trop courte", "Ajoutez un peu plus de contenu.");
       return;
     }
-    Alert.alert(
-      "Pas encore implémenté",
-      "L’envoi de réponses n’est pas disponible pour le moment.",
-    );
-    setReplyDraft("");
-    setReplyToCommentId(null);
-  }, [replyDraft, replyToCommentId]);
+    setBusyAction(true);
+    try {
+      const created = await apiReplyComment(token, replyToCommentId, replyDraft.trim());
+      const status = await resolveCreatedComment(created);
+      if (status === "pending") {
+        Alert.alert("Réponse envoyée", "Votre réponse est en attente de modération.");
+      }
+      setReplyDraft("");
+      setReplyToCommentId(null);
+    } catch (e) {
+      Alert.alert("Erreur", e instanceof Error ? e.message : "Réponse impossible.");
+    } finally {
+      setBusyAction(false);
+    }
+  }, [canComment, replyDraft, replyToCommentId, resolveCreatedComment, token]);
 
-  const hasActions = useMemo(() => Boolean(resource), [resource]);
+  const handleRefresh = useCallback(async () => {
+    if (!resourceId) return;
+    setRefreshing(true);
+    try {
+      const [resourceData] = await Promise.all([
+        apiGetResource(resourceId),
+        refreshComments(),
+      ]);
+      setResource(resourceData);
+      setError(null);
+      await refreshFavoriteStatus();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Chargement impossible.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [refreshComments, refreshFavoriteStatus, resourceId]);
+  const canEditResource = useMemo(() => {
+    if (!resource) return false;
+    const ownerId = resource.user?.id ?? resource.user_id;
+    return canEditResourcePermission({
+      isLoggedIn,
+      userId: user?.id,
+      ownerId,
+    });
+  }, [isLoggedIn, resource, user]);
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
@@ -155,17 +345,25 @@ export default function ResourceDetailScreen() {
         contentContainerStyle={scrollContentStyle}
         onScroll={scrollHandler}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void handleRefresh()}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
       >
         <BackButton />
 
-        {loading ? (
+        {resourceLoading ? (
           <View style={styles.centered}>
             <ActivityIndicator color={colors.primary} size="large" />
           </View>
         ) : !resource ? (
           <Card>
-            <ThemedText variant="body1" color="gray600">
-              Ressource introuvable dans le jeu de données local.
+            <ThemedText variant="body1" color={error ? "danger" : "gray600"}>
+              {error ?? "Ressource introuvable."}
             </ThemedText>
           </Card>
         ) : (
@@ -178,10 +376,10 @@ export default function ResourceDetailScreen() {
               {resource.title}
             </ThemedText>
 
-            {hasActions ? (
-              <View style={styles.actionsRow}>
+            <View style={styles.actionsRow}>
+              {canManageFavorites ? (
                 <Pressable
-                  onPress={handleFavoriteToggle}
+                  onPress={() => void handleFavoriteToggle()}
                   accessibilityRole="button"
                   accessibilityLabel="Favori"
                   style={styles.iconButton}
@@ -192,40 +390,33 @@ export default function ResourceDetailScreen() {
                     color={isFavorited ? colors.primary : colors.foreground}
                   />
                 </Pressable>
+              ) : null}
+              <Pressable
+                onPress={() => void handleShare()}
+                accessibilityRole="button"
+                accessibilityLabel="Partager la ressource"
+                style={styles.iconButton}
+              >
+                <Ionicons name="share-outline" size={22} color={colors.foreground} />
+              </Pressable>
+              {canEditResource ? (
                 <Pressable
-                  onPress={() => handleSetProgression("exploited")}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/resource/edit/[id]",
+                      params: { id: String(resource.id) },
+                    })
+                  }
                   accessibilityRole="button"
-                  accessibilityLabel="Marquer comme exploitée"
-                  style={styles.iconButton}
+                  accessibilityLabel="Modifier la ressource"
+                  style={styles.editButton}
                 >
-                  <Ionicons
-                    name={isExploited ? "checkmark-circle" : "checkmark-circle-outline"}
-                    size={22}
-                    color={isExploited ? colors.primary : colors.foreground}
-                  />
+                  <ThemedText variant="subtitle2" color="foreground">
+                    Modifier
+                  </ThemedText>
                 </Pressable>
-                <Pressable
-                  onPress={() => handleSetProgression("set_aside")}
-                  accessibilityRole="button"
-                  accessibilityLabel="Mettre de côté"
-                  style={styles.iconButton}
-                >
-                  <Ionicons
-                    name={isSetAside ? "bookmark" : "bookmark-outline"}
-                    size={22}
-                    color={isSetAside ? colors.primary : colors.foreground}
-                  />
-                </Pressable>
-                <Pressable
-                  onPress={() => void handleShare()}
-                  accessibilityRole="button"
-                  accessibilityLabel="Partager la ressource"
-                  style={styles.iconButton}
-                >
-                  <Ionicons name="share-outline" size={22} color={colors.foreground} />
-                </Pressable>
-              </View>
-            ) : null}
+              ) : null}
+            </View>
 
             <View style={styles.metaRow}>
               {resource.category ? (
@@ -277,7 +468,15 @@ export default function ResourceDetailScreen() {
             </Card>
 
             <Card title="Commentaires">
-              {comments.length === 0 ? (
+              {commentsLoading ? (
+                <View style={styles.commentsLoader}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              ) : commentsError ? (
+                <ThemedText variant="body2" color="danger">
+                  {commentsError}
+                </ThemedText>
+              ) : comments.length === 0 ? (
                 <ThemedText variant="body2" color="gray600">
                   Aucun commentaire pour cette ressource.
                 </ThemedText>
@@ -291,28 +490,37 @@ export default function ResourceDetailScreen() {
                       {comment.content}
                     </ThemedText>
                     <ThemedText variant="body2" color="gray600" style={styles.commentMeta}>
-                      {comment.user?.name ?? "Anonyme"} · {formatDate(comment.created_at)}
+                      {comment.user?.name ?? "Anonyme"} · {formatDateTime(comment.created_at)}
                     </ThemedText>
-                    <Pressable
-                      onPress={() =>
-                        setReplyToCommentId((prev) =>
-                          prev === comment.id ? null : comment.id,
-                        )
-                      }
-                      accessibilityRole="button"
-                    >
-                      <ThemedText variant="subtitle2" color="foreground">
-                        Répondre
+                    {isPendingModeration(comment) ? (
+                      <ThemedText variant="subtitle3" color="accent" style={styles.pendingMeta}>
+                        En attente de modération
                       </ThemedText>
-                    </Pressable>
+                    ) : null}
+                    {canComment ? (
+                      <Pressable
+                        onPress={() =>
+                          setReplyToCommentId((prev) =>
+                            prev === comment.id ? null : comment.id,
+                          )
+                        }
+                        disabled={busyAction}
+                        accessibilityRole="button"
+                      >
+                        <ThemedText variant="subtitle2" color="foreground">
+                          Répondre
+                        </ThemedText>
+                      </Pressable>
+                    ) : null}
 
-                    {replyToCommentId === comment.id ? (
+                    {canComment && replyToCommentId === comment.id ? (
                       <View style={styles.replyComposer}>
                         <TextInput
                           value={replyDraft}
                           onChangeText={setReplyDraft}
                           placeholder="Votre réponse"
                           placeholderTextColor={colors.gray400}
+                          editable={!busyAction}
                           multiline
                           style={[
                             styles.input,
@@ -321,6 +529,7 @@ export default function ResourceDetailScreen() {
                         />
                         <Pressable
                           onPress={handleReply}
+                          disabled={busyAction}
                           accessibilityRole="button"
                           style={[
                             styles.replyButton,
@@ -350,8 +559,17 @@ export default function ResourceDetailScreen() {
                               style={styles.commentMeta}
                             >
                               {reply.user?.name ?? "Anonyme"} ·{" "}
-                              {formatDate(reply.created_at)}
+                              {formatDateTime(reply.created_at)}
                             </ThemedText>
+                            {isPendingModeration(reply) ? (
+                              <ThemedText
+                                variant="subtitle3"
+                                color="accent"
+                                style={styles.pendingMeta}
+                              >
+                                En attente de modération
+                              </ThemedText>
+                            ) : null}
                           </View>
                         ))}
                       </View>
@@ -360,28 +578,36 @@ export default function ResourceDetailScreen() {
                 ))
               )}
 
-              <View style={styles.commentComposer}>
-                <TextInput
-                  value={commentDraft}
-                  onChangeText={setCommentDraft}
-                  placeholder="Ajouter un commentaire"
-                  placeholderTextColor={colors.gray400}
-                  multiline
-                  style={[
-                    styles.input,
-                    { borderColor: colors.gray300, color: colors.foreground },
-                  ]}
-                />
-                <Pressable
-                  onPress={handlePostComment}
-                  accessibilityRole="button"
-                  style={[styles.commentButton, { backgroundColor: colors.primary }]}
-                >
-                  <ThemedText variant="subtitle1" color="gray50">
-                    Commenter
-                  </ThemedText>
-                </Pressable>
-              </View>
+              {canComment ? (
+                <View style={styles.commentComposer}>
+                  <TextInput
+                    value={commentDraft}
+                    onChangeText={setCommentDraft}
+                    placeholder="Ajouter un commentaire"
+                    placeholderTextColor={colors.gray400}
+                    editable={!busyAction}
+                    multiline
+                    style={[
+                      styles.input,
+                      { borderColor: colors.gray300, color: colors.foreground },
+                    ]}
+                  />
+                  <Pressable
+                    onPress={handlePostComment}
+                    disabled={busyAction}
+                    accessibilityRole="button"
+                    style={[styles.commentButton, { backgroundColor: colors.primary }]}
+                  >
+                    <ThemedText variant="subtitle1" color="gray50">
+                      Commenter
+                    </ThemedText>
+                  </Pressable>
+                </View>
+              ) : (
+                <ThemedText variant="body2" color="gray600" style={styles.commentComposer}>
+                  Connectez-vous pour commenter et répondre.
+                </ThemedText>
+              )}
             </Card>
           </>
         )}
@@ -412,6 +638,11 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 20,
   },
+  editButton: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -441,6 +672,10 @@ const styles = StyleSheet.create({
     marginTop: 4,
     marginBottom: 8,
   },
+  pendingMeta: {
+    marginTop: -2,
+    marginBottom: 8,
+  },
   repliesWrap: {
     marginTop: 10,
     paddingLeft: 10,
@@ -452,6 +687,10 @@ const styles = StyleSheet.create({
   },
   commentComposer: {
     marginTop: 8,
+  },
+  commentsLoader: {
+    paddingVertical: 8,
+    alignItems: "center",
   },
   replyComposer: {
     marginTop: 8,
