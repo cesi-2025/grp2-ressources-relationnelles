@@ -57,6 +57,42 @@ export default function ModerationPage() {
  
       {/* ── Contenu ─────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 32px 64px" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          <button
+            onClick={() => setTab("resources")}
+            type="button"
+            aria-pressed={tab === "resources"}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: tab === "resources" ? "2px solid #2563eb" : "2px solid #e2e8f0",
+              background: tab === "resources" ? "#eff6ff" : "#fff",
+              color: tab === "resources" ? "#1d4ed8" : "#334155",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Ressources
+          </button>
+          <button
+            onClick={() => setTab("comments")}
+            type="button"
+            aria-pressed={tab === "comments"}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: tab === "comments" ? "2px solid #2563eb" : "2px solid #e2e8f0",
+              background: tab === "comments" ? "#eff6ff" : "#fff",
+              color: tab === "comments" ? "#1d4ed8" : "#334155",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Commentaires
+          </button>
+        </div>
  
         {/* ── TAB : Ressources ──────────────────────────────────────────────── */}
         {tab === "resources" && (
