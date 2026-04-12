@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { navbarAdminS, responsiveCss } from "@/style/admin/navAdminStyle";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const data_admin_tab = {
   "admin": "Administration",
@@ -14,10 +14,10 @@ const data_admin_tab = {
  
 export default function NavbarAdmin() {
   const {logout} = useAuth()
-  const { user, loading, isAuthenticated} = useAuth()
+  const { user, loading} = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
  
-  if(loading) return null;
+  if(!loading) return null
   return (
     <>
       <nav style={navbarAdminS.nav}>
@@ -35,7 +35,7 @@ export default function NavbarAdmin() {
  
           <div style={navbarAdminS.spacer} />
  
-          {isAuthenticated ? (
+          {user ? (
             <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <div style={{ textAlign: 'right' }}>

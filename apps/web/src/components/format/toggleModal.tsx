@@ -1,6 +1,16 @@
 'use client';
  
-import { CreateUser } from '@/lib/api';
+// ✅ Remplace import { CreateUser } from '@/lib/api' — CreateUser n'est pas exporté par api.ts original
+// Interface définie localement, identique à celle utilisée dans utilisateur.tsx
+interface CreateUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
+ 
 import s from '@/style/admin/userAdminStyle';
  
 interface ToggleModalProps {

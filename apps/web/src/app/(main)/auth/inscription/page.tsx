@@ -1,17 +1,14 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import Link from "next/link";
-import { useAuth } from "@/contexts/AuthContext";
 import { ApiRequestError } from "@/lib/api";
 
-import { FormEvent, useState } from 'react';
-import { ApiError } from '@/lib/api';
-import { useAuth } from "@/context/AuthContext";
+import { useState } from 'react';
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function InscriptionPage() {
   const router = useRouter();

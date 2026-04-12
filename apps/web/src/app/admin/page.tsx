@@ -1,13 +1,15 @@
 "use client"
  
 import { useEffect, useState, useCallback } from "react"
-import { useRequireAdmin } from "@/contexts/AuthContext"
-import { api, getCategories, getResources, Category, Resource, RelationType, ResourceType } from "@/lib/api"
+import { useAuth } from "@/contexts/AuthContext"
+import { api, getCategories, getResources, Category} from "@/lib/api"
+import { RelationType } from "@/data/admin/RelationType"
+import { ResourceType } from "@/data/admin/RessourceType"
 import s from "@/style/admin/dashboardAdminStyle";
-import Stats, { STAT_CARDS } from "@/data/admin/admonStats"
+import { STAT_CARDS } from "@/data/admin/admonStats"
  
 export default function AdminDashboardPage() {
-  const { user, loading } = useRequireAdmin();
+  const { user, loading } = useAuth();
  
   const [stats, setStats] = useState<any | null>(null);
   const [catList, setCatList] = useState<Category[]>([]);
@@ -162,8 +164,6 @@ export default function AdminDashboardPage() {
                     {key === 'creations' && 'Total des ressources créées'}
                     {key === 'resources_published' && 'Ressources validées et visibles publiquement'}
                     {key === 'resources_pending' && 'Ressources en attente de modération'}
-                    {key === 'exploitations' && "Nombre de fois qu'une ressource a été exploitée"}
-                    {key === 'favoris' && 'Total des ressources ajoutées en favori'}
                     {key === 'commentaires' && 'Total des commentaires postés'}
                   </td>
                 </tr>
@@ -181,7 +181,7 @@ export default function AdminDashboardPage() {
               </p>
               <p style={{ margin: '2px 0 0', color: '#9a7a00', fontSize: 13 }}>Des ressources nécessitent votre validation.</p>
             </div>
-            <a href="/administration/moderation" style={{ background: '#7a6200', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: "'Poppins', sans-serif" }}>
+            <a href="/admin/moderation" style={{ background: '#7a6200', color: '#fff', border: 'none', borderRadius: 6, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', textDecoration: 'none', fontFamily: "'Poppins', sans-serif" }}>
               Voir la modération →
             </a>
           </div>

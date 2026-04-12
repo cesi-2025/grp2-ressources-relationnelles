@@ -24,7 +24,7 @@ export default function ConnexionPage() {
 
     try {
       await login(email, password);
-      router.push("/ressources");
+      router.push("/dashboard");
     } catch (err) {
       if (err instanceof ApiRequestError) {
         setError(err.message);

@@ -1,7 +1,8 @@
 'use client';
  
 import { useState, useEffect } from 'react';
-import { Resource, Category, resources } from '@/lib/api';
+// ✅ Remplace resources.update() / resources.create() inexistants → api() direct
+import { api, Resource, Category } from '@/lib/api';
 import s from '@/style/admin/ressourceAdminStyle';
  
 interface RelationType { id: number; name: string; }
@@ -60,7 +61,7 @@ export default function ResourceForm({
     e.preventDefault();
     setSaving(true);
     try {
-      const data = {
+      const body = {
         title: form.title,
         content: form.content,
         category_id: Number(form.category_id),
@@ -68,16 +69,19 @@ export default function ResourceForm({
         resource_type_id: Number(form.resource_type_id),
         is_public: form.is_public,
       };
+ 
       if (isEdit && resource) {
-        await resources.update(resource.id, data);
+        // ✅ Remplace resources.update() → api() PUT /resources/{id}
+        await api<Resource>(`/resources/${resource.id}`, { method: 'PUT', body });
         onSaved('Ressource mise à jour avec succès.');
       } else {
-        await resources.create(data);
+        // ✅ Remplace resources.create() → api() POST /resources
+        await api<Resource>('/resources', { method: 'POST', body });
         onSaved('Ressource créée avec succès.');
       }
       onClose();
     } catch (err) {
-      onError(`Une erreur est survenue durant la mise a jout/création 'une ressources.s`);
+      onError(`Une erreur est survenue lors de la ${isEdit ? 'mise à jour' : 'création'} de la ressource : ${err}`);
     } finally {
       setSaving(false);
     }

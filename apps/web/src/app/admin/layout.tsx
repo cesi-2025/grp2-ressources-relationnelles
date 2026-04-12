@@ -3,7 +3,6 @@ import "../globals.css";
 import NavbarAdmin from "@/components/layout/NavbarAdmin";
 import Footer from "@/components/layout/Footer";
 import SidebarAdmin from "@/components/layout/sideBarAdmin";
-import { AdminPage } from "@/components/layout/ProtectedPage";
 
 
 
@@ -23,7 +22,7 @@ export default function AdminLayout({
         <NavbarAdmin/>
         <div style={{ display: "flex", flex: 1 }}>
           <SidebarAdmin/>
-          <main className="flex-grow"><AdminPage>{children}</AdminPage></main>
+          <main className="flex-grow">{children}</main>
         </div>
         <Footer />
       </div>

@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 // ✅ FIX — api.ts exporte ApiRequestError (pas ApiError)
 // ✅ Plus d'import de createUser inexistant — on utilise api() directement
 import { api, ApiRequestError } from '@/lib/api';
-import { useRequireSuperAdmin } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import s from '@/style/admin/userAdminStyle';
  
 // Interface locale (était dans api.ts corrigé, on la définit ici)
@@ -36,7 +36,7 @@ function getInitials(name: string): string {
 }
  
 export default function UtilisateursPage() {
-  const { user, loading } = useRequireSuperAdmin();
+  const { user, loading } = useAuth();
   const [list, setList] = useState<CreateUser[]>([]);
   const [search, setSearch] = useState('');
   const [filterRole, setFilterRole] = useState('');

@@ -43,4 +43,4 @@ class SuperAdminController extends Controller
             'user' => $user,
         ], 201);
     }
-}<
+}

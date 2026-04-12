@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react';
 // ✅ Remplace categories.list() / categories.delete() inexistants
 // → getCategories() (existe) + api() direct pour create/update/delete
 import { api, getCategories, Category } from '@/lib/api';
-import { useRequireStrictAdmin } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import CategoryForm from '@/components/format/categoryForma';
 import s from '@/style/admin/categoryAdminStyle';
  
 export default function CategoriesPage() {
-  const { user, loading } = useRequireStrictAdmin();
+  const { user, loading } = useAuth();
   const [list, setList] = useState<Category[]>([]);
   const [search, setSearch] = useState('');
   const [pageLoading, setPageLoading] = useState(true);

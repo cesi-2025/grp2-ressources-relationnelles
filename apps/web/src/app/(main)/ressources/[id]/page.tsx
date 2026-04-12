@@ -39,10 +39,6 @@ export default function ResourceDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-<<<<<<< HEAD:apps/web/src/app/ressources/[id]/page.tsx
-
-  if (!resource) {
-=======
   const [isFavorite, setIsFavorite] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
@@ -105,7 +101,6 @@ export default function ResourceDetailPage() {
   }
 
   if (error || !resource) {
->>>>>>> origin/develop:apps/web/src/app/(main)/ressources/[id]/page.tsx
     return (
       <div className="bg-gray-50 min-h-screen py-14">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -1,7 +1,7 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
-import { useRequireAdmin, useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { api, getResources, Resource } from '@/lib/api';
 import ResourceTable from '@/components/moderation/ressourceTable';
 import CommentTable from '@/components/moderation/commentTable';
@@ -20,8 +20,7 @@ interface CommentItem {
 }
  
 export default function ModerationPage() {
-  const { user, loading } = useRequireAdmin();
-  const { isModerator } = useAuth();
+  const { user, loading } = useAuth();
   const [table, setTable] = useState("resource");
   const [resources, setResources] = useState<Resource[]>([]);
   const [comments, setComments] = useState<CommentItem[]>([]);
@@ -45,7 +44,7 @@ export default function ModerationPage() {
       // Pour avoir les pending, on utilise api() directement vers /admin/resources
       // en fallback sur getResources si non admin.
       let list: Resource[] = [];
-      if (!isModerator) {
+      if (!user.role !== "moderator") {
         // Admin : appel direct /admin/resources?status=pending (route protégée)
         const res: any = await api('/admin/resources?status=pending');
         list = Array.isArray(res) ? res : res.data ?? [];
@@ -66,7 +65,7 @@ export default function ModerationPage() {
     } finally {
       setResLoad(false);
     }
-  }, [isModerator]);
+  }, [user]);
  
   const fetchComments = useCallback(async () => {
     setComLoad(true);

@@ -2,7 +2,7 @@
  
 import Link from "next/link";
 import { sidebarAdminS, tokens } from "@/style/admin/navAdminStyle";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 import HomePicture from "@/style/picture/home.png"
 import RessourcesPicture from "@/style/picture/options.png"
 import CategoriePicture from "@/style/picture/menu.png"
@@ -15,17 +15,17 @@ const SECTIONS = [
     label: "Navigation",
     role:["admin", "moderator", "super_admin"],
     links: [ 
-      { href: "/administration",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
-      { href: "/administration/ressources", role:["admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
-      { href: "/administration/categorie",      role:["admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
+      { href: "/admin",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
+      { href: "/admin/ressources", role:["admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
+      { href: "/admin/categorie",      role:["admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
     ],
   },
   {
     label: "Gestion",
     role:["moderator", "super_admin"],
     links: [
-      { href: "/administration/utilisateur", role:["super_admin"], label: "Utilisateurs", icon: UserPicture, badge: null },
-      { href: "/administration/moderation",  role:["moderator"], label: "Modération",   icon: ModerationPicture, badge: null },
+      { href: "/admin/utilisateur", role:["super_admin"], label: "Utilisateurs", icon: UserPicture, badge: null },
+      { href: "/admin/moderation",  role:["moderator"], label: "Modération",   icon: ModerationPicture, badge: null },
     ],
   },
 ];

@@ -1,6 +1,6 @@
 import s from "@/style/dashboardStyle"
 
-export default interface Stats{
+export interface Stats{
     consulted: number
     searchs: number
     exploited: number
@@ -10,6 +10,11 @@ export default interface Stats{
     pending_ressources: number
     published_ressources: number
 }
+export interface StatsMod{
+    searchs: number
+    commente: number
+    pending_ressources: number
+}
 
 export const STAT_CARDS = [
   { key: 'created',             label: 'Ressources créées',    style: s.statCard },
@@ -17,5 +22,11 @@ export const STAT_CARDS = [
   { key: 'pending_ressourecs',  label: 'En attente',           style: { ...s.statCard, ...s.statCardYellow } },
   { key: 'exploite',            label: 'Exploitations',        style: { ...s.statCard, ...s.statCardPurple } },
   { key: 'favorite',            label: 'Favoris',              style: { ...s.statCard, ...s.statCardCoral } },
+  { key: 'commente',            label: 'Commentaires',         style: { ...s.statCard, ...s.statCardGray } },
+];
+
+export const STAT_MOD_CARDS = [
+  { key: 'created',             label: 'Ressources créées',    style: s.statCard },
+  { key: 'pending_ressourecs',  label: 'En attente',           style: { ...s.statCard, ...s.statCardYellow } },
   { key: 'commente',            label: 'Commentaires',         style: { ...s.statCard, ...s.statCardGray } },
 ];

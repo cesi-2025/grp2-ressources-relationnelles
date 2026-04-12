@@ -1,7 +1,8 @@
 'use client';
  
 import { useState, useEffect } from 'react';
-import { categories, Category } from '@/lib/api';
+// ✅ Remplace categories.update() / categories.create() inexistants → api() direct
+import { api, Category } from '@/lib/api';
 import s from '@/style/admin/categoryAdminStyle';
  
 interface CategoryFormProps {
@@ -27,16 +28,26 @@ export default function CategoryForm({ category, onClose, onSaved, onError }: Ca
     setSaving(true);
     setError('');
     try {
+      let result: Category;
       if (isEdit && category) {
-        const updated = await categories.update(category.id, name.trim());
-        onSaved(updated);
+        // ✅ Remplace categories.update() → api() PUT /categories/{id}
+        result = await api<Category>(`/categories/${category.id}`, {
+          method: 'PUT',
+          body: { name: name.trim() },
+        });
       } else {
-        const created = await categories.create(name.trim());
-        onSaved(created);
+        // ✅ Remplace categories.create() → api() POST /categories
+        result = await api<Category>('/categories', {
+          method: 'POST',
+          body: { name: name.trim() },
+        });
       }
+      onSaved(result);
       onClose();
     } catch (err) {
-      const msg = isEdit ? `Erreur lors de la modification de ${category.name}: ${err}.` : 'Erreur lors de la création.';
+      const msg = isEdit
+        ? `Erreur lors de la modification de ${category?.name}: ${err}.`
+        : 'Erreur lors de la création.';
       setError(msg);
       onError(msg);
     } finally {

@@ -1,8 +1,20 @@
 'use client';
  
 import { useState } from 'react';
-import { createUser, ApiError } from '@/lib/api';
+// ✅ Remplace createUser.createPrivilegedUser() inexistant → api() direct
+// ✅ Remplace ApiError → ApiRequestError (nom exact dans api.ts)
+import { api, ApiRequestError } from '@/lib/api';
 import s from '@/style/admin/userAdminStyle';
+ 
+// Interface locale — CreateUser n'est pas exporté par api.ts original
+interface CreateUser {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+}
  
 interface CreateUserFormProps {
   onClose: () => void;
@@ -38,22 +50,27 @@ export default function CreateUserForm({ onClose, onCreated }: CreateUserFormPro
  
     setSaving(true);
     try {
-      await createUser.createPrivilegedUser({
-        name: form.name,
-        email: form.email,
-        password: form.password,
-        password_confirmation: form.password_confirmation,
-        role: form.role,
+      // ✅ Remplace createUser.createPrivilegedUser() → api() POST /super-admin/users
+      await api<CreateUser>('/super-admin/users', {
+        method: 'POST',
+        body: {
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          password_confirmation: form.password_confirmation,
+          role: form.role,
+        },
       });
       onCreated();
       onClose();
     } catch (err) {
-      if (err instanceof ApiError && err.errors) {
+      // ✅ instanceof ApiRequestError (nom correct dans api.ts)
+      if (err instanceof ApiRequestError && err.errors) {
         const flat: Record<string, string> = {};
         Object.entries(err.errors).forEach(([k, v]) => (flat[k] = v[0]));
         setErrors(flat);
       } else {
-        setGlobalError(err instanceof ApiError ? err.message : 'Une erreur est survenue.');
+        setGlobalError(err instanceof ApiRequestError ? err.message : 'Une erreur est survenue.');
       }
     } finally {
       setSaving(false);
@@ -106,7 +123,7 @@ export default function CreateUserForm({ onClose, onCreated }: CreateUserFormPro
             <select value={form.role} onChange={set('role')} style={s.select} required>
               <option value="moderator">Modérateur</option>
               <option value="admin">Administrateur</option>
-              <option value="super_admin">Super Administrator</option>
+              <option value="super_admin">Super Administrateur</option>
             </select>
             {errors.role && <p style={s.errorText}>{errors.role}</p>}
           </div>

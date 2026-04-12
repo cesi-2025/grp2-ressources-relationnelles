@@ -4,7 +4,7 @@ const ADMIN_ROLES = ['admin', 'super_admin', 'moderator'];
 const CITIZEN_ROLES = ['citoyen'];
  
 const PROTECTED_ROUTES: Record<string, string[]> = {
-  '/administration': ADMIN_ROLES,
+  '/admin': ADMIN_ROLES,
   '/moderation': ['moderator', 'admin', 'super_admin'],
   '/dashboard': CITIZEN_ROLES,
 };
@@ -44,7 +44,7 @@ export function middleware(request: NextRequest) {
   // Si role ne corresponda pas retour page correspondant
   if (!role || !allowedRoles.includes(role)) {
     const redirect = ADMIN_ROLES.includes(role ?? '')
-      ? '/administration'
+      ? '/admin'
       : '/dashboard';
     return NextResponse.redirect(new URL(redirect, request.url));
   }
@@ -53,6 +53,6 @@ export function middleware(request: NextRequest) {
 }
  
 export const config = {
-  matcher: ['/administration/:path*', '/moderation/:path*', '/dashboard/:path*'],
+  matcher: ['/admin/:path*', '/moderation/:path*', '/dashboard/:path*'],
 };
  

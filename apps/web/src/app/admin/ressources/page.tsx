@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, getResources, getCategories, Resource, Category } from '@/lib/api';
-import { useRequireAdmin } from '@/contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 import ResourceForm from '@/components/format/ressourceForma';
 import Toast, { ToastItem } from '@/components/toast/ressourceToast';
 import s from '@/style/admin/ressourceAdminStyle';
@@ -26,7 +26,7 @@ function StatusBadge({ status }: { status: Resource['status'] }) {
 }
  
 export default function AdminRessourcesPage() {
-  const { user, loading: authLoading } = useRequireAdmin();
+  const { user } = useAuth();
   const router = useRouter();
  
   const [list, setList] = useState<Resource[]>([]);
@@ -44,10 +44,10 @@ export default function AdminRessourcesPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
  
   useEffect(() => {
-    if (!authLoading && (!user || !['admin', 'super_admin', 'moderator'].includes(user.role))) {
-      router.replace('/dashboard');
+    if (!user || !['admin', 'super_admin', 'moderator'].includes(user.role)) {
+      router.replace('/auth/connection');
     }
-  }, [authLoading, user, router]);
+  }, [user, router]);
  
   const addToast = useCallback((message: string, type: 'success' | 'error') => {
     setToasts((t) => [...t, { id: Date.now(), message, type }]);
@@ -73,7 +73,7 @@ export default function AdminRessourcesPage() {
         resList = Array.isArray(res) ? res : res.data ?? [];
       } else {
         const query = params ? "?" + new URLSearchParams(params).toString() : "";
-        const res: any = await api(`/admin/resources${query}`);
+        const res: any = await api(`/resources${query}`);
         resList = Array.isArray(res) ? res : res.data ?? [];
       }
       setList(resList);
@@ -160,16 +160,10 @@ export default function AdminRessourcesPage() {
     return true;
   });
  
-  if (authLoading || !user) return null;
+  if (!user) return null;
  
   return (
     <div style={s.page}>
-      <div style={s.header}>
-        <h1 style={s.headerTitle}>Gestion des ressources</h1>
-        <button style={s.headerBack} onClick={() => router.push('/administration')}>
-          ← Retour
-        </button>
-      </div>
  
       <div style={s.content}>
         <div style={s.toolbar}>
