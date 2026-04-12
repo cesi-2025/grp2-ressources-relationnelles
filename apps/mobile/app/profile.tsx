@@ -14,8 +14,15 @@ import Animated from "react-native-reanimated";
 export default function ProfileScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
-  const { isReady, isLoggedIn, user, token, signOut, deleteAccount, refreshUser } =
-    useAuth();
+  const {
+    isReady,
+    isLoggedIn,
+    user,
+    token,
+    signOut,
+    deleteAccount,
+    refreshUser,
+  } = useAuth();
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
@@ -142,25 +149,6 @@ export default function ProfileScreen() {
             {user.email}
           </ThemedText>
 
-          {user.role ? (
-            <>
-              <ThemedText
-                variant="subtitle2"
-                color="gray600"
-                style={styles.fieldLabel}
-              >
-                Rôle
-              </ThemedText>
-              <ThemedText
-                variant="body1"
-                color="foreground"
-                style={styles.fieldValue}
-              >
-                {user.role}
-              </ThemedText>
-            </>
-          ) : null}
-
           <ThemedText
             variant="body1"
             color="foreground"
@@ -168,6 +156,17 @@ export default function ProfileScreen() {
           >
             Vous êtes connecté·e.
           </ThemedText>
+
+          <Pressable
+            onPress={() => router.push({ pathname: "/favorites" })}
+            accessibilityRole="button"
+            accessibilityLabel="Voir mes favoris"
+            style={[styles.favoritesButton, { borderColor: colors.gray300 }]}
+          >
+            <ThemedText variant="subtitle1" color="foreground">
+              Mes favoris
+            </ThemedText>
+          </Pressable>
 
           <Pressable
             onPress={handleSignOut}
@@ -219,7 +218,14 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   signOutButton: {
-    marginTop: 24,
+    marginTop: 48,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  favoritesButton: {
+    marginTop: 48,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",

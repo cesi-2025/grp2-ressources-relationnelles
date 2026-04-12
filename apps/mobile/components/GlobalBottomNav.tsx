@@ -19,17 +19,14 @@ export function GlobalBottomNav() {
     pathname === "/index" ||
     (pathname.startsWith("/resource/") && pathname !== "/resource/create");
   const isCreate = pathname === "/resource/create";
-  const isDashboard = pathname === "/dashboard";
   const isProfile = pathname === "/profile" || pathname === "/login";
 
   const iconHome = isHome ? colors.foreground : colors.gray500;
   const iconCreate = isCreate ? colors.foreground : colors.gray500;
-  const iconDash = isDashboard ? colors.foreground : colors.gray500;
   const iconProfile = isProfile ? colors.foreground : colors.gray500;
 
   const goHome = useCallback(() => router.replace({ pathname: "/" }), []);
   const goCreate = useCallback(() => router.push({ pathname: "/resource/create" }), []);
-  const goDashboard = useCallback(() => router.push({ pathname: "/dashboard" }), []);
   const goProfile = useCallback(() => {
     if (isLoggedIn) router.push({ pathname: "/profile" });
     else router.push({ pathname: "/login" });
@@ -42,12 +39,11 @@ export function GlobalBottomNav() {
           <FooterNavItem accessibilityLabel="Accueil" onPress={goHome}>
             <Ionicons name="home" size={26} color={iconHome} />
           </FooterNavItem>
-          <FooterNavItem accessibilityLabel="Créer une ressource" onPress={goCreate}>
-            <Ionicons name="add-circle-outline" size={26} color={iconCreate} />
-          </FooterNavItem>
-          <FooterNavItem accessibilityLabel="Tableau de bord" onPress={goDashboard}>
-            <Ionicons name="stats-chart-outline" size={26} color={iconDash} />
-          </FooterNavItem>
+          {isLoggedIn ? (
+            <FooterNavItem accessibilityLabel="Créer une ressource" onPress={goCreate}>
+              <Ionicons name="add-circle-outline" size={26} color={iconCreate} />
+            </FooterNavItem>
+          ) : null}
           <FooterNavItem accessibilityLabel="Mon profil" onPress={goProfile}>
             <Ionicons name="person" size={26} color={iconProfile} />
           </FooterNavItem>

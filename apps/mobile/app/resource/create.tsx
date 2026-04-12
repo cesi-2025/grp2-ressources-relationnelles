@@ -1,5 +1,6 @@
 import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
 import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
@@ -9,17 +10,18 @@ import {
   type ResourceMetaOption,
 } from "@/constants/resourceMeta";
 import { useCategory } from "@/contexts/CategoryContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
+import { canCreateResource } from "@/lib/resourcePermissions";
+import { apiCreateResource } from "@/lib/resourceApi";
 import { router } from "expo-router";
 import { useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   StyleSheet,
-  Switch,
   View,
 } from "react-native";
 import Animated from "react-native-reanimated";
@@ -29,11 +31,13 @@ function SelectRow({
   options,
   selectedId,
   onSelect,
+  disabled = false,
 }: {
   label: string;
   options: readonly ResourceMetaOption[];
   selectedId: number;
   onSelect: (id: number) => void;
+  disabled?: boolean;
 }) {
   const colors = useThemeColors();
 
@@ -49,6 +53,7 @@ function SelectRow({
             <Pressable
               key={option.id}
               onPress={() => onSelect(option.id)}
+              disabled={disabled}
               style={[
                 styles.optionChip,
                 {
@@ -71,6 +76,7 @@ function SelectRow({
 export default function CreateResourceScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const { token, isLoggedIn } = useAuth();
   const { categoryOptions } = useCategory();
 
   const validCategories = useMemo(
@@ -83,10 +89,14 @@ export default function CreateResourceScreen() {
   const [categoryId, setCategoryId] = useState<number>(1);
   const [relationTypeId, setRelationTypeId] = useState<number>(1);
   const [resourceTypeId, setResourceTypeId] = useState<number>(1);
-  const [isPublic, setIsPublic] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
+    if (!canCreateResource({ isLoggedIn, token })) {
+      router.push({ pathname: "/login" });
+      return;
+    }
     if (title.trim().length < 3) {
       setError("Le titre doit contenir au moins 3 caractères.");
       return;
@@ -96,11 +106,23 @@ export default function CreateResourceScreen() {
       return;
     }
 
-    Alert.alert(
-      "Pas encore implémenté",
-      "La publication de ressources n’est pas disponible pour le moment.",
-      [{ text: "OK", onPress: () => router.replace({ pathname: "/" }) }],
-    );
+    setSubmitting(true);
+    setError(null);
+    try {
+      await apiCreateResource(token, {
+        title: title.trim(),
+        content: content.trim(),
+        category_id: categoryId,
+        relation_type_id: relationTypeId,
+        resource_type_id: resourceTypeId,
+        is_public: false,
+      });
+      router.replace({ pathname: "/dashboard" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Publication impossible.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const scrollContentStyle = useMemo(
@@ -165,6 +187,7 @@ export default function CreateResourceScreen() {
                       setCategoryId(id);
                       setError(null);
                     }}
+                    disabled={submitting}
                     style={[
                       styles.optionChip,
                       {
@@ -188,6 +211,7 @@ export default function CreateResourceScreen() {
               label="Type de relation"
               options={RELATION_TYPE_OPTIONS}
               selectedId={relationTypeId}
+              disabled={submitting}
               onSelect={(id) => {
                 setRelationTypeId(id);
                 setError(null);
@@ -198,23 +222,16 @@ export default function CreateResourceScreen() {
               label="Type de ressource"
               options={RESOURCE_TYPE_OPTIONS}
               selectedId={resourceTypeId}
+              disabled={submitting}
               onSelect={(id) => {
                 setResourceTypeId(id);
                 setError(null);
               }}
             />
 
-            <View style={styles.switchRow}>
-              <ThemedText variant="body1" color="foreground">
-                Rendre la ressource publique
-              </ThemedText>
-              <Switch
-                value={isPublic}
-                onValueChange={setIsPublic}
-                trackColor={{ false: colors.gray300, true: colors.primary }}
-                thumbColor={colors.gray50}
-              />
-            </View>
+            <ThemedText variant="body2" color="gray600" style={styles.visibilityHint}>
+              La ressource est créée en privé puis validée par la modération.
+            </ThemedText>
 
             {error ? (
               <ThemedText variant="body2" color="danger" style={styles.errorText}>
@@ -224,6 +241,7 @@ export default function CreateResourceScreen() {
 
             <Pressable
               onPress={handleSubmit}
+              disabled={submitting}
               accessibilityRole="button"
               accessibilityLabel="Publier la ressource"
               style={[styles.submitButton, { backgroundColor: colors.primary }]}
@@ -235,6 +253,11 @@ export default function CreateResourceScreen() {
           </Card>
         </Animated.ScrollView>
       </KeyboardAvoidingView>
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        message="Publication..."
+        accessibilityLabel="Publication de la ressource"
+      />
     </RootView>
   );
 }
@@ -268,11 +291,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  switchRow: {
+  visibilityHint: {
     marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   errorText: {
     marginTop: 12,

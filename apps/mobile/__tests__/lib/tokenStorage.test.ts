@@ -1,22 +1,20 @@
-import * as SecureStore from "expo-secure-store";
-import { Platform } from "react-native";
+import { setPlatformOverrideForTests } from "@/lib/platformRuntime";
 import {
   clearStoredToken,
   getStoredToken,
   setStoredToken,
 } from "@/lib/tokenStorage";
+import * as SecureStore from "expo-secure-store";
 
 describe("tokenStorage", () => {
-  const originalOs = Platform.OS;
-
   afterEach(() => {
-    Object.defineProperty(Platform, "OS", { value: originalOs, configurable: true });
+    setPlatformOverrideForTests(null);
     jest.clearAllMocks();
   });
 
   describe("hors web (SecureStore)", () => {
     beforeEach(() => {
-      Object.defineProperty(Platform, "OS", { value: "ios", configurable: true });
+      setPlatformOverrideForTests("ios");
     });
 
     it("lit le token via SecureStore", async () => {
@@ -38,13 +36,15 @@ describe("tokenStorage", () => {
     it("efface le token", async () => {
       await clearStoredToken();
 
-      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith("rr_sanctum_token");
+      expect(SecureStore.deleteItemAsync).toHaveBeenCalledWith(
+        "rr_sanctum_token",
+      );
     });
   });
 
   describe("web (localStorage)", () => {
     beforeEach(() => {
-      Object.defineProperty(Platform, "OS", { value: "web", configurable: true });
+      setPlatformOverrideForTests("web");
     });
 
     it("utilise localStorage quand disponible", async () => {

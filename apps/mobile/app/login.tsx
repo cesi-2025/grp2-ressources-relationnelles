@@ -19,7 +19,7 @@ import {
 } from "react-native";
 import Animated from "react-native-reanimated";
 
-const NOT_FOUND_DEMO_PATH = "/404-demo" as Href;
+const FORGOT_PASSWORD_PATH = "/404-demo" as Href;
 const HOME_PATH = "/" as Href;
 
 const REDIRECT_MS = 120;
@@ -202,7 +202,7 @@ export default function LoginScreen() {
 
             {!isRegister ? (
               <Pressable
-                onPress={() => router.push(NOT_FOUND_DEMO_PATH)}
+                onPress={() => router.push(FORGOT_PASSWORD_PATH)}
                 accessibilityRole="link"
                 accessibilityLabel="Mot de passe oublié"
                 style={styles.forgotPasswordRow}
