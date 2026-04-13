@@ -1,7 +1,6 @@
 import type { ApiResource } from "@/lib/resourceApi";
 
 type HomeSection = { title: string; data: ApiResource[] };
-
 export function isPublishedHomeResource(resource: ApiResource): boolean {
   return (resource.status ?? "").toLowerCase() === "published";
 }

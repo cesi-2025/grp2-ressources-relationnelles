@@ -18,7 +18,6 @@ const fetchDefaults: Pick<RequestInit, "credentials"> = {
   credentials: "omit",
 };
 
-// Shared JSON headers for auth requests.
 const jsonHeaders: HeadersInit = {
   Accept: "application/json",
   "Content-Type": "application/json",
@@ -87,7 +86,7 @@ export async function apiLogin(
 ): Promise<LoginResponse> {
   let res: Response;
   try {
-    res = await fetch(apiUrl("/api/login"), {
+    res = await fetch(apiUrl("/login"), {
       ...fetchDefaults,
       method: "POST",
       headers: jsonHeaders,
@@ -98,7 +97,7 @@ export async function apiLogin(
     });
   } catch {
     throw new Error(
-      "Impossible de joindre le serveur. Vérifie EXPO_PUBLIC_API_URL et le réseau.",
+      "Impossible de joindre le serveur. Vérifie la configuration API et le réseau.",
     );
   }
 
@@ -110,7 +109,7 @@ export async function apiLogin(
 }
 
 export async function apiLogout(token: string): Promise<void> {
-  await fetch(apiUrl("/api/logout"), {
+  await fetch(apiUrl("/logout"), {
     ...fetchDefaults,
     method: "POST",
     headers: bearerHeaders(token),
@@ -118,7 +117,7 @@ export async function apiLogout(token: string): Promise<void> {
 }
 
 export async function apiDeleteAccount(token: string): Promise<void> {
-  const res = await fetch(apiUrl("/api/user"), {
+  const res = await fetch(apiUrl("/user"), {
     ...fetchDefaults,
     method: "DELETE",
     headers: bearerHeaders(token),
@@ -135,7 +134,7 @@ export async function apiRegister(
 ): Promise<LoginResponse> {
   let res: Response;
   try {
-    res = await fetch(apiUrl("/api/register"), {
+    res = await fetch(apiUrl("/register"), {
       ...fetchDefaults,
       method: "POST",
       headers: jsonHeaders,
@@ -159,7 +158,7 @@ export async function apiRegister(
 }
 
 export async function apiMe(token: string): Promise<ApiUser> {
-  const res = await fetch(apiUrl("/api/user"), {
+  const res = await fetch(apiUrl("/user"), {
     ...fetchDefaults,
     headers: bearerHeaders(token),
   });

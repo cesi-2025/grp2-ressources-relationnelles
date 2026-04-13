@@ -1,6 +1,5 @@
 import { apiRegister } from "@/lib/authApi";
 import { isPublishedHomeResource } from "@/lib/homeResourceUtils";
-import { setPlatformOverrideForTests } from "@/lib/platformRuntime";
 import type { ApiResource } from "@/lib/resourceApi";
 import { apiListResourcesAllPages } from "@/lib/resourceApi";
 
@@ -22,7 +21,6 @@ function errJson(status: number, body: unknown) {
 
 function installApiTestHooks() {
   beforeAll(() => {
-    setPlatformOverrideForTests("ios");
     process.env.EXPO_PUBLIC_API_URL = "http://127.0.0.1:8000";
   });
   beforeEach(() => {

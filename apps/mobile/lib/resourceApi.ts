@@ -2,6 +2,10 @@ import { apiUrl } from "@/lib/api";
 
 // Message d'erreur API.
 type ApiMessage = { message?: string; errors?: Record<string, string[]> };
+const API_CRYPTO_HINTS: Record<string, string> = {
+  "The MAC is invalid.":
+    "Donnees chiffrees invalides cote API (APP_KEY changee). Redemarre l'API avec une APP_KEY stable ou regenere les donnees.",
+};
 
 // Catégorie API.
 export type ApiCategory = {
@@ -57,7 +61,6 @@ export type ApiComment = {
 // Pagination API.
 type Paginated<T> = { data: T[] };
 
-// Réponse paginée Laravel pour GET /api/resources.
 type LaravelResourcePage = Paginated<ApiResource> & {
   last_page?: number;
   current_page?: number;
@@ -73,6 +76,7 @@ const jsonHeaders: HeadersInit = {
 const fetchDefaults: Pick<RequestInit, "credentials"> = {
   credentials: "omit",
 };
+const FETCH_TIMEOUT_MS = 12000;
 
 // Headers d'authentification.
 function authHeaders(token: string): HeadersInit {
@@ -97,7 +101,7 @@ function errorMessage(data: ApiMessage | null, fallback: string): string {
     }
   }
   if (data?.message) {
-    return data.message;
+    return API_CRYPTO_HINTS[data.message] ?? data.message;
   }
   return fallback;
 }
@@ -109,10 +113,21 @@ async function safeFetch<T>(
   fallbackError: string,
 ): Promise<T> {
   let res: Response;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {
-    res = await fetch(input, { ...fetchDefaults, ...init });
-  } catch {
+    res = await fetch(input, {
+      ...fetchDefaults,
+      ...init,
+      signal: controller.signal,
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Le serveur met trop de temps a repondre.");
+    }
     throw new Error("Impossible de joindre le serveur.");
+  } finally {
+    clearTimeout(timeoutId);
   }
 
   const data = await parseJsonResponse<T | ApiMessage>(res);
@@ -130,7 +145,6 @@ async function fetchResourcesPage(params: {
   relationTypeId?: string;
   sortBy?: "date" | "title";
   page: number;
-  /** Absent = RESOURCE_LIST_PER_PAGE pour les listes ; 15 pour rester aligné sur les tests API par défaut. */
   perPage?: number;
 }): Promise<{ items: ApiResource[]; lastPage: number }> {
   const query = new URLSearchParams();
@@ -145,16 +159,11 @@ async function fetchResourcesPage(params: {
   }
   query.set(
     "per_page",
-    String(
-      Math.min(
-        60,
-        Math.max(1, params.perPage ?? RESOURCE_LIST_PER_PAGE),
-      ),
-    ),
+    String(Math.min(60, Math.max(1, params.perPage ?? RESOURCE_LIST_PER_PAGE))),
   );
   query.set("page", String(Math.max(1, params.page)));
   const data = await safeFetch<LaravelResourcePage>(
-    apiUrl(`/api/resources?${query.toString()}`),
+    apiUrl(`/resources?${query.toString()}`),
     { method: "GET" },
     "Chargement des ressources impossible.",
   );
@@ -173,7 +182,7 @@ export async function apiListResourcesAllPages(
   },
   options?: { maxPages?: number },
 ): Promise<ApiResource[]> {
-  const maxPages = options?.maxPages ?? 100;
+  const maxPages = options?.maxPages ?? 10;
   if (maxPages < 1) {
     return [];
   }
@@ -204,7 +213,7 @@ export async function apiListResourcesAllPages(
 
 export function apiGetResource(id: number): Promise<ApiResource> {
   return safeFetch<ApiResource>(
-    apiUrl(`/api/resources/${id}`),
+    apiUrl(`/resources/${id}`),
     { method: "GET" },
     "Ressource introuvable.",
   );
@@ -222,7 +231,7 @@ export function apiCreateResource(
   },
 ): Promise<ApiResource> {
   return safeFetch<ApiResource>(
-    apiUrl("/api/resources"),
+    apiUrl("/resources"),
     {
       method: "POST",
       headers: authHeaders(token),
@@ -245,7 +254,7 @@ export function apiUpdateResource(
   },
 ): Promise<ApiResource> {
   return safeFetch<ApiResource>(
-    apiUrl(`/api/resources/${resourceId}`),
+    apiUrl(`/resources/${resourceId}`),
     {
       method: "PUT",
       headers: authHeaders(token),
@@ -257,7 +266,7 @@ export function apiUpdateResource(
 
 export function apiListCategories(): Promise<ApiCategory[]> {
   return safeFetch<ApiCategory[]>(
-    apiUrl("/api/categories"),
+    apiUrl("/categories"),
     { method: "GET" },
     "Chargement des categories impossible.",
   );
@@ -279,11 +288,10 @@ function sortedMetaFromMap(map: Map<number, string>): ApiResourceMeta[] {
     .sort((a, b) => a.name.localeCompare(b.name, "fr"));
 }
 
-/** Pages max pour la découverte des types (évite de parcourir tout le catalogue au démarrage). */
+/** Pages max pour la découverte des types  */
 const DISCOVER_META_MAX_PAGES = 5;
 const DISCOVER_META_PER_PAGE = 60;
 
-/** Types de relation et de ressource déduits des ressources publiées (échantillon paginé + fallback UI). */
 export async function apiDiscoverResourceMetaFromResources(): Promise<{
   relationTypes: ApiResourceMeta[];
   resourceTypes: ApiResourceMeta[];
@@ -334,7 +342,7 @@ export async function apiDiscoverResourceMetaFromResources(): Promise<{
 
 export function apiListComments(resourceId: number): Promise<ApiComment[]> {
   return safeFetch<ApiComment[]>(
-    apiUrl(`/api/resources/${resourceId}/comments`),
+    apiUrl(`/resources/${resourceId}/comments`),
     { method: "GET" },
     "Chargement des commentaires impossible.",
   );
@@ -346,7 +354,7 @@ export function apiCreateComment(
   content: string,
 ): Promise<ApiComment> {
   return safeFetch<ApiComment>(
-    apiUrl(`/api/resources/${resourceId}/comments`),
+    apiUrl(`/resources/${resourceId}/comments`),
     {
       method: "POST",
       headers: authHeaders(token),
@@ -362,7 +370,7 @@ export function apiReplyComment(
   content: string,
 ): Promise<ApiComment> {
   return safeFetch<ApiComment>(
-    apiUrl(`/api/comments/${commentId}/reply`),
+    apiUrl(`/comments/${commentId}/reply`),
     {
       method: "POST",
       headers: authHeaders(token),
@@ -378,7 +386,7 @@ export async function apiSetFavorite(
   favorite: boolean,
 ): Promise<void> {
   await safeFetch<{ message: string }>(
-    apiUrl(`/api/resources/${resourceId}/favorite`),
+    apiUrl(`/resources/${resourceId}/favorite`),
     {
       method: favorite ? "POST" : "DELETE",
       headers: authHeaders(token),
@@ -394,7 +402,7 @@ export async function apiSetProgression(
 ): Promise<void> {
   const endpoint = status === "exploited" ? "exploit" : "set-aside";
   await safeFetch<{ message: string }>(
-    apiUrl(`/api/resources/${resourceId}/${endpoint}`),
+    apiUrl(`/resources/${resourceId}/${endpoint}`),
     {
       method: "POST",
       headers: authHeaders(token),
@@ -420,13 +428,15 @@ function coerceProgressionRows(value: unknown): ApiProgressionRow[] {
   return [];
 }
 
-export async function apiGetProgression(token: string): Promise<ApiProgression> {
+export async function apiGetProgression(
+  token: string,
+): Promise<ApiProgression> {
   const data = await safeFetch<{
     favorites?: unknown;
     exploited?: unknown;
     set_aside?: unknown;
   }>(
-    apiUrl("/api/progression"),
+    apiUrl("/progression"),
     {
       method: "GET",
       headers: authHeaders(token),

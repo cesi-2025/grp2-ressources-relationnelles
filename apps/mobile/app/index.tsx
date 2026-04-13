@@ -12,10 +12,7 @@ import {
   isPublishedHomeResource,
   previewText,
 } from "@/lib/homeResourceUtils";
-import {
-  apiListResourcesAllPages,
-  type ApiResource,
-} from "@/lib/resourceApi";
+import { apiListResourcesAllPages, type ApiResource } from "@/lib/resourceApi";
 import { router } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
