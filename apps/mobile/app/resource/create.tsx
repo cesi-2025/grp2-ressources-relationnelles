@@ -4,11 +4,7 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import {
-  RELATION_TYPE_OPTIONS,
-  RESOURCE_TYPE_OPTIONS,
-  type ResourceMetaOption,
-} from "@/constants/resourceMeta";
+import { type ResourceMetaOption } from "@/constants/resourceMeta";
 import { useCategory } from "@/contexts/CategoryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
@@ -16,7 +12,7 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 import { canCreateResource } from "@/lib/resourcePermissions";
 import { apiCreateResource } from "@/lib/resourceApi";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -77,7 +73,11 @@ export default function CreateResourceScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const { token, isLoggedIn } = useAuth();
-  const { categoryOptions } = useCategory();
+  const {
+    categoryOptions,
+    relationTypePickOptions,
+    resourceTypePickOptions,
+  } = useCategory();
 
   const validCategories = useMemo(
     () => categoryOptions.filter((category) => category.id !== "all"),
@@ -89,11 +89,39 @@ export default function CreateResourceScreen() {
   const [categoryId, setCategoryId] = useState<number>(1);
   const [relationTypeId, setRelationTypeId] = useState<number>(1);
   const [resourceTypeId, setResourceTypeId] = useState<number>(1);
+
+  useEffect(() => {
+    if (
+      validCategories.length > 0 &&
+      !validCategories.some((c) => Number(c.id) === categoryId)
+    ) {
+      setCategoryId(Number(validCategories[0].id));
+    }
+  }, [validCategories, categoryId]);
+
+  useEffect(() => {
+    if (
+      relationTypePickOptions.length > 0 &&
+      !relationTypePickOptions.some((o) => o.id === relationTypeId)
+    ) {
+      setRelationTypeId(relationTypePickOptions[0].id);
+    }
+  }, [relationTypePickOptions, relationTypeId]);
+
+  useEffect(() => {
+    if (
+      resourceTypePickOptions.length > 0 &&
+      !resourceTypePickOptions.some((o) => o.id === resourceTypeId)
+    ) {
+      setResourceTypeId(resourceTypePickOptions[0].id);
+    }
+  }, [resourceTypePickOptions, resourceTypeId]);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!canCreateResource({ isLoggedIn, token })) {
+    const auth = { isLoggedIn, token };
+    if (!canCreateResource(auth)) {
       router.push({ pathname: "/login" });
       return;
     }
@@ -109,7 +137,7 @@ export default function CreateResourceScreen() {
     setSubmitting(true);
     setError(null);
     try {
-      await apiCreateResource(token, {
+      await apiCreateResource(auth.token, {
         title: title.trim(),
         content: content.trim(),
         category_id: categoryId,
@@ -209,7 +237,7 @@ export default function CreateResourceScreen() {
 
             <SelectRow
               label="Type de relation"
-              options={RELATION_TYPE_OPTIONS}
+              options={relationTypePickOptions}
               selectedId={relationTypeId}
               disabled={submitting}
               onSelect={(id) => {
@@ -220,7 +248,7 @@ export default function CreateResourceScreen() {
 
             <SelectRow
               label="Type de ressource"
-              options={RESOURCE_TYPE_OPTIONS}
+              options={resourceTypePickOptions}
               selectedId={resourceTypeId}
               disabled={submitting}
               onSelect={(id) => {

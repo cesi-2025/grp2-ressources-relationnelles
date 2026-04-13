@@ -2,6 +2,7 @@ import { Colors } from "@/constants/colors";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import { StyleSheet, Text, TextProps } from "react-native";
 
+// Styles pour les différents variantes de texte.
 const styles = StyleSheet.create({
   headline: {
     fontSize: 24,
@@ -42,6 +43,7 @@ type Props = TextProps & {
   color?: keyof (typeof Colors)["light"];
 };
 
+// Composant de texte pour simplifier la gestion des couleurs et des font-sizes.
 export function ThemedText({ variant, color, style, ...rest }: Props) {
   const colors = useThemeColors();
   return (

@@ -37,9 +37,13 @@ function parseApiErrorBody(data: unknown, status: number): string {
   const d = data as Record<string, unknown>;
   if ("errors" in d && typeof d.errors === "object" && d.errors !== null) {
     const first = Object.values(d.errors as Record<string, string[]>).flat()[0];
-    if (first) return first;
+    if (first) {
+      return first;
+    }
   }
-  if (typeof d.message === "string") return d.message;
+  if (typeof d.message === "string") {
+    return d.message;
+  }
   return `Erreur ${status}`;
 }
 
@@ -82,7 +86,7 @@ export async function apiLogin(
 ): Promise<LoginResponse> {
   let res: Response;
   try {
-    res = await fetch(apiUrl("/api/login"), {
+    res = await fetch(apiUrl("/login"), {
       ...fetchDefaults,
       method: "POST",
       headers: jsonHeaders,
@@ -93,7 +97,7 @@ export async function apiLogin(
     });
   } catch {
     throw new Error(
-      "Impossible de joindre le serveur. Vérifie EXPO_PUBLIC_API_URL et le réseau.",
+      "Impossible de joindre le serveur. Vérifie la configuration API et le réseau.",
     );
   }
 
@@ -105,7 +109,7 @@ export async function apiLogin(
 }
 
 export async function apiLogout(token: string): Promise<void> {
-  await fetch(apiUrl("/api/logout"), {
+  await fetch(apiUrl("/logout"), {
     ...fetchDefaults,
     method: "POST",
     headers: bearerHeaders(token),
@@ -113,7 +117,7 @@ export async function apiLogout(token: string): Promise<void> {
 }
 
 export async function apiDeleteAccount(token: string): Promise<void> {
-  const res = await fetch(apiUrl("/api/user"), {
+  const res = await fetch(apiUrl("/user"), {
     ...fetchDefaults,
     method: "DELETE",
     headers: bearerHeaders(token),
@@ -130,7 +134,7 @@ export async function apiRegister(
 ): Promise<LoginResponse> {
   let res: Response;
   try {
-    res = await fetch(apiUrl("/api/register"), {
+    res = await fetch(apiUrl("/register"), {
       ...fetchDefaults,
       method: "POST",
       headers: jsonHeaders,
@@ -154,10 +158,12 @@ export async function apiRegister(
 }
 
 export async function apiMe(token: string): Promise<ApiUser> {
-  const res = await fetch(apiUrl("/api/user"), {
+  const res = await fetch(apiUrl("/user"), {
     ...fetchDefaults,
     headers: bearerHeaders(token),
   });
-  if (!res.ok) throw new Error("Session invalide");
+  if (!res.ok) {
+    throw new Error("Session invalide");
+  }
   return res.json() as Promise<ApiUser>;
 }

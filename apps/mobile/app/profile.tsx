@@ -38,7 +38,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     if (isReady && !isLoggedIn) {
-      router.replace({ pathname: "/login" });
+      router.replace({ pathname: "/" });
     }
   }, [isReady, isLoggedIn]);
 
@@ -149,14 +149,6 @@ export default function ProfileScreen() {
             {user.email}
           </ThemedText>
 
-          <ThemedText
-            variant="body1"
-            color="foreground"
-            style={styles.connectedText}
-          >
-            Vous êtes connecté·e.
-          </ThemedText>
-
           <Pressable
             onPress={() => router.push({ pathname: "/favorites" })}
             accessibilityRole="button"
@@ -226,6 +218,13 @@ const styles = StyleSheet.create({
   },
   favoritesButton: {
     marginTop: 48,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  dashboardButton: {
+    marginTop: 12,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",

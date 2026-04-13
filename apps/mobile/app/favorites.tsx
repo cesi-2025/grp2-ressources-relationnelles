@@ -57,21 +57,27 @@ export default function FavoritesScreen() {
     }, [loadFavorites]),
   );
 
-  const resources = useMemo(
-    () => favorites.map(toResource).filter((r): r is { id: number; title: string } => r !== null),
-    [favorites],
-  );
+  const resources = useMemo(() => {
+    return favorites
+      .map(toResource)
+      .filter((r): r is { id: number; title: string } => r !== null);
+  }, [favorites]);
 
   const handleRemoveFavorite = useCallback(
     async (resourceId: number) => {
-      if (!token) return;
+      if (!token) {
+        return;
+      }
+
       setRemovingId(resourceId);
       const previous = favorites;
-      setFavorites((rows) =>
-        rows.filter(
-          (row) => row.resource?.id !== resourceId && row.resource_id !== resourceId,
-        ),
-      );
+      setFavorites((rows) => {
+        return rows.filter((row) => {
+          const idFromResource = row.resource?.id;
+          const idFromRow = row.resource_id;
+          return idFromResource !== resourceId && idFromRow !== resourceId;
+        });
+      });
       try {
         await apiSetFavorite(token, resourceId, false);
       } catch (e) {

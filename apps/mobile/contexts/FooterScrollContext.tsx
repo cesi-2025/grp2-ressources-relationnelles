@@ -1,21 +1,15 @@
-import type { ReactNode } from "react";
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
 import { usePathname } from "expo-router";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import type { ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef } from "react";
 import type { ViewStyle } from "react-native";
-import Animated, {
+import {
   type AnimatedStyle,
   useAnimatedScrollHandler,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from "react-native-reanimated";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const FOOTER_ROW = 52;
 const FOOTER_PADDING_TOP = 8;
@@ -30,7 +24,9 @@ type FooterScrollContextValue = {
   footerAnimatedStyle: AnimatedStyle<ViewStyle>;
 };
 
-const FooterScrollContext = createContext<FooterScrollContextValue | null>(null);
+const FooterScrollContext = createContext<FooterScrollContextValue | null>(
+  null,
+);
 
 export function FooterScrollProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
@@ -41,6 +37,7 @@ export function FooterScrollProvider({ children }: { children: ReactNode }) {
   const lastY = useSharedValue(0);
   const hideDistance = useSharedValue(computeFooterHeight(insets.bottom));
 
+  // Gestion de la hauteur du footer.
   useEffect(() => {
     hideDistance.value = computeFooterHeight(insets.bottom);
   }, [insets.bottom, hideDistance]);
@@ -50,13 +47,17 @@ export function FooterScrollProvider({ children }: { children: ReactNode }) {
     [insets.bottom],
   );
 
+  // Gestion du changement de route.
   useEffect(() => {
-    if (pathnameRef.current === pathname) return;
+    if (pathnameRef.current === pathname) {
+      return;
+    }
     pathnameRef.current = pathname;
     footerTranslate.value = 0;
     lastY.value = 0;
   }, [pathname, footerTranslate, lastY]);
 
+  // Gestion du scroll.
   const scrollHandler = useAnimatedScrollHandler({
     onScroll: (e) => {
       const y = e.contentOffset.y;
@@ -76,12 +77,18 @@ export function FooterScrollProvider({ children }: { children: ReactNode }) {
       }
 
       if (y + layoutH >= contentH - 32) {
-        footerTranslate.value = withTiming(hideDistance.value, { duration: 220 });
+        footerTranslate.value = withTiming(hideDistance.value, {
+          duration: 220,
+        });
         return;
       }
 
+      // Scroll down  -> masquer le footer.
       if (delta > 12) {
-        footerTranslate.value = withTiming(hideDistance.value, { duration: 220 });
+        footerTranslate.value = withTiming(hideDistance.value, {
+          duration: 220,
+        });
+        // Scroll up -> afficher le footer.
       } else if (delta < -12) {
         footerTranslate.value = withTiming(0, { duration: 220 });
       }
@@ -111,7 +118,9 @@ export function FooterScrollProvider({ children }: { children: ReactNode }) {
 export function useFooterScroll() {
   const ctx = useContext(FooterScrollContext);
   if (!ctx) {
-    throw new Error("useFooterScroll doit être utilisé dans un FooterScrollProvider");
+    throw new Error(
+      "useFooterScroll doit être utilisé dans un FooterScrollProvider",
+    );
   }
   return ctx;
 }

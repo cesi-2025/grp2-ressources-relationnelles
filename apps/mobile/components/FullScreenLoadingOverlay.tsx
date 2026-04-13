@@ -9,11 +9,10 @@ import {
   type ViewProps,
 } from "react-native";
 
-export type FullScreenLoadingOverlayProps = ViewProps & {
+type Props = ViewProps & {
   visible: boolean;
   message: string;
   accessibilityLabel?: string;
-  /** Bloque le retour matériel Android tant que l’overlay est affiché. */
   blockHardwareBack?: boolean;
 };
 
@@ -24,7 +23,7 @@ export function FullScreenLoadingOverlay({
   blockHardwareBack = true,
   style,
   ...rest
-}: FullScreenLoadingOverlayProps) {
+}: Props) {
   const colors = useThemeColors();
 
   useEffect(() => {
