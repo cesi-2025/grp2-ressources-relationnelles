@@ -1,7 +1,10 @@
+"use client"
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 
+
 export default function PresentationPage() {
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero */}

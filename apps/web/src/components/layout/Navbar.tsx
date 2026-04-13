@@ -56,8 +56,8 @@ export default function Navbar() {
             {loading ? null : user ? (
               <>
                 <span className="text-sm text-gray-700 font-medium">{user.name}</span>
-                {(user.role === "admin" || user.role === "super_admin") && (
-                  <Link href="/administration">
+                {(user.role === "admin" || user.role === "super_admin" || user.role === 'moderator') && (
+                  <Link href="/admin">
                     <Button variant="outline" size="sm">
                       Administration
                     </Button>
@@ -136,7 +136,7 @@ export default function Navbar() {
                   <>
                     <span className="text-sm text-gray-700 font-medium px-2">{user.name}</span>
                     {(user.role === "admin" || user.role === "super_admin") && (
-                      <Link href="/administration" onClick={() => setIsMenuOpen(false)}>
+                      <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="md" className="w-full">
                           Administration
                         </Button>

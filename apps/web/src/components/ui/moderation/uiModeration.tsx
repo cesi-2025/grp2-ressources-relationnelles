@@ -1,7 +1,6 @@
 "use client";
  
-// ─── Badge ────────────────────────────────────────────────────────────────────
- 
+// Stule lier au badge du code
 type BadgeColor = "indigo" | "amber" | "red" | "green" | "slate";
  
 const BADGE_COLORS: Record<BadgeColor, { bg: string; text: string; border: string }> = {
@@ -26,8 +25,7 @@ export function Badge({ label, color }: { label: string; color: BadgeColor }) {
   );
 }
  
-// ─── IconBtn ──────────────────────────────────────────────────────────────────
- 
+// Style du bouton 
 type IconBtnVariant = "primary" | "danger" | "ghost";
  
 const ICON_BTN_STYLES: Record<IconBtnVariant, React.CSSProperties> = {

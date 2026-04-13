@@ -14,12 +14,12 @@ type Tab = "resources" | "comments";
 export default function ModerationPage() {
   const [tab, setTab] = useState<Tab>("resources");
  
-  // ── Ressources ──────────────────────────────────────────────────────────────
+  // Variable pour la gestion des ressource
   const [pending, setPending] = useState<ResourceItem[]>(PENDING_RESOURCES);
   const [rejected, setRejected] = useState<number[]>([]);
   const [resourceConfirm, setResourceConfirm] = useState<{ id: number; action: "approve" | "reject" } | null>(null);
  
-  // ── Commentaires ────────────────────────────────────────────────────────────
+  //  Variable pour la gestion des commantaires
   const [comments, setComments]       = useState<Comment[]>(INITIAL_COMMENTS);
   const [filterFlagged, setFilterFlagged] = useState(false);
   const [editComment, setEditComment]     = useState<Comment | null>(null);
@@ -28,7 +28,7 @@ export default function ModerationPage() {
   const flaggedCount    = comments.filter((c) => c.flagged).length;
   const visibleComments = filterFlagged ? comments.filter((c) => c.flagged) : comments;
  
-  // ── Handlers ressources ─────────────────────────────────────────────────────
+  // Gestion des Commentaires
   function approveResource(id: number) {
     setPending((prev) => prev.filter((r) => r.id !== id));
     setResourceConfirm(null);
@@ -40,7 +40,7 @@ export default function ModerationPage() {
     setResourceConfirm(null);
   }
  
-  // ── Handlers commentaires ───────────────────────────────────────────────────
+  // Prise en chage de la sauvegarde et suppression de commentaire
   function saveComment(id: number, content: string) {
     setComments((prev) => prev.map((c) => (c.id === id ? { ...c, content } : c)));
     setEditComment(null);
@@ -52,11 +52,47 @@ export default function ModerationPage() {
   }
  
   return (
-    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "'DM Sans', 'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "#f1f5f9", fontFamily: "var(--font-sans)" }}>
  
  
       {/* ── Contenu ─────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1100, margin: "0 auto", padding: "32px 32px 64px" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
+          <button
+            onClick={() => setTab("resources")}
+            type="button"
+            aria-pressed={tab === "resources"}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: tab === "resources" ? "2px solid #2563eb" : "2px solid #e2e8f0",
+              background: tab === "resources" ? "#eff6ff" : "#fff",
+              color: tab === "resources" ? "#1d4ed8" : "#334155",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Ressources
+          </button>
+          <button
+            onClick={() => setTab("comments")}
+            type="button"
+            aria-pressed={tab === "comments"}
+            style={{
+              padding: "8px 14px",
+              borderRadius: 10,
+              border: tab === "comments" ? "2px solid #2563eb" : "2px solid #e2e8f0",
+              background: tab === "comments" ? "#eff6ff" : "#fff",
+              color: tab === "comments" ? "#1d4ed8" : "#334155",
+              fontSize: 13,
+              fontWeight: 700,
+              cursor: "pointer",
+            }}
+          >
+            Commentaires
+          </button>
+        </div>
  
         {/* ── TAB : Ressources ──────────────────────────────────────────────── */}
         {tab === "resources" && (
