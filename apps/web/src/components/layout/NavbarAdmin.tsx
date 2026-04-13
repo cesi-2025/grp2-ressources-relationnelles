@@ -16,11 +16,12 @@ export default function NavbarAdmin() {
   const {logout} = useAuth()
   const { user, loading} = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const mobileMenuId = "admin-mobile-menu";
  
   if(!loading) return null
   return (
     <>
-      <nav style={navbarAdminS.nav}>
+      <nav style={navbarAdminS.nav} aria-label="Navigation administration">
         <div style={navbarAdminS.inner}>
  
           <Link href="/admin" style={navbarAdminS.logoWrap}>
@@ -82,6 +83,9 @@ export default function NavbarAdmin() {
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menu"
+            aria-expanded={isMenuOpen}
+            aria-controls={mobileMenuId}
+            type="button"
             style={navbarAdminS.burger(isMenuOpen)}
             className="navbar-admin-burger"
           >
@@ -96,7 +100,7 @@ export default function NavbarAdmin() {
         </div>
  
         {isMenuOpen && (
-          <div style={navbarAdminS.mobileMenu}>
+          <div id={mobileMenuId} style={navbarAdminS.mobileMenu}>
             <div style={navbarAdminS.mobileAuthRow}>
               <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
                 Connexion

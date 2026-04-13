@@ -1,43 +1,118 @@
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import { MOCK_USER } from "@/data/mockUser";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { useFocusEffect } from "@react-navigation/native";
 import { router } from "expo-router";
-import { Alert, Pressable, ScrollView, StyleSheet, View } from "react-native";
+import { useCallback, useEffect, useMemo } from "react";
+import { Alert, Pressable, StyleSheet } from "react-native";
+import Animated from "react-native-reanimated";
 
 export default function ProfileScreen() {
   const colors = useThemeColors();
-  const user = MOCK_USER;
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const {
+    isReady,
+    isLoggedIn,
+    user,
+    token,
+    signOut,
+    deleteAccount,
+    refreshUser,
+  } = useAuth();
+
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!token || !isLoggedIn) return;
+      void refreshUser().catch(() => {});
+    }, [token, isLoggedIn, refreshUser]),
+  );
+
+  useEffect(() => {
+    if (isReady && !isLoggedIn) {
+      router.replace({ pathname: "/" });
+    }
+  }, [isReady, isLoggedIn]);
+
+  if (!isReady) {
+    return (
+      <RootView>
+        <ThemedText variant="body1" color="gray600" style={styles.loadingText}>
+          Chargement…
+        </ThemedText>
+      </RootView>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return null;
+  }
+
+  if (!user) {
+    return (
+      <RootView>
+        <ThemedText variant="body1" color="gray600" style={styles.loadingText}>
+          Chargement du profil…
+        </ThemedText>
+      </RootView>
+    );
+  }
 
   const handleSignOut = () => {
-    Alert.alert("Pas encore implémenté", "La déconnexion n’est pas disponible pour le moment.", [
-      { text: "OK" },
+    Alert.alert("Déconnexion", "Fermer la session sur cet appareil ?", [
+      { text: "Annuler", style: "cancel" },
+      {
+        text: "Déconnexion",
+        style: "destructive",
+        onPress: () => {
+          void signOut().then(() => router.replace({ pathname: "/" }));
+        },
+      },
     ]);
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      "Pas encore implémenté",
-      "La suppression de compte n’est pas disponible pour le moment.",
+      "Supprimer le compte",
+      "Cette action est définitive. Voulez-vous continuer ?",
+      [
+        { text: "Annuler", style: "cancel" },
+        {
+          text: "Supprimer",
+          style: "destructive",
+          onPress: () => {
+            void deleteAccount()
+              .then(() => {
+                router.replace({ pathname: "/" });
+              })
+              .catch(() => {
+                Alert.alert(
+                  "Erreur",
+                  "Impossible de supprimer le compte pour le moment.",
+                );
+              });
+          },
+        },
+      ],
     );
   };
 
   return (
     <RootView>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Pressable
-          onPress={() => router.back()}
-          accessibilityRole="button"
-          accessibilityLabel="Retour"
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={24} color={colors.foreground} />
-          <ThemedText variant="subtitle1" color="foreground">
-            Retour
-          </ThemedText>
-        </Pressable>
+      <Animated.ScrollView
+        contentContainerStyle={scrollContentStyle}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
+        <BackButton />
 
         <ThemedText
           variant="headline"
@@ -46,18 +121,6 @@ export default function ProfileScreen() {
         >
           Mon profil
         </ThemedText>
-
-        <Pressable
-          onPress={() => router.push({ pathname: "/login" })}
-          style={styles.linkRow}
-          accessibilityRole="button"
-          accessibilityLabel="Ouvrir l’écran connexion"
-        >
-          <ThemedText variant="subtitle2" color="primary">
-            Voir l’écran connexion
-          </ThemedText>
-          <Ionicons name="chevron-forward" size={18} color={colors.primary} />
-        </Pressable>
 
         <Card>
           <ThemedText variant="subtitle2" color="gray600">
@@ -86,19 +149,16 @@ export default function ProfileScreen() {
             {user.email}
           </ThemedText>
 
-          <View style={styles.badge}>
-            <ThemedText variant="body2" color="gray600">
-              Compte : fonctionnalités à venir
-            </ThemedText>
-          </View>
-
-          <ThemedText
-            variant="body1"
-            color="foreground"
-            style={styles.connectedText}
+          <Pressable
+            onPress={() => router.push({ pathname: "/favorites" })}
+            accessibilityRole="button"
+            accessibilityLabel="Voir mes favoris"
+            style={[styles.favoritesButton, { borderColor: colors.gray300 }]}
           >
-            L’authentification n’est pas encore implémentée.
-          </ThemedText>
+            <ThemedText variant="subtitle1" color="foreground">
+              Mes favoris
+            </ThemedText>
+          </Pressable>
 
           <Pressable
             onPress={handleSignOut}
@@ -117,12 +177,12 @@ export default function ProfileScreen() {
             accessibilityLabel="Supprimer mon compte"
             style={[styles.deleteButton, { borderColor: colors.gray300 }]}
           >
-            <ThemedText variant="subtitle1" style={styles.deleteButtonText}>
+            <ThemedText variant="subtitle1" color="danger">
               Supprimer mon compte
             </ThemedText>
           </Pressable>
         </Card>
-      </ScrollView>
+      </Animated.ScrollView>
     </RootView>
   );
 }
@@ -131,22 +191,12 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: 32,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
+  loadingText: {
+    padding: 16,
   },
   pageTitle: {
     marginTop: 8,
-    marginBottom: 12,
-  },
-  linkRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 16,
-    paddingVertical: 4,
+    marginBottom: 20,
   },
   fieldLabel: {
     marginTop: 16,
@@ -154,19 +204,27 @@ const styles = StyleSheet.create({
   fieldValue: {
     marginTop: 8,
   },
-  badge: {
-    marginTop: 16,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: "#F3F4F6",
-  },
   connectedText: {
     paddingTop: 16,
     marginTop: 16,
     textAlign: "center",
   },
   signOutButton: {
-    marginTop: 24,
+    marginTop: 48,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  favoritesButton: {
+    marginTop: 48,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+  },
+  dashboardButton: {
+    marginTop: 12,
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: "center",
@@ -178,8 +236,5 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     borderWidth: 1,
-  },
-  deleteButtonText: {
-    color: "#B91C1C",
   },
 });

@@ -1,170 +1,156 @@
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
+import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import { inputStyles } from "@/constants/styles";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import { router } from "expo-router";
-import { useCallback, useState } from "react";
+import { router, type Href } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
-  Alert,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
-  TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
+
+const FORGOT_PASSWORD_PATH = "/404-demo" as Href;
+const HOME_PATH = "/" as Href;
+const REGISTER_PATH = "/register" as Href;
+
+const REDIRECT_MS = 120;
 
 export default function LoginScreen() {
   const colors = useThemeColors();
-  const [isRegister, setIsRegister] = useState(false);
-  const [name, setName] = useState("");
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [postAuthLoading, setPostAuthLoading] = useState(false);
+  const [postAuthMessage, setPostAuthMessage] = useState("Connexion…");
   const [error, setError] = useState<string | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
 
-  const handleSubmitLogin = useCallback(() => {
-    if (!email.trim() || !password) {
-      setError("Renseigne l’e-mail et le mot de passe.");
-      return;
-    }
-    Alert.alert("Pas encore implémenté", "La connexion n’est pas disponible pour le moment.", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
-  }, [email, password]);
-
-  const handleSubmitRegister = useCallback(() => {
-    if (!name.trim()) {
-      setError("Renseigne ton nom.");
-      return;
-    }
-    if (!email.trim() || !password) {
-      setError("Renseigne l’e-mail et le mot de passe.");
-      return;
-    }
-    if (password.length < 8) {
-      setError("Le mot de passe doit contenir au moins 8 caractères.");
-      return;
-    }
-    Alert.alert("Pas encore implémenté", "L’inscription n’est pas disponible pour le moment.", [
-      { text: "OK", onPress: () => router.back() },
-    ]);
-  }, [name, email, password]);
-
-  const toggleMode = useCallback(() => {
-    setIsRegister((prev) => !prev);
-    setError(null);
+  const goHomeAfterAuth = useCallback((message: string) => {
+    setSubmitting(false);
+    setPostAuthMessage(message);
+    setPostAuthLoading(true);
+    setTimeout(() => {
+      router.replace(HOME_PATH);
+    }, REDIRECT_MS);
   }, []);
+
+  const handleSubmitLogin = useCallback(async () => {
+    if (!email.trim() || !password) {
+      setError("Renseigne l’e-mail et le mot de passe.");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      await signIn(email, password);
+      goHomeAfterAuth("Connexion…");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Connexion impossible.");
+      setSubmitting(false);
+    }
+  }, [email, password, signIn, goHomeAfterAuth]);
+
+  const goToRegister = useCallback(() => {
+    router.replace(REGISTER_PATH);
+  }, []);
+
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
+
+  const busy = submitting || postAuthLoading;
 
   return (
     <RootView>
+      <FullScreenLoadingOverlay visible={postAuthLoading} message={postAuthMessage} />
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
-        <ScrollView
+        <Animated.ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={scrollContentStyle}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
         >
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.foreground} />
-            <ThemedText variant="subtitle1" color="foreground">
-              Retour
-            </ThemedText>
-          </Pressable>
+          <BackButton disabled={busy} />
 
           <ThemedText
             variant="headline"
             color="foreground"
             style={styles.pageTitle}
           >
-            {isRegister ? "Inscription" : "Connexion"}
+            Connexion
           </ThemedText>
 
           <Card>
-            {isRegister ? (
-              <>
-                <ThemedText variant="subtitle2" color="gray600">
-                  Nom
-                </ThemedText>
-                <TextInput
-                  value={name}
-                  onChangeText={(t) => {
-                    setName(t);
-                    clearError();
-                  }}
-                  placeholder="Prénom Nom"
-                  placeholderTextColor={colors.gray400}
-                  autoCapitalize="words"
-                  autoComplete="name"
-                  style={[
-                    inputStyles.base,
-                    { borderColor: colors.gray200, color: colors.foreground },
-                  ]}
-                />
-              </>
-            ) : null}
-
-            <ThemedText
-              variant="subtitle2"
-              color="gray600"
-              style={isRegister ? styles.fieldLabel : undefined}
-            >
-              Adresse e-mail
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Adresse e-mail"
               value={email}
               onChangeText={(t) => {
                 setEmail(t);
                 clearError();
               }}
               placeholder="exemple@example.com"
-              placeholderTextColor={colors.gray400}
               autoCapitalize="none"
               keyboardType="email-address"
               autoComplete="email"
-              style={[
-                inputStyles.base,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
+              editable={!busy}
             />
 
-            <ThemedText
-              variant="subtitle2"
-              color="gray600"
-              style={styles.fieldLabel}
-            >
-              Mot de passe
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Mot de passe"
+              labelStyle={styles.fieldLabel}
               value={password}
               onChangeText={(t) => {
                 setPassword(t);
                 clearError();
               }}
               placeholder="••••••••"
-              placeholderTextColor={colors.gray400}
               secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              spellCheck={false}
               autoComplete="password"
-              style={[
-                inputStyles.base,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
+              editable={!busy}
             />
+
+            <Pressable
+              onPress={() => router.push(FORGOT_PASSWORD_PATH)}
+              accessibilityRole="link"
+              accessibilityLabel="Mot de passe oublié"
+              style={styles.forgotPasswordRow}
+            >
+              <ThemedText
+                variant="subtitle1"
+                color="primary"
+                style={[
+                  styles.forgotPasswordText,
+                  { textDecorationColor: colors.primary },
+                ]}
+              >
+                Vous avez oublié votre mot de passe ?
+              </ThemedText>
+            </Pressable>
 
             {error ? (
               <ThemedText
                 variant="body2"
-                color="gray600"
+                color="danger"
                 style={styles.errorText}
               >
                 {error}
@@ -173,38 +159,55 @@ export default function LoginScreen() {
 
             <View style={styles.buttonsRow}>
               <Pressable
-                onPress={isRegister ? handleSubmitRegister : handleSubmitLogin}
+                onPress={() => void handleSubmitLogin()}
                 accessibilityRole="button"
-                accessibilityLabel={isRegister ? "S’inscrire" : "Se connecter"}
+                accessibilityLabel="Se connecter"
+                disabled={busy}
                 style={[
                   styles.primaryButton,
-                  { backgroundColor: colors.primary },
+                  {
+                    backgroundColor: colors.primary,
+                    opacity: busy ? 0.7 : 1,
+                  },
+                ]}
+              >
+                {busy ? (
+                  <ActivityIndicator color={colors.gray50} />
+                ) : (
+                  <ThemedText
+                    variant="subtitle1"
+                    color="gray50"
+                    style={styles.bold}
+                  >
+                    Se connecter
+                  </ThemedText>
+                )}
+              </Pressable>
+
+              <Pressable
+                onPress={goToRegister}
+                accessibilityRole="button"
+                accessibilityLabel="Aller à l’inscription"
+                disabled={busy}
+                style={[
+                  styles.secondaryButton,
+                  {
+                    borderColor: colors.gray300,
+                    opacity: busy ? 0.5 : 1,
+                  },
                 ]}
               >
                 <ThemedText
                   variant="subtitle1"
-                  color="gray50"
+                  color="foreground"
                   style={styles.bold}
                 >
-                  {isRegister ? "S’inscrire" : "Se connecter"}
-                </ThemedText>
-              </Pressable>
-
-              <Pressable
-                onPress={toggleMode}
-                accessibilityRole="button"
-                style={[
-                  styles.secondaryButton,
-                  { borderColor: colors.gray300 },
-                ]}
-              >
-                <ThemedText variant="subtitle1" color="foreground" style={styles.bold}>
-                  {isRegister ? "Se connecter" : "S’inscrire"}
+                  S’inscrire
                 </ThemedText>
               </Pressable>
             </View>
           </Card>
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
     </RootView>
   );
@@ -218,15 +221,18 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 24,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
-  },
   pageTitle: {
     marginTop: 16,
-    marginBottom: 8,
+    marginBottom: 24,
+  },
+  forgotPasswordRow: {
+    alignSelf: "flex-end",
+    marginTop: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 2,
+  },
+  forgotPasswordText: {
+    textDecorationLine: "underline",
   },
   bold: {
     fontWeight: "600",
@@ -236,7 +242,6 @@ const styles = StyleSheet.create({
   },
   errorText: {
     marginTop: 12,
-    color: "#B91C1C",
   },
   buttonsRow: {
     flexDirection: "row",

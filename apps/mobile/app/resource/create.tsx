@@ -1,39 +1,39 @@
+import { BackButton } from "@/components/BackButton";
 import { Card } from "@/components/Card";
+import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay";
+import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import { inputStyles } from "@/constants/styles";
-import {
-  RELATION_TYPE_OPTIONS,
-  RESOURCE_TYPE_OPTIONS,
-  type ResourceMetaOption,
-} from "@/constants/resourceMeta";
+import { type ResourceMetaOption } from "@/constants/resourceMeta";
 import { useCategory } from "@/contexts/CategoryContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import { canCreateResource } from "@/lib/resourcePermissions";
+import { apiCreateResource } from "@/lib/resourceApi";
 import { router } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
-  Switch,
-  TextInput,
   View,
 } from "react-native";
+import Animated from "react-native-reanimated";
 
 function SelectRow({
   label,
   options,
   selectedId,
   onSelect,
+  disabled = false,
 }: {
   label: string;
   options: readonly ResourceMetaOption[];
   selectedId: number;
   onSelect: (id: number) => void;
+  disabled?: boolean;
 }) {
   const colors = useThemeColors();
 
@@ -49,6 +49,7 @@ function SelectRow({
             <Pressable
               key={option.id}
               onPress={() => onSelect(option.id)}
+              disabled={disabled}
               style={[
                 styles.optionChip,
                 {
@@ -70,7 +71,13 @@ function SelectRow({
 
 export default function CreateResourceScreen() {
   const colors = useThemeColors();
-  const { categoryOptions } = useCategory();
+  const { scrollHandler, contentInsetBottom } = useFooterScroll();
+  const { token, isLoggedIn } = useAuth();
+  const {
+    categoryOptions,
+    relationTypePickOptions,
+    resourceTypePickOptions,
+  } = useCategory();
 
   const validCategories = useMemo(
     () => categoryOptions.filter((category) => category.id !== "all"),
@@ -82,10 +89,42 @@ export default function CreateResourceScreen() {
   const [categoryId, setCategoryId] = useState<number>(1);
   const [relationTypeId, setRelationTypeId] = useState<number>(1);
   const [resourceTypeId, setResourceTypeId] = useState<number>(1);
-  const [isPublic, setIsPublic] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = () => {
+  useEffect(() => {
+    if (
+      validCategories.length > 0 &&
+      !validCategories.some((c) => Number(c.id) === categoryId)
+    ) {
+      setCategoryId(Number(validCategories[0].id));
+    }
+  }, [validCategories, categoryId]);
+
+  useEffect(() => {
+    if (
+      relationTypePickOptions.length > 0 &&
+      !relationTypePickOptions.some((o) => o.id === relationTypeId)
+    ) {
+      setRelationTypeId(relationTypePickOptions[0].id);
+    }
+  }, [relationTypePickOptions, relationTypeId]);
+
+  useEffect(() => {
+    if (
+      resourceTypePickOptions.length > 0 &&
+      !resourceTypePickOptions.some((o) => o.id === resourceTypeId)
+    ) {
+      setResourceTypeId(resourceTypePickOptions[0].id);
+    }
+  }, [resourceTypePickOptions, resourceTypeId]);
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async () => {
+    const auth = { isLoggedIn, token };
+    if (!canCreateResource(auth)) {
+      router.push({ pathname: "/login" });
+      return;
+    }
     if (title.trim().length < 3) {
       setError("Le titre doit contenir au moins 3 caractères.");
       return;
@@ -95,12 +134,29 @@ export default function CreateResourceScreen() {
       return;
     }
 
-    Alert.alert(
-      "Pas encore implémenté",
-      "La publication de ressources n’est pas disponible pour le moment.",
-      [{ text: "OK", onPress: () => router.replace({ pathname: "/" }) }],
-    );
+    setSubmitting(true);
+    setError(null);
+    try {
+      await apiCreateResource(auth.token, {
+        title: title.trim(),
+        content: content.trim(),
+        category_id: categoryId,
+        relation_type_id: relationTypeId,
+        resource_type_id: resourceTypeId,
+        is_public: false,
+      });
+      router.replace({ pathname: "/dashboard" });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Publication impossible.");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  const scrollContentStyle = useMemo(
+    () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
+    [contentInsetBottom],
+  );
 
   return (
     <RootView>
@@ -108,62 +164,41 @@ export default function CreateResourceScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
         style={styles.flex}
       >
-        <ScrollView
+        <Animated.ScrollView
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={scrollContentStyle}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
         >
-          <Pressable
-            onPress={() => router.back()}
-            accessibilityRole="button"
-            accessibilityLabel="Retour"
-            style={styles.backButton}
-          >
-            <Ionicons name="chevron-back" size={24} color={colors.foreground} />
-            <ThemedText variant="subtitle1" color="foreground">
-              Retour
-            </ThemedText>
-          </Pressable>
+          <BackButton />
 
           <ThemedText variant="headline" color="foreground" style={styles.pageTitle}>
             Proposer une ressource
           </ThemedText>
 
           <Card>
-            <ThemedText variant="subtitle2" color="gray600">
-              Titre
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Titre"
               value={title}
               onChangeText={(text) => {
                 setTitle(text);
                 setError(null);
               }}
               placeholder="Titre de la ressource"
-              placeholderTextColor={colors.gray400}
-              style={[
-                inputStyles.base,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
             />
 
-            <ThemedText variant="subtitle2" color="gray600" style={styles.fieldLabel}>
-              Contenu
-            </ThemedText>
-            <TextInput
+            <LabeledTextInput
+              label="Contenu"
+              labelStyle={styles.fieldLabel}
               value={content}
               onChangeText={(text) => {
                 setContent(text);
                 setError(null);
               }}
               placeholder="Décrivez votre ressource"
-              placeholderTextColor={colors.gray400}
               multiline
               textAlignVertical="top"
-              style={[
-                inputStyles.base,
-                styles.multiline,
-                { borderColor: colors.gray200, color: colors.foreground },
-              ]}
+              inputStyle={styles.multiline}
             />
 
             <ThemedText variant="subtitle2" color="gray600" style={styles.fieldLabel}>
@@ -180,6 +215,7 @@ export default function CreateResourceScreen() {
                       setCategoryId(id);
                       setError(null);
                     }}
+                    disabled={submitting}
                     style={[
                       styles.optionChip,
                       {
@@ -201,8 +237,9 @@ export default function CreateResourceScreen() {
 
             <SelectRow
               label="Type de relation"
-              options={RELATION_TYPE_OPTIONS}
+              options={relationTypePickOptions}
               selectedId={relationTypeId}
+              disabled={submitting}
               onSelect={(id) => {
                 setRelationTypeId(id);
                 setError(null);
@@ -211,34 +248,28 @@ export default function CreateResourceScreen() {
 
             <SelectRow
               label="Type de ressource"
-              options={RESOURCE_TYPE_OPTIONS}
+              options={resourceTypePickOptions}
               selectedId={resourceTypeId}
+              disabled={submitting}
               onSelect={(id) => {
                 setResourceTypeId(id);
                 setError(null);
               }}
             />
 
-            <View style={styles.switchRow}>
-              <ThemedText variant="body1" color="foreground">
-                Rendre la ressource publique
-              </ThemedText>
-              <Switch
-                value={isPublic}
-                onValueChange={setIsPublic}
-                trackColor={{ false: colors.gray300, true: colors.primary }}
-                thumbColor={colors.gray50}
-              />
-            </View>
+            <ThemedText variant="body2" color="gray600" style={styles.visibilityHint}>
+              La ressource est créée en privé puis validée par la modération.
+            </ThemedText>
 
             {error ? (
-              <ThemedText variant="body2" color="gray600" style={styles.errorText}>
+              <ThemedText variant="body2" color="danger" style={styles.errorText}>
                 {error}
               </ThemedText>
             ) : null}
 
             <Pressable
               onPress={handleSubmit}
+              disabled={submitting}
               accessibilityRole="button"
               accessibilityLabel="Publier la ressource"
               style={[styles.submitButton, { backgroundColor: colors.primary }]}
@@ -248,8 +279,13 @@ export default function CreateResourceScreen() {
               </ThemedText>
             </Pressable>
           </Card>
-        </ScrollView>
+        </Animated.ScrollView>
       </KeyboardAvoidingView>
+      <FullScreenLoadingOverlay
+        visible={submitting}
+        message="Publication..."
+        accessibilityLabel="Publication de la ressource"
+      />
     </RootView>
   );
 }
@@ -260,12 +296,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingBottom: 24,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
   },
   pageTitle: {
     marginTop: 16,
@@ -289,15 +319,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
   },
-  switchRow: {
+  visibilityHint: {
     marginTop: 20,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
   },
   errorText: {
     marginTop: 12,
-    color: "#B91C1C",
   },
   submitButton: {
     marginTop: 20,
