@@ -2,7 +2,7 @@
  
 import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/contexts/AuthContext"
-import { api, getCategories, getResources, Category} from "@/lib/api"
+import { api, getCategories, getResources, Category, downloadStatsExport} from "@/lib/api"
 import { RelationType } from "@/data/admin/RelationType"
 import { ResourceType } from "@/data/admin/RessourceType"
 import s from "@/style/admin/dashboardAdminStyle";
@@ -52,11 +52,9 @@ export default function AdminDashboardPage() {
  
   useEffect(() => {
     if (!user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
         router.replace('/auth/connexion');
-      }
     }else if(user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+      if(!['admin', 'super_admin', 'moderator'].includes(user.role)) {
         router.replace('/dashboard');
       }
     }
@@ -122,6 +120,18 @@ export default function AdminDashboardPage() {
               </select>
               <button onClick={fetchStats} style={{ ...s.filterSelect, background: '#5BA4CF', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}>
                 Actualiser
+              </button>
+              <button
+                onClick={() => {
+                  const params: Record<string, string> = { period: filterP };
+                  if (filterC) params.category = filterC;
+                  if (filterRelT) params.relation_type = filterRelT;
+                  if (filterResT) params.resource_type = filterResT;
+                  downloadStatsExport(params).catch(console.error);
+                }}
+                style={{ ...s.filterSelect, background: '#0f172a', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 600 }}
+              >
+                Exporter CSV
               </button>
             </div>
  

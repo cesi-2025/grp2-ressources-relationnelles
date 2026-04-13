@@ -1,14 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import Link from "next/link";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ResourceCard from "@/components/resources/ResourceCard";
+import { useAuth } from "@/contexts/AuthContext";
 import { getResources, getCategories, type Resource, type Category } from "@/lib/api";
 
 const ITEMS_PER_PAGE = 6;
 
 export default function RessourcesPage() {
+  const { user } = useAuth();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sortBy, setSortBy] = useState("date-recent");
@@ -94,11 +97,18 @@ export default function RessourcesPage() {
   return (
     <div className="bg-gray-50 min-h-screen py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-primary mb-3">Ressources Relationnelles</h1>
-          <p className="text-lg text-gray-600">
-            Explorez les ressources publiques, appliquez des filtres et triez les résultats.
-          </p>
+        <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+          <div>
+            <h1 className="text-4xl font-bold text-primary mb-3">Ressources Relationnelles</h1>
+            <p className="text-lg text-gray-600">
+              Explorez les ressources publiques, appliquez des filtres et triez les résultats.
+            </p>
+          </div>
+          {user && (
+            <Link href="/ressources/creer">
+              <Button variant="primary">+ Créer une ressource</Button>
+            </Link>
+          )}
         </div>
 
         <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-4 md:p-6 mb-8">

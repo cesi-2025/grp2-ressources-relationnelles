@@ -10,6 +10,7 @@ import {
   setToken,
   removeToken,
 } from "@/lib/api";
+import { authCookies } from "@/lib/cookies";
 
 interface AuthContextType {
   user: User | null;
@@ -32,9 +33,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
     getMe()
-      .then(setUser)
+      .then((u) => {
+        setUser(u);
+        authCookies.set(token, u.role);
+      })
       .catch(() => {
         removeToken();
+        authCookies.remove();
       })
       .finally(() => setLoading(false));
   }, []);
@@ -42,12 +47,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const response = await apiLogin(email, password);
     setToken(response.token);
+    authCookies.set(response.token, response.user.role);
     setUser(response.user);
   }, []);
 
   const register = useCallback(async (name: string, email: string, password: string, passwordConfirmation: string) => {
     const response = await apiRegister(name, email, password, passwordConfirmation);
     setToken(response.token);
+    authCookies.set(response.token, response.user.role);
     setUser(response.user);
   }, []);
 
@@ -56,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await apiLogout();
     } finally {
       removeToken();
+      authCookies.remove();
       setUser(null);
     }
   }, []);

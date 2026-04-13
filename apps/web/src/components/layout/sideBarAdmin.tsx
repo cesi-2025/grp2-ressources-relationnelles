@@ -16,16 +16,16 @@ const SECTIONS = [
     role:["admin", "moderator", "super_admin"],
     links: [ 
       { href: "/admin",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
-      { href: "/admin/ressources", role:["admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
-      { href: "/admin/categorie",      role:["admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
+      { href: "/admin/ressources", role:["admin", "super_admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
+      { href: "/admin/categorie",      role:["admin", "super_admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
     ],
   },
   {
     label: "Gestion",
-    role:["moderator", "super_admin"],
+    role:["moderator", "admin", "super_admin"],
     links: [
-      { href: "/admin/utilisateur", role:["super_admin"], label: "Utilisateurs", icon: UserPicture, badge: null },
-      { href: "/admin/moderation",  role:["moderator"], label: "Modération",   icon: ModerationPicture, badge: null },
+      { href: "/admin/utilisateur", role:["admin", "super_admin"], label: "Utilisateurs", icon: UserPicture, badge: null },
+      { href: "/admin/moderation",  role:["moderator", "admin", "super_admin"], label: "Modération",   icon: ModerationPicture, badge: null },
     ],
   },
 ];

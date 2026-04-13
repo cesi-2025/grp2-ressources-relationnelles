@@ -147,6 +147,18 @@ export function getResource(id: number) {
 export function createResource(data: { title: string; content: string; category_id: number; relation_type_id: number; resource_type_id: number; is_public?: boolean }) {
   return api<Resource>("/resources", { method: "POST", body: data });
 }
+
+export function updateResource(id: number, data: { title: string; content: string; category_id: number; relation_type_id: number; resource_type_id: number; is_public?: boolean }) {
+  return api<Resource>(`/resources/${id}`, { method: "PUT", body: data });
+}
+
+export function deleteResource(id: number) {
+  return api<{ message: string }>(`/admin/resources/${id}`, { method: "DELETE" });
+}
+
+export function getShareLink(id: number) {
+  return api<{ id: number; title: string; url: string }>(`/resources/${id}/share`);
+}
  
 // --- Categories ---
  
@@ -181,6 +193,10 @@ export function getComments(resourceId: number) {
 export function createComment(resourceId: number, content: string) {
   return api<Comment>(`/resources/${resourceId}/comments`, { method: "POST", body: { content } });
 }
+
+export function replyComment(commentId: number, content: string) {
+  return api<Comment>(`/comments/${commentId}/reply`, { method: "POST", body: { content } });
+}
  
 // --- Favorites ---
  
@@ -204,4 +220,83 @@ export function markSetAside(resourceId: number) {
  
 export function getProgression() {
   return api("/progression");
+}
+
+// --- Activity sessions ---
+
+export interface ActivityParticipant {
+  id: number;
+  activity_session_id: number;
+  user_id: number;
+  user?: { id: number; name: string };
+}
+
+export interface ActivitySession {
+  id: number;
+  resource_id: number;
+  owner_id: number;
+  started_at: string;
+  resource?: Resource;
+  owner?: { id: number; name: string };
+  participants?: ActivityParticipant[];
+}
+
+export interface ActivityMessage {
+  id: number;
+  activity_session_id: number;
+  user_id: number;
+  content: string;
+  created_at: string;
+  user?: { id: number; name: string };
+}
+
+export function startActivity(resourceId: number) {
+  return api<{ message: string; session: ActivitySession }>(`/activity/${resourceId}/start`, { method: "POST" });
+}
+
+export function getActivitySession(sessionId: number) {
+  return api<ActivitySession>(`/activity/sessions/${sessionId}`);
+}
+
+export function inviteActivityParticipant(sessionId: number, userId: number) {
+  return api<{ message: string; participant: ActivityParticipant }>(`/activity/sessions/${sessionId}/invite`, {
+    method: "POST",
+    body: { user_id: userId },
+  });
+}
+
+export function getActivityMessages(sessionId: number) {
+  return api<ActivityMessage[]>(`/activity/sessions/${sessionId}/messages`);
+}
+
+export function postActivityMessage(sessionId: number, content: string) {
+  return api<ActivityMessage>(`/activity/sessions/${sessionId}/messages`, {
+    method: "POST",
+    body: { content },
+  });
+}
+
+// --- Statistics export ---
+
+export function getStatsExportUrl(params: Record<string, string>) {
+  const query = Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : "";
+  const base = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  return `${base}/api/admin/statistics/export${query}`;
+}
+
+export async function downloadStatsExport(params: Record<string, string>) {
+  const token = typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+  const res = await fetch(getStatsExportUrl(params), {
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!res.ok) throw new ApiRequestError({ message: "Export impossible", status: res.status });
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `statistiques-${Date.now()}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
 }

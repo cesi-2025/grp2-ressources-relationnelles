@@ -67,12 +67,9 @@ export default function ModerationPage() {
  
   useEffect(() => {
 
-    if (!user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
-        router.replace('/auth/connexion');
-      }
+    if (!user){router.replace('/auth/connexion');
     }else if(user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+      if(!['admin', 'super_admin', 'moderator'].includes(user.role)) {
         router.replace('/dashboard');
       }
     }

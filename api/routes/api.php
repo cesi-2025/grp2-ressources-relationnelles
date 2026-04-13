@@ -47,13 +47,28 @@ Route::post('/resources/{id}/exploit', [ProgressionController::class, 'exploit']
 Route::post('/resources/{id}/set-aside', [ProgressionController::class, 'setAside'])->middleware(['auth:sanctum']);
 Route::get('/progression', [ProgressionController::class, 'index'])->middleware(['auth:sanctum']);
  
+Route::get('/resources/{resource}/share', [ResourceController::class, 'share']);
+
+Route::prefix('activity')->middleware(['auth:sanctum'])->group(function () {
+    Route::post('/{resource}/start', [\App\Http\Controllers\ActivityController::class, 'start']);
+    Route::get('/sessions/{session}', [\App\Http\Controllers\ActivityController::class, 'show']);
+    Route::post('/sessions/{session}/invite', [\App\Http\Controllers\ActivityController::class, 'invite']);
+    Route::get('/sessions/{session}/messages', [\App\Http\Controllers\ActivityController::class, 'messages']);
+    Route::post('/sessions/{session}/messages', [\App\Http\Controllers\ActivityController::class, 'postMessage']);
+});
+
 Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin,super_admin'])->group(function () {
     Route::get('/statistics', [AdminController::class, 'statistics']);
+    Route::get('/statistics/export', [AdminController::class, 'exportStatistics']);
     Route::get('/resources', [AdminController::class, 'listResources']);
     Route::put('/resources/{resource}/suspend', [AdminController::class, 'suspendResource']);
+    Route::delete('/resources/{resource}', [AdminController::class, 'destroyResource']);
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy']);
     Route::post('/categories', [CategoryController::class, 'store']);
     Route::put('/categories/{category}', [CategoryController::class, 'update']);
+
+    Route::get('/users', [AdminController::class, 'listCitizens']);
+    Route::put('/users/{user}/toggle', [AdminController::class, 'toggleCitizen']);
 });
 Route::prefix('moderation')->middleware(['auth:sanctum', 'role:moderator,admin,super_admin'])->group(function () {
     Route::get('/resources', [ModerationController::class, 'listResources']);

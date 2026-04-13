@@ -135,7 +135,7 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <span className="text-sm text-gray-700 font-medium px-2">{user.name}</span>
-                    {(user.role === "admin" || user.role === "super_admin") && (
+                    {(user.role === "admin" || user.role === "super_admin" || user.role === "moderator") && (
                       <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="md" className="w-full">
                           Administration

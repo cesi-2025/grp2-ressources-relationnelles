@@ -55,41 +55,45 @@ export default function UtilisateursPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
  
+  const isSuperAdmin = user?.role === 'super_admin';
+
   const fetchUsers = useCallback(async () => {
     try {
-      // ✅ Remplace createUser.list() inexistant → api() direct vers /super-admin/users
+      // Super admin voit tous les rôles (via /super-admin/users) ;
+      // admin ne voit que les citoyens (via /admin/users).
       const params: Record<string, string> = {};
-      if (filterRole) params.role = filterRole;
+      if (user?.role === 'super_admin' && filterRole) params.role = filterRole;
       const query = Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : "";
-      const res = await api<CreateUser[]>(`/super-admin/users${query}`);
+      const endpoint = user?.role === 'super_admin' ? `/super-admin/users${query}` : `/admin/users`;
+      const res = await api<CreateUser[]>(endpoint);
       setList(Array.isArray(res) ? res : (res as any).data ?? []);
     } catch (err) {
       setError(`Erreur lors du chargement des rôles ${err}.`);
     } finally {
       setPageLoading(false);
     }
-  }, [filterRole]);
- 
+  }, [filterRole, user?.role]);
+
   useEffect(() => {
-    if (!user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
-        router.replace('/auth/connexion');
-      }
+    if (!user){router.replace('/auth/connexion');
     }else if(user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+      if(!['admin', 'super_admin'].includes(user.role)) {
         router.replace('/dashboard');
       }
     }
     if (user) fetchUsers();
   }, [user, router, fetchUsers]);
- 
+
   async function handleToggle() {
     if (!toggleTarget) return;
     setToggling(true);
     setError('');
     try {
-      // ✅ Remplace createUser.toggleActive() inexistant → api() direct
-      const res = await api<{ user: CreateUser }>(`/super-admin/users/${toggleTarget.id}/toggle`, { method: 'PUT' });
+      // Admin → /admin/users (citoyens uniquement). Super-admin → /super-admin/users (tous).
+      const endpoint = user?.role === 'super_admin'
+        ? `/super-admin/users/${toggleTarget.id}/toggle`
+        : `/admin/users/${toggleTarget.id}/toggle`;
+      const res = await api<{ user: CreateUser }>(endpoint, { method: 'PUT' });
       setList((prev) => prev.map((u) => u.id === res.user.id ? res.user : u));
       setToggleTarget(null);
     } catch (err) {
@@ -160,19 +164,23 @@ export default function UtilisateursPage() {
           </div>
           <div style={s.toolbar}>
             <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Rechercher..." style={s.searchInput} />
-            <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} style={s.filterSelect}>
-              <option value="">Tous les rôles</option>
-              <option value="citizen">Citoyen</option>
-              <option value="moderator">Modérateur</option>
-              <option value="admin">Admin</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
-            <button
-              onClick={() => { setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' }); setFormErrors({}); setGlobalError(''); setFormOpen(true); }}
-              style={s.btnCreate}
-            >
-              + Créer un compte
-            </button>
+            {isSuperAdmin && (
+              <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)} style={s.filterSelect}>
+                <option value="">Tous les rôles</option>
+                <option value="citizen">Citoyen</option>
+                <option value="moderator">Modérateur</option>
+                <option value="admin">Admin</option>
+                <option value="super_admin">Super Admin</option>
+              </select>
+            )}
+            {isSuperAdmin && (
+              <button
+                onClick={() => { setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' }); setFormErrors({}); setGlobalError(''); setFormOpen(true); }}
+                style={s.btnCreate}
+              >
+                + Créer un compte
+              </button>
+            )}
           </div>
         </div>
  
@@ -277,7 +285,6 @@ export default function UtilisateursPage() {
               <div style={s.field}>
                 <label style={s.label}>Rôle</label>
                 <select value={form.role} onChange={setField('role')} style={{ ...s.input, cursor: 'pointer' }} required>
-                    <option value="citizen">Citoyen</option>
                     <option value="moderator">Modérateur</option>
                     <option value="admin">Admin</option>
                     <option value="super_admin">Super Admin</option>
