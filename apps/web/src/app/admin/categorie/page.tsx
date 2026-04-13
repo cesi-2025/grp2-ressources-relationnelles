@@ -1,12 +1,11 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
-// ✅ Remplace categories.list() / categories.delete() inexistants
-// → getCategories() (existe) + api() direct pour create/update/delete
 import { api, getCategories, Category } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import CategoryForm from '@/components/format/categoryForma';
 import s from '@/style/admin/categoryAdminStyle';
+import { useRouter } from 'next/navigation';
  
 export default function CategoriesPage() {
   const { user, loading } = useAuth();
@@ -18,10 +17,10 @@ export default function CategoriesPage() {
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState('');
- 
+  const router = useRouter();
+
   const fetchCategories = useCallback(async () => {
     try {
-      // ✅ Remplace categories.list() → getCategories() (existe dans api.ts)
       const res = await getCategories();
       setList(res);
     } catch (err) {
@@ -32,8 +31,18 @@ export default function CategoriesPage() {
   }, []);
  
   useEffect(() => {
+    if (!user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/auth/connexion');
+      }
+    }else if(user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/dashboard');
+      }
+    }
     if (user) fetchCategories();
-  }, [user, fetchCategories]);
+
+  }, [user, router, fetchCategories]);
  
   function handleSaved(cat: Category) {
     setList((prev) => {
@@ -47,8 +56,8 @@ export default function CategoriesPage() {
     setDeleting(true);
     setError('');
     try {
-      // ✅ Remplace categories.delete() inexistant → api() direct vers /categories/{id}
-      await api(`/categories/${deleteTarget.id}`, { method: 'DELETE' });
+      // ✅ FIX — route correcte : DELETE /admin/categories/{id} (auth:sanctum + role:admin)
+      await api(`/admin/categories/${deleteTarget.id}`, { method: 'DELETE' });
       setList((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
     } catch (err) {
@@ -131,6 +140,9 @@ export default function CategoriesPage() {
           onClose={() => { setFormOpen(false); setEditTarget(null); }}
           onSaved={handleSaved}
           onError={setError}
+          // ✅ NOTE — CategoryForm doit utiliser :
+          //   POST  /admin/categories         (création)
+          //   PUT   /admin/categories/{id}    (modification)
         />
       )}
  

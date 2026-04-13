@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiRequestError } from "@/lib/api";
-
+ 
 export default function ConnexionPage() {
   const router = useRouter();
   const { login } = useAuth();
@@ -16,12 +16,12 @@ export default function ConnexionPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+ 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+ 
     try {
       await login(email, password);
       router.push("/dashboard");
@@ -35,6 +35,7 @@ export default function ConnexionPage() {
       setLoading(false);
     }
   }
+ 
   return (
     <div className="bg-gray-50 min-h-screen py-12 flex items-center justify-center">
       <div className="max-w-md w-full px-4">
@@ -44,7 +45,7 @@ export default function ConnexionPage() {
             Connectez-vous pour accéder à votre compte
           </p>
         </div>
-
+ 
         <Card>
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
@@ -52,11 +53,10 @@ export default function ConnexionPage() {
                 {error}
               </div>
             )}
-
+ 
             <Input
               name="email"
               label="Email"
-              onChange={(e) => setEmail(e.target.value)}
               type="email"
               placeholder="jean.dupont@example.com"
               autoComplete="email"
@@ -68,14 +68,13 @@ export default function ConnexionPage() {
               name="password"
               label="Mot de passe"
               type="password"
-              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               autoComplete="current-password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-
+ 
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center">
                 <input
@@ -91,12 +90,12 @@ export default function ConnexionPage() {
                 Mot de passe oublié ?
               </Link>
             </div>
-
+ 
             <Button variant="primary" className="w-full" type="submit" disabled={loading}>
               {loading ? "Connexion en cours..." : "Se connecter"}
             </Button>
           </form>
-
+ 
           <div className="mt-6 text-center text-sm text-gray-600">
             Vous n&apos;avez pas de compte ?{" "}
             <Link href="/auth/inscription" className="text-primary font-medium hover:underline">

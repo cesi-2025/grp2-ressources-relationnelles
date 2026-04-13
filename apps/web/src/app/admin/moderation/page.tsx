@@ -8,6 +8,7 @@ import CommentTable from '@/components/moderation/commentTable';
 import ConfirmModal from '@/components/moderation/confirmModal';
 import ms from '@/style/admin/dashboardAdminStyle';
 import mbs from '@/style/admin/moderatorButtonStyle';
+import { useRouter } from 'next/navigation';
  
 type ConfirmType = 'validate' | 'refuse' | 'approve-comment' | 'delete-comment';
  
@@ -27,6 +28,8 @@ export default function ModerationPage() {
   const [resLoad, setResLoad] = useState(true);
   const [comLoad, setComLoad] = useState(true);
  
+  const router = useRouter();
+
   const [confirmModal, setConfirmModal] = useState<{
     type: ConfirmType;
     id: number;
@@ -37,27 +40,10 @@ export default function ModerationPage() {
   const fetchResources = useCallback(async () => {
     setResLoad(true);
     try {
-      // ✅ Remplace moderationApi.listResources() / admin.listResources() inexistants
-      // → getResources({ status: 'pending' }) appelle GET /resources?status=pending
-      // Note : ResourceController filtre sur published uniquement en public ;
-      // les rôles admin/moderator verront toutes les ressources si le backend le permet.
-      // Pour avoir les pending, on utilise api() directement vers /admin/resources
-      // en fallback sur getResources si non admin.
-      let list: Resource[] = [];
-      if (!user.role !== "moderator") {
-        // Admin : appel direct /admin/resources?status=pending (route protégée)
-        const res: any = await api('/admin/resources?status=pending');
-        list = Array.isArray(res) ? res : res.data ?? [];
-      } else {
-        // Moderator : appel direct /moderation/resources?status=pending
-        const res: any = await api('/moderation/resources?status=pending');
-        list = Array.isArray(res) ? res : res.data ?? [];
-      }
-      setResources(list);
+      const res: any = await api('/moderation/resources?status=pending');
+      setResources(Array.isArray(res) ? res : res.data ?? []);
     } catch (e) {
       console.error(e);
-      // Fallback : si les routes admin/moderation ne retournent pas de liste,
-      // on tente getResources en dernier recours
       try {
         const res = await getResources({ status: 'pending' });
         setResources(res.data ?? []);
@@ -65,13 +51,11 @@ export default function ModerationPage() {
     } finally {
       setResLoad(false);
     }
-  }, [user]);
+  }, []);
  
   const fetchComments = useCallback(async () => {
     setComLoad(true);
     try {
-      // ✅ Remplace moderationApi.listComments() inexistant
-      // → appel direct api() vers /moderation/comments
       const res: any = await api('/moderation/comments');
       setComments(Array.isArray(res) ? res : res.data ?? []);
     } catch (e) {
@@ -82,8 +66,18 @@ export default function ModerationPage() {
   }, []);
  
   useEffect(() => {
+
+    if (!user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/auth/connexion');
+      }
+    }else if(user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/dashboard');
+      }
+    }
     if (user) { fetchResources(); fetchComments(); }
-  }, [user, fetchResources, fetchComments]);
+  }, [user, fetchResources, fetchComments, router]);
  
   async function handleConfirm() {
     if (!confirmModal) return;
@@ -91,19 +85,16 @@ export default function ModerationPage() {
     try {
       const { type, id } = confirmModal;
       if (type === 'validate') {
-        // ✅ Remplace moderationApi.validateResource() → appel direct api()
         await api(`/moderation/resources/${id}/validate`, { method: 'PUT' });
         setResources((prev) => prev.filter((r) => r.id !== id));
       } else if (type === 'refuse') {
-        // ✅ Remplace admin.suspendResource() → appel direct api()
+        // ✅ FIX — suspend est une action admin, pas moderation
         await api(`/admin/resources/${id}/suspend`, { method: 'PUT' });
         setResources((prev) => prev.filter((r) => r.id !== id));
       } else if (type === 'approve-comment') {
-        // ✅ Remplace moderationApi.approveComment() → appel direct api()
         await api(`/moderation/comments/${id}/approve`, { method: 'PUT' });
         setComments((prev) => prev.map((c) => c.id === id ? { ...c, is_approved: true } : c));
       } else if (type === 'delete-comment') {
-        // ✅ Remplace moderationApi.deleteComment() → appel direct api()
         await api(`/moderation/comments/${id}`, { method: 'DELETE' });
         setComments((prev) => prev.filter((c) => c.id !== id));
       }

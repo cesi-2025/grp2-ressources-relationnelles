@@ -126,16 +126,7 @@ export default function DashboardPage() {
   };
  
   return (
-    <div style={{ background: '#F6F7F9', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <nav style={s.navbar}>
-        <span style={s.navBrand}>Ressources+</span>
-        <div style={s.navRight}>
-          <div style={s.avatar}>{getInitials(user.name)}</div>
-          <span style={s.navUserName}>{user.name}</span>
-        </div>
-      </nav>
- 
+
       <main style={s.page}>
  
         <h1 style={s.greeting}>Bonjour, {user.name}</h1>
@@ -231,6 +222,5 @@ export default function DashboardPage() {
         </blockquote>
  
       </main>
-    </div>
   );
 }

@@ -6,6 +6,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { api, ApiRequestError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import s from '@/style/admin/userAdminStyle';
+import { useRouter } from 'next/navigation';
  
 // Interface locale (était dans api.ts corrigé, on la définit ici)
 interface CreateUser {
@@ -42,6 +43,8 @@ export default function UtilisateursPage() {
   const [filterRole, setFilterRole] = useState('');
   const [pageLoading, setPageLoading] = useState(true);
  
+  const router = useRouter();
+
   const [toggleTarget, setToggleTarget] = useState<CreateUser | null>(null);
   const [toggling, setToggling] = useState(false);
  
@@ -68,8 +71,17 @@ export default function UtilisateursPage() {
   }, [filterRole]);
  
   useEffect(() => {
+    if (!user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/auth/connexion');
+      }
+    }else if(user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/dashboard');
+      }
+    }
     if (user) fetchUsers();
-  }, [user, fetchUsers]);
+  }, [user, router, fetchUsers]);
  
   async function handleToggle() {
     if (!toggleTarget) return;
@@ -265,8 +277,10 @@ export default function UtilisateursPage() {
               <div style={s.field}>
                 <label style={s.label}>Rôle</label>
                 <select value={form.role} onChange={setField('role')} style={{ ...s.input, cursor: 'pointer' }} required>
-                  <option value="moderator">Modérateur</option>
-                  <option value="admin">Administrateur</option>
+                    <option value="citizen">Citoyen</option>
+                    <option value="moderator">Modérateur</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
                 </select>
                 {formErrors.role && <p style={s.errorText}>{formErrors.role}</p>}
               </div>

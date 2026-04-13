@@ -12,8 +12,8 @@ import s from '@/style/admin/ressourceAdminStyle';
 interface RelationType { id: number; name: string; }
 interface ResourceType { id: number; name: string; }
  
-// ✅ FIX — Labels corrigés pour correspondre aux vraies valeurs Laravel :
-// published (pas validated), pending, archived (pas suspended)
+// ✅ Labels alignés avec les vraies valeurs Laravel :
+// published, pending, archived (ResourceStatus enum)
 function StatusBadge({ status }: { status: Resource['status'] }) {
   const map: Record<string, { label: string; extra: React.CSSProperties }> = {
     published: { label: 'Publié',     extra: s.badgeValidated },
@@ -44,8 +44,14 @@ export default function AdminRessourcesPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
  
   useEffect(() => {
-    if (!user || !['admin', 'super_admin', 'moderator'].includes(user.role)) {
-      router.replace('/auth/connection');
+    if (!user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/auth/connexion');
+      }
+    }else if(user){
+      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+        router.replace('/dashboard');
+      }
     }
   }, [user, router]);
  
@@ -62,24 +68,21 @@ export default function AdminRessourcesPage() {
       const params: Record<string, string> = {};
       if (filterStats) params.status = filterStats;
       if (filterC) params.category_id = filterC;
+      const query = Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : "";
  
-      // ✅ Remplace moderator.listResources() / admin.listResources() inexistants
-      // Admin/moderator : appel direct api() vers les routes protégées
-      // Fallback sur getResources() si les routes admin ne sont pas dispo
       let resList: Resource[] = [];
       if (user?.role === 'moderator') {
-        const query = params ? "?" + new URLSearchParams(params).toString() : "";
+        // ✅ Modérateur : route GET /moderation/resources (existe)
         const res: any = await api(`/moderation/resources${query}`);
         resList = Array.isArray(res) ? res : res.data ?? [];
       } else {
-        const query = params ? "?" + new URLSearchParams(params).toString() : "";
-        const res: any = await api(`/resources${query}`);
+        // ✅ Admin/Super Admin : route GET /admin/resources (existe)
+        const res: any = await api(`/admin/resources${query}`);
         resList = Array.isArray(res) ? res : res.data ?? [];
       }
       setList(resList);
     } catch (err) {
       addToast(`Erreur lors du chargement ${err}.`, 'error');
-      // Fallback sur les ressources publiques
       try {
         const res = await getResources();
         setList(res.data ?? []);
@@ -90,7 +93,6 @@ export default function AdminRessourcesPage() {
   }, [filterStats, filterC, user?.role, addToast]);
  
   useEffect(() => {
-    // ✅ Remplace categories.list() → getCategories() et resources.list() → getResources()
     getCategories().then(setCatList).catch(console.error);
  
     getResources().then((res) => {
@@ -110,10 +112,9 @@ export default function AdminRessourcesPage() {
     if (user) fetchRes();
   }, [user, fetchRes]);
  
-  // ✅ FIX — suspendResource met le status à "archived" (ResourceStatus::ARCHIVED côté Laravel)
   async function handleSuspend(r: Resource) {
     try {
-      // ✅ Remplace admin.suspendResource() → api() direct
+      // ✅ Route correcte : PUT /admin/resources/{resource}/suspend
       await api(`/admin/resources/${r.id}/suspend`, { method: 'PUT' });
       const newStatus: Resource['status'] = r.status !== 'archived' ? 'archived' : 'published';
       setList((prev) => prev.map((item) =>
@@ -140,10 +141,9 @@ export default function AdminRessourcesPage() {
     }
   }
  
-  // ✅ FIX — validateResource met le status à "published" (ResourceStatus::PUBLISHED côté Laravel)
   async function handleValidate(r: Resource) {
     try {
-      // ✅ Remplace moderator.validateResource() → api() direct
+      // ✅ Route correcte : PUT /moderation/resources/{resource}/validate
       await api(`/moderation/resources/${r.id}/validate`, { method: 'PUT' });
       setList((prev) => prev.map((item) =>
         item.id === r.id ? { ...item, status: 'published' as const } : item
@@ -168,7 +168,6 @@ export default function AdminRessourcesPage() {
       <div style={s.content}>
         <div style={s.toolbar}>
           <div style={s.filters}>
-            {/* ✅ FIX — options alignées avec les vraies valeurs de status Laravel */}
             <select style={s.select} value={filterStats} onChange={(e) => setFilterStats(e.target.value)}>
               <option value="">Tous les statuts</option>
               <option value="pending">En attente</option>
@@ -185,7 +184,6 @@ export default function AdminRessourcesPage() {
             </select>
           </div>
  
-          {/* ✅ FIX — "citoyen" corrigé en "citizen" (valeur réelle du rôle Laravel) */}
           {user.role !== 'citizen' && user.role !== 'moderator' && (
             <button style={s.btnAdd} onClick={() => { setEditRes(null); setFormOpen(true); }}>
               + Ajouter une ressource
