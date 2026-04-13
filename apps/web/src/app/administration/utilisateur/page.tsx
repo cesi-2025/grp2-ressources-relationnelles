@@ -43,7 +43,7 @@ export default function RessourcesPage() {
 
   
   return (
-    <div style={{ padding: "40px 24px", minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+    <div style={{ padding: "40px 24px", minHeight: "100vh", background: "#f8fafc", fontFamily: "var(--font-sans)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
         {/* En-tête */}

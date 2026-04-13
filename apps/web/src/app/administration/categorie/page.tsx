@@ -40,15 +40,15 @@ export default function RessourcesPage() {
   const nextId = items.length > 0 ? Math.max(...items.map((i) => i.id)) + 1 : 1;
 
   
-  return (<div style={{ padding: "40px 24px", minHeight: "100vh", background: "#f8fafc", fontFamily: "'Segoe UI', system-ui, sans-serif" }}>
+  return (<div style={{ padding: "40px 24px", minHeight: "100vh", background: "#f8fafc", fontFamily: "var(--font-sans)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto" }}>
 
         {/* En-tête */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#0f172a" }}>Utilisateurs</h1>
+            <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: "#0f172a" }}>Catégories</h1>
             <p style={{ margin: "4px 0 0", color: "#64748b", fontSize: 14 }}>
-              {filtered.length} Categorie{filtered.length > 1 ? "s" : ""}
+              {filtered.length} Catégorie{filtered.length > 1 ? "s" : ""}
             </p>
           </div>
 
@@ -156,8 +156,8 @@ export default function RessourcesPage() {
 
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={6} style={{ padding: 48, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
-                    Aucun utilisateur trouvé.
+                  <td colSpan={3} style={{ padding: 48, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>
+                    Aucune catégorie trouvée.
                   </td>
                 </tr>
               )}

@@ -1,12 +1,21 @@
 'use client';
  
 import { useEffect, useState, useCallback } from 'react';
+<<<<<<< HEAD
+=======
+// ✅ FIX — api.ts exporte ApiRequestError (pas ApiError)
+// ✅ Plus d'import de createUser inexistant — on utilise api() directement
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
 import { api, ApiRequestError } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import s from '@/style/admin/userAdminStyle';
 import { useRouter } from 'next/navigation';
  
+<<<<<<< HEAD
 // Interface de création d'utilisateur
+=======
+// Interface locale (était dans api.ts corrigé, on la définit ici)
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
 interface CreateUser {
   id: number;
   name: string;
@@ -55,6 +64,10 @@ export default function UtilisateursPage() {
  
   const fetchUsers = useCallback(async () => {
     try {
+<<<<<<< HEAD
+=======
+      // ✅ Remplace createUser.list() inexistant → api() direct vers /super-admin/users
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
       const params: Record<string, string> = {};
       if (filterRole) params.role = filterRole;
       const query = Object.keys(params).length ? "?" + new URLSearchParams(params).toString() : "";
@@ -85,6 +98,10 @@ export default function UtilisateursPage() {
     setToggling(true);
     setError('');
     try {
+<<<<<<< HEAD
+=======
+      // ✅ Remplace createUser.toggleActive() inexistant → api() direct
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
       const res = await api<{ user: CreateUser }>(`/super-admin/users/${toggleTarget.id}/toggle`, { method: 'PUT' });
       setList((prev) => prev.map((u) => u.id === res.user.id ? res.user : u));
       setToggleTarget(null);
@@ -110,6 +127,10 @@ export default function UtilisateursPage() {
     }
     setSaving(true);
     try {
+<<<<<<< HEAD
+=======
+      // ✅ Remplace createUser.createPrivilegedUser() → api() direct vers /super-admin/users
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
       await api<CreateUser>('/super-admin/users', {
         method: 'POST',
         body: {
@@ -124,6 +145,10 @@ export default function UtilisateursPage() {
       setForm({ name: '', email: '', password: '', password_confirmation: '', role: 'moderator' });
       fetchUsers();
     } catch (err) {
+<<<<<<< HEAD
+=======
+      // ✅ FIX — instanceof ApiRequestError (nom correct dans api.ts)
+>>>>>>> 3110a0653e9150372b5b15a403fede59fd94b139
       if (err instanceof ApiRequestError && err.errors) {
         const flat: Record<string, string> = {};
         Object.entries(err.errors).forEach(([k, v]) => (flat[k] = v[0]));

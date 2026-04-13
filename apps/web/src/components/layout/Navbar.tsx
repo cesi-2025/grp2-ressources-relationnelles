@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Button from "../ui/Button";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, loading, logout } = useAuth();
+  const router = useRouter();
   const mobileMenuId = "main-mobile-menu";
 
   const navLinks = [
@@ -14,6 +18,11 @@ export default function Navbar() {
     { href: "/presentation", label: "Présentation" },
     { href: "/aide", label: "Aide" },
   ];
+
+  async function handleLogout() {
+    await logout();
+    router.push("/");
+  }
 
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50" aria-label="Navigation principale">
@@ -44,16 +53,34 @@ export default function Navbar() {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link href="/administration">
-              <Button variant="outline" size="sm">
-                Connexion
-              </Button>
-            </Link>
-            <Link href="/auth/inscription">
-              <Button variant="primary" size="sm">
-                Inscription
-              </Button>
-            </Link>
+            {loading ? null : user ? (
+              <>
+                <span className="text-sm text-gray-700 font-medium">{user.name}</span>
+                {(user.role === "admin" || user.role === "super_admin" || user.role === 'moderator') && (
+                  <Link href="/admin">
+                    <Button variant="outline" size="sm">
+                      Administration
+                    </Button>
+                  </Link>
+                )}
+                <Button variant="outline" size="sm" onClick={handleLogout}>
+                  Déconnexion
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/auth/connexion">
+                  <Button variant="outline" size="sm">
+                    Connexion
+                  </Button>
+                </Link>
+                <Link href="/auth/inscription">
+                  <Button variant="primary" size="sm">
+                    Inscription
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -105,16 +132,34 @@ export default function Navbar() {
                 </Link>
               ))}
               <div className="flex flex-col space-y-2 pt-3 border-t border-gray-200">
-                <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="outline" size="md" className="w-full">
-                    Connexion
-                  </Button>
-                </Link>
-                <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
-                  <Button variant="primary" size="md" className="w-full">
-                    Inscription
-                  </Button>
-                </Link>
+                {user ? (
+                  <>
+                    <span className="text-sm text-gray-700 font-medium px-2">{user.name}</span>
+                    {(user.role === "admin" || user.role === "super_admin") && (
+                      <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
+                        <Button variant="outline" size="md" className="w-full">
+                          Administration
+                        </Button>
+                      </Link>
+                    )}
+                    <Button variant="outline" size="md" className="w-full" onClick={() => { handleLogout(); setIsMenuOpen(false); }}>
+                      Déconnexion
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/auth/connexion" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="md" className="w-full">
+                        Connexion
+                      </Button>
+                    </Link>
+                    <Link href="/auth/inscription" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="primary" size="md" className="w-full">
+                        Inscription
+                      </Button>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>
