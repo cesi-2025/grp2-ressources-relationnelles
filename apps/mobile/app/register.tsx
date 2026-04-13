@@ -19,21 +19,22 @@ import {
 } from "react-native";
 import Animated from "react-native-reanimated";
 
-const FORGOT_PASSWORD_PATH = "/404-demo" as Href;
 const HOME_PATH = "/" as Href;
-const REGISTER_PATH = "/register" as Href;
+const LOGIN_PATH = "/login" as Href;
 
 const REDIRECT_MS = 120;
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
-  const { signIn } = useAuth();
+  const { signUp } = useAuth();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [postAuthLoading, setPostAuthLoading] = useState(false);
-  const [postAuthMessage, setPostAuthMessage] = useState("Connexion…");
+  const [postAuthMessage, setPostAuthMessage] = useState("Compte créé…");
   const [error, setError] = useState<string | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
@@ -47,24 +48,40 @@ export default function LoginScreen() {
     }, REDIRECT_MS);
   }, []);
 
-  const handleSubmitLogin = useCallback(async () => {
+  const handleSubmitRegister = useCallback(async () => {
+    if (!name.trim()) {
+      setError("Renseigne ton nom.");
+      return;
+    }
     if (!email.trim() || !password) {
       setError("Renseigne l’e-mail et le mot de passe.");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+    if (!passwordConfirm) {
+      setError("Confirme ton mot de passe.");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      setError("Les mots de passe ne correspondent pas.");
       return;
     }
     setSubmitting(true);
     setError(null);
     try {
-      await signIn(email, password);
-      goHomeAfterAuth("Connexion…");
+      await signUp(name, email, password);
+      goHomeAfterAuth("Compte créé…");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Connexion impossible.");
+      setError(e instanceof Error ? e.message : "Inscription impossible.");
       setSubmitting(false);
     }
-  }, [email, password, signIn, goHomeAfterAuth]);
+  }, [name, email, password, passwordConfirm, signUp, goHomeAfterAuth]);
 
-  const goToRegister = useCallback(() => {
-    router.replace(REGISTER_PATH);
+  const goToLogin = useCallback(() => {
+    router.replace(LOGIN_PATH);
   }, []);
 
   const scrollContentStyle = useMemo(
@@ -87,19 +104,37 @@ export default function LoginScreen() {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
-          <BackButton disabled={busy} />
+          <BackButton
+            disabled={busy}
+            onPress={goToLogin}
+            accessibilityLabel="Retour à la connexion"
+          />
 
           <ThemedText
             variant="headline"
             color="foreground"
             style={styles.pageTitle}
           >
-            Connexion
+            Inscription
           </ThemedText>
 
           <Card>
             <LabeledTextInput
+              label="Nom"
+              value={name}
+              onChangeText={(t) => {
+                setName(t);
+                clearError();
+              }}
+              placeholder="Prénom Nom"
+              autoCapitalize="words"
+              autoComplete="name"
+              editable={!busy}
+            />
+
+            <LabeledTextInput
               label="Adresse e-mail"
+              labelStyle={styles.fieldLabel}
               value={email}
               onChangeText={(t) => {
                 setEmail(t);
@@ -111,6 +146,10 @@ export default function LoginScreen() {
               autoComplete="email"
               editable={!busy}
             />
+
+            <ThemedText variant="body2" color="gray600" style={styles.emailHint}>
+              Un seul compte par adresse e-mail.
+            </ThemedText>
 
             <LabeledTextInput
               label="Mot de passe"
@@ -125,27 +164,26 @@ export default function LoginScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               spellCheck={false}
-              autoComplete="password"
+              autoComplete="password-new"
               editable={!busy}
             />
 
-            <Pressable
-              onPress={() => router.push(FORGOT_PASSWORD_PATH)}
-              accessibilityRole="link"
-              accessibilityLabel="Mot de passe oublié"
-              style={styles.forgotPasswordRow}
-            >
-              <ThemedText
-                variant="subtitle1"
-                color="primary"
-                style={[
-                  styles.forgotPasswordText,
-                  { textDecorationColor: colors.primary },
-                ]}
-              >
-                Vous avez oublié votre mot de passe ?
-              </ThemedText>
-            </Pressable>
+            <LabeledTextInput
+              label="Confirmer le mot de passe"
+              labelStyle={styles.fieldLabel}
+              value={passwordConfirm}
+              onChangeText={(t) => {
+                setPasswordConfirm(t);
+                clearError();
+              }}
+              placeholder="••••••••"
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              spellCheck={false}
+              autoComplete="password-new"
+              editable={!busy}
+            />
 
             {error ? (
               <ThemedText
@@ -157,11 +195,11 @@ export default function LoginScreen() {
               </ThemedText>
             ) : null}
 
-            <View style={styles.buttonsRow}>
+            <View style={styles.submitBlock}>
               <Pressable
-                onPress={() => void handleSubmitLogin()}
+                onPress={() => void handleSubmitRegister()}
                 accessibilityRole="button"
-                accessibilityLabel="Se connecter"
+                accessibilityLabel="S’inscrire"
                 disabled={busy}
                 style={[
                   styles.primaryButton,
@@ -179,31 +217,33 @@ export default function LoginScreen() {
                     color="gray50"
                     style={styles.bold}
                   >
-                    Se connecter
+                    S’inscrire
                   </ThemedText>
                 )}
               </Pressable>
 
               <Pressable
-                onPress={goToRegister}
-                accessibilityRole="button"
-                accessibilityLabel="Aller à l’inscription"
+                onPress={goToLogin}
+                accessibilityRole="link"
+                accessibilityLabel="Vous avez un compte, se connecter"
                 disabled={busy}
-                style={[
-                  styles.secondaryButton,
-                  {
-                    borderColor: colors.gray300,
-                    opacity: busy ? 0.5 : 1,
-                  },
-                ]}
+                style={[styles.loginLinkRow, busy && styles.loginLinkDisabled]}
               >
-                <ThemedText
-                  variant="subtitle1"
-                  color="foreground"
-                  style={styles.bold}
-                >
-                  S’inscrire
-                </ThemedText>
+                <View style={styles.loginLinkInner}>
+                  <ThemedText variant="body2" color="gray600">
+                    Vous avez un compte ?{" "}
+                  </ThemedText>
+                  <ThemedText
+                    variant="subtitle1"
+                    color="primary"
+                    style={[
+                      styles.linkUnderline,
+                      { textDecorationColor: colors.primary },
+                    ]}
+                  >
+                    Se connecter
+                  </ThemedText>
+                </View>
               </Pressable>
             </View>
           </Card>
@@ -225,40 +265,44 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 24,
   },
-  forgotPasswordRow: {
-    alignSelf: "flex-end",
-    marginTop: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 2,
-  },
-  forgotPasswordText: {
-    textDecorationLine: "underline",
-  },
   bold: {
     fontWeight: "600",
   },
   fieldLabel: {
     marginTop: 16,
   },
+  emailHint: {
+    marginTop: 8,
+  },
   errorText: {
     marginTop: 12,
   },
-  buttonsRow: {
-    flexDirection: "row",
-    gap: 10,
+  submitBlock: {
     marginTop: 24,
+    gap: 16,
+    alignSelf: "stretch",
   },
   primaryButton: {
-    flex: 1,
     paddingVertical: 14,
     borderRadius: 8,
+    alignItems: "center",
+    alignSelf: "stretch",
+  },
+  loginLinkRow: {
+    alignSelf: "center",
+    paddingVertical: 6,
+    paddingHorizontal: 4,
+  },
+  loginLinkDisabled: {
+    opacity: 0.5,
+  },
+  loginLinkInner: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     alignItems: "center",
   },
-  secondaryButton: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: "center",
-    borderWidth: 1,
+  linkUnderline: {
+    textDecorationLine: "underline",
   },
 });

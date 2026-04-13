@@ -1,10 +1,13 @@
+import { ALL_CATEGORY_ROW, type CategoryRow } from "@/constants/categories";
 import {
-  ALL_CATEGORY_ID,
-  DEFAULT_CATEGORIES,
-  type CategoryRow,
-} from "@/constants/categories";
-import { RELATION_TYPE_OPTIONS } from "@/constants/resourceMeta";
-import { apiListCategories } from "@/lib/resourceApi";
+  FALLBACK_RELATION_TYPE_OPTIONS,
+  FALLBACK_RESOURCE_TYPE_OPTIONS,
+  type ResourceMetaOption,
+} from "@/constants/resourceMeta";
+import {
+  apiDiscoverResourceMetaFromResources,
+  apiListCategories,
+} from "@/lib/resourceApi";
 import {
   createContext,
   useCallback,
@@ -16,8 +19,9 @@ import {
 } from "react";
 
 export type SortOption = "date" | "title";
-export type VisibilityOption = "all" | "public" | "restricted";
 export type RelationTypeFilter = "all" | `${number}`;
+
+const DEFAULT_SORT: SortOption = "date";
 
 type CategoryContextValue = {
   selectedCategoryId: string;
@@ -26,37 +30,64 @@ type CategoryContextValue = {
   relationTypeId: RelationTypeFilter;
   setRelationTypeId: (id: RelationTypeFilter) => void;
   relationTypeOptions: readonly { id: RelationTypeFilter; name: string }[];
+  relationTypePickOptions: readonly ResourceMetaOption[];
+  resourceTypePickOptions: readonly ResourceMetaOption[];
   sortBy: SortOption;
-  setSortBy: (sort: SortOption) => void;
-  visibility: VisibilityOption;
-  setVisibility: (visibility: VisibilityOption) => void;
 };
 
 const CategoryContext = createContext<CategoryContextValue | null>(null);
 
 export function CategoryProvider({ children }: { children: ReactNode }) {
-  const [selectedCategoryId, setSelectedCategoryIdState] = useState(ALL_CATEGORY_ID);
-  const [relationTypeId, setRelationTypeIdState] = useState<RelationTypeFilter>("all");
-  const [sortBy, setSortBy] = useState<SortOption>("date");
-  const [visibility, setVisibility] = useState<VisibilityOption>("all");
-  const [categoryOptions, setCategoryOptions] =
-    useState<readonly CategoryRow[]>(DEFAULT_CATEGORIES);
+  const [selectedCategoryId, setSelectedCategoryIdState] =
+    useState(ALL_CATEGORY_ROW.id);
+  const [relationTypeId, setRelationTypeIdState] =
+    useState<RelationTypeFilter>("all");
+  const [categoryOptions, setCategoryOptions] = useState<
+    readonly CategoryRow[]
+  >([ALL_CATEGORY_ROW]);
+  const [relationTypePickOptions, setRelationTypePickOptions] = useState<
+    readonly ResourceMetaOption[]
+  >(FALLBACK_RELATION_TYPE_OPTIONS);
+  const [resourceTypePickOptions, setResourceTypePickOptions] = useState<
+    readonly ResourceMetaOption[]
+  >(FALLBACK_RESOURCE_TYPE_OPTIONS);
 
-  const refreshCategories = useCallback(async () => {
-    try {
-      const categories = await apiListCategories();
+  const refreshCatalog = useCallback(async () => {
+    const [catRes, metaRes] = await Promise.allSettled([
+      apiListCategories(),
+      apiDiscoverResourceMetaFromResources(),
+    ]);
+
+    if (catRes.status === "fulfilled" && catRes.value.length > 0) {
       setCategoryOptions([
-        DEFAULT_CATEGORIES[0],
-        ...categories.map((c) => ({ id: String(c.id), name: c.name })),
+        ALL_CATEGORY_ROW,
+        ...catRes.value.map((c) => ({ id: String(c.id), name: c.name })),
       ]);
-    } catch {
-      setCategoryOptions(DEFAULT_CATEGORIES);
+    } else {
+      setCategoryOptions([ALL_CATEGORY_ROW]);
+    }
+
+    if (metaRes.status === "fulfilled") {
+      const { relationTypes, resourceTypes } = metaRes.value;
+      if (relationTypes.length > 0) {
+        setRelationTypePickOptions(relationTypes);
+      } else {
+        setRelationTypePickOptions(FALLBACK_RELATION_TYPE_OPTIONS);
+      }
+      if (resourceTypes.length > 0) {
+        setResourceTypePickOptions(resourceTypes);
+      } else {
+        setResourceTypePickOptions(FALLBACK_RESOURCE_TYPE_OPTIONS);
+      }
+    } else {
+      setRelationTypePickOptions(FALLBACK_RELATION_TYPE_OPTIONS);
+      setResourceTypePickOptions(FALLBACK_RESOURCE_TYPE_OPTIONS);
     }
   }, []);
 
   useEffect(() => {
-    void refreshCategories();
-  }, [refreshCategories]);
+    void refreshCatalog();
+  }, [refreshCatalog]);
 
   const setSelectedCategoryId = useCallback((id: string) => {
     setSelectedCategoryIdState(id);
@@ -66,6 +97,17 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
     setRelationTypeIdState(id);
   }, []);
 
+  const relationTypeOptions = useMemo(
+    () => [
+      { id: "all" as const, name: "Toutes" },
+      ...relationTypePickOptions.map((relation) => ({
+        id: String(relation.id) as RelationTypeFilter,
+        name: relation.name,
+      })),
+    ],
+    [relationTypePickOptions],
+  );
+
   const value = useMemo(
     () => ({
       selectedCategoryId,
@@ -73,19 +115,21 @@ export function CategoryProvider({ children }: { children: ReactNode }) {
       categoryOptions,
       relationTypeId,
       setRelationTypeId,
-      relationTypeOptions: [
-        { id: "all", name: "Toutes" },
-        ...RELATION_TYPE_OPTIONS.map((relation) => ({
-          id: String(relation.id) as RelationTypeFilter,
-          name: relation.name,
-        })),
-      ],
-      sortBy,
-      setSortBy,
-      visibility,
-      setVisibility,
+      relationTypeOptions,
+      relationTypePickOptions,
+      resourceTypePickOptions,
+      sortBy: DEFAULT_SORT,
     }),
-    [selectedCategoryId, categoryOptions, relationTypeId, sortBy, visibility],
+    [
+      selectedCategoryId,
+      setSelectedCategoryId,
+      categoryOptions,
+      relationTypeId,
+      setRelationTypeId,
+      relationTypeOptions,
+      relationTypePickOptions,
+      resourceTypePickOptions,
+    ],
   );
 
   return (

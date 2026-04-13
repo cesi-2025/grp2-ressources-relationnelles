@@ -6,20 +6,21 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
 import { useThemeColors } from "@/hooks/useThemeColors";
 import {
-  canManageFavorites as canManageFavoritesPermission,
-  canComment as canCommentPermission,
-  canEditResource as canEditResourcePermission,
-} from "@/lib/resourcePermissions";
-import {
   apiCreateComment,
   apiGetProgression,
   apiGetResource,
   apiListComments,
   apiReplyComment,
   apiSetFavorite,
+  apiSetProgression,
   type ApiComment,
   type ApiResource,
 } from "@/lib/resourceApi";
+import {
+  canComment as canCommentPermission,
+  canEditResource as canEditResourcePermission,
+  canManageFavorites as canManageFavoritesPermission,
+} from "@/lib/resourcePermissions";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { router, useLocalSearchParams } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -73,7 +74,15 @@ function progressionFlags(
   progression: Awaited<ReturnType<typeof apiGetProgression>>,
 ) {
   return {
-    favorited: progression.favorites.some((r) => rowMatchesResource(r, resourceId)),
+    favorited: progression.favorites.some((r) =>
+      rowMatchesResource(r, resourceId),
+    ),
+    exploited: progression.exploited.some((r) =>
+      rowMatchesResource(r, resourceId),
+    ),
+    setAside: progression.set_aside.some((r) =>
+      rowMatchesResource(r, resourceId),
+    ),
   };
 }
 
@@ -107,7 +116,10 @@ function normalizeCommentsTree(list: ApiComment[]): ApiComment[] {
   return roots;
 }
 
-function appendCommentInTree(list: ApiComment[], comment: ApiComment): ApiComment[] {
+function appendCommentInTree(
+  list: ApiComment[],
+  comment: ApiComment,
+): ApiComment[] {
   if (!comment.parent_id) {
     return [...list, { ...comment, replies: comment.replies ?? [] }];
   }
@@ -116,7 +128,10 @@ function appendCommentInTree(list: ApiComment[], comment: ApiComment): ApiCommen
     if (parent.id !== comment.parent_id) return parent;
     return {
       ...parent,
-      replies: [...(parent.replies ?? []), { ...comment, replies: comment.replies ?? [] }],
+      replies: [
+        ...(parent.replies ?? []),
+        { ...comment, replies: comment.replies ?? [] },
+      ],
     };
   });
 }
@@ -132,7 +147,10 @@ export default function ResourceDetailScreen() {
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const { token, user, isLoggedIn } = useAuth();
   const canComment = canCommentPermission({ isLoggedIn, token });
-  const canManageFavorites = canManageFavoritesPermission({ isLoggedIn, token });
+  const canManageFavorites = canManageFavoritesPermission({
+    isLoggedIn,
+    token,
+  });
 
   const [resource, setResource] = useState<ApiResource | null>(null);
   const [resourceLoading, setResourceLoading] = useState(true);
@@ -145,21 +163,41 @@ export default function ResourceDetailScreen() {
   const [error, setError] = useState<string | null>(null);
   const [commentsError, setCommentsError] = useState<string | null>(null);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isExploited, setIsExploited] = useState(false);
+  const [isSetAside, setIsSetAside] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  const applyProgressionPayload = useCallback(
+    (progression: Awaited<ReturnType<typeof apiGetProgression>> | null) => {
+      if (!resourceId) return;
+      if (!progression) {
+        setIsFavorited(false);
+        setIsExploited(false);
+        setIsSetAside(false);
+        return;
+      }
+      const flags = progressionFlags(resourceId, progression);
+      setIsFavorited(flags.favorited);
+      setIsExploited(flags.exploited);
+      setIsSetAside(flags.setAside);
+    },
+    [resourceId],
+  );
 
   const refreshFavoriteStatus = useCallback(async () => {
     if (!token || !resourceId) {
       setIsFavorited(false);
+      setIsExploited(false);
+      setIsSetAside(false);
       return;
     }
     try {
       const progression = await apiGetProgression(token);
-      const flags = progressionFlags(resourceId, progression);
-      setIsFavorited(flags.favorited);
+      applyProgressionPayload(progression);
     } catch {
-      setIsFavorited(false);
+      applyProgressionPayload(null);
     }
-  }, [resourceId, token]);
+  }, [applyProgressionPayload, resourceId, token]);
 
   const refreshComments = useCallback(async () => {
     setCommentsLoading(true);
@@ -168,7 +206,11 @@ export default function ResourceDetailScreen() {
       setComments(normalizeCommentsTree(list));
       setCommentsError(null);
     } catch (e) {
-      setCommentsError(e instanceof Error ? e.message : "Chargement des commentaires impossible.");
+      setCommentsError(
+        e instanceof Error
+          ? e.message
+          : "Chargement des commentaires impossible.",
+      );
       throw e;
     } finally {
       setCommentsLoading(false);
@@ -190,37 +232,63 @@ export default function ResourceDetailScreen() {
     setComments([]);
     void (async () => {
       try {
-        const resourceData = await apiGetResource(resourceId);
+        const settled = await Promise.allSettled([
+          apiGetResource(resourceId),
+          apiListComments(resourceId),
+          token ? apiGetProgression(token) : Promise.resolve(null),
+        ]);
         if (cancelled) return;
-        setResource(resourceData);
+        const [resSettled, commentsSettled, progressionSettled] = settled;
+        if (resSettled.status === "fulfilled") {
+          setResource(resSettled.value);
+          setError(null);
+        } else {
+          setError(
+            resSettled.reason instanceof Error
+              ? resSettled.reason.message
+              : "Chargement impossible.",
+          );
+          setResource(null);
+        }
+        if (commentsSettled.status === "fulfilled") {
+          setComments(normalizeCommentsTree(commentsSettled.value));
+          setCommentsError(null);
+        } else {
+          setCommentsError(
+            commentsSettled.reason instanceof Error
+              ? commentsSettled.reason.message
+              : "Chargement des commentaires impossible.",
+          );
+          setComments([]);
+        }
+        if (token) {
+          if (
+            progressionSettled.status === "fulfilled" &&
+            progressionSettled.value
+          ) {
+            applyProgressionPayload(progressionSettled.value);
+          } else {
+            applyProgressionPayload(null);
+          }
+        } else {
+          applyProgressionPayload(null);
+        }
       } catch (e) {
         if (!cancelled) {
           setError(e instanceof Error ? e.message : "Chargement impossible.");
           setResource(null);
         }
       } finally {
-        if (!cancelled) setResourceLoading(false);
-      }
-
-      if (!cancelled) {
-        void refreshComments().catch(() => {});
+        if (!cancelled) {
+          setResourceLoading(false);
+          setCommentsLoading(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [resourceId, refreshComments]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      await refreshFavoriteStatus();
-      if (cancelled) return;
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [refreshFavoriteStatus]);
+  }, [applyProgressionPayload, resourceId, token]);
 
   const resolveCreatedComment = useCallback(
     async (created: ApiComment): Promise<"appended" | "pending"> => {
@@ -241,7 +309,10 @@ export default function ResourceDetailScreen() {
       await apiSetFavorite(token, resourceId, next);
     } catch (e) {
       setIsFavorited(!next);
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Action impossible.");
+      Alert.alert(
+        "Erreur",
+        e instanceof Error ? e.message : "Action impossible.",
+      );
     }
   }, [canManageFavorites, isFavorited, resourceId, token]);
 
@@ -257,6 +328,34 @@ export default function ResourceDetailScreen() {
     }
   }, [resource]);
 
+  const handleSetProgression = useCallback(
+    async (status: "exploited" | "set_aside") => {
+      if (!token) {
+        router.push({ pathname: "/login" });
+        return;
+      }
+      setBusyAction(true);
+      try {
+        await apiSetProgression(token, resourceId, status);
+        if (status === "exploited") {
+          setIsExploited(true);
+          setIsSetAside(false);
+        } else {
+          setIsSetAside(true);
+          setIsExploited(false);
+        }
+      } catch (e) {
+        Alert.alert(
+          "Erreur",
+          e instanceof Error ? e.message : "Mise à jour impossible.",
+        );
+      } finally {
+        setBusyAction(false);
+      }
+    },
+    [resourceId, token],
+  );
+
   const handlePostComment = useCallback(async () => {
     if (!canComment || !token) {
       router.push({ pathname: "/login" });
@@ -268,14 +367,24 @@ export default function ResourceDetailScreen() {
     }
     setBusyAction(true);
     try {
-      const created = await apiCreateComment(token, resourceId, commentDraft.trim());
+      const created = await apiCreateComment(
+        token,
+        resourceId,
+        commentDraft.trim(),
+      );
       const status = await resolveCreatedComment(created);
       if (status === "pending") {
-        Alert.alert("Commentaire envoyé", "Votre commentaire est en attente de modération.");
+        Alert.alert(
+          "Commentaire envoyé",
+          "Votre commentaire est en attente de modération.",
+        );
       }
       setCommentDraft("");
     } catch (e) {
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Publication impossible.");
+      Alert.alert(
+        "Erreur",
+        e instanceof Error ? e.message : "Publication impossible.",
+      );
     } finally {
       setBusyAction(false);
     }
@@ -293,15 +402,25 @@ export default function ResourceDetailScreen() {
     }
     setBusyAction(true);
     try {
-      const created = await apiReplyComment(token, replyToCommentId, replyDraft.trim());
+      const created = await apiReplyComment(
+        token,
+        replyToCommentId,
+        replyDraft.trim(),
+      );
       const status = await resolveCreatedComment(created);
       if (status === "pending") {
-        Alert.alert("Réponse envoyée", "Votre réponse est en attente de modération.");
+        Alert.alert(
+          "Réponse envoyée",
+          "Votre réponse est en attente de modération.",
+        );
       }
       setReplyDraft("");
       setReplyToCommentId(null);
     } catch (e) {
-      Alert.alert("Erreur", e instanceof Error ? e.message : "Réponse impossible.");
+      Alert.alert(
+        "Erreur",
+        e instanceof Error ? e.message : "Réponse impossible.",
+      );
     } finally {
       setBusyAction(false);
     }
@@ -311,13 +430,22 @@ export default function ResourceDetailScreen() {
     if (!resourceId) return;
     setRefreshing(true);
     try {
-      const [resourceData] = await Promise.all([
+      const settled = await Promise.allSettled([
         apiGetResource(resourceId),
         refreshComments(),
+        refreshFavoriteStatus(),
       ]);
-      setResource(resourceData);
-      setError(null);
-      await refreshFavoriteStatus();
+      const [resSettled] = settled;
+      if (resSettled.status === "fulfilled") {
+        setResource(resSettled.value);
+        setError(null);
+      } else {
+        setError(
+          resSettled.reason instanceof Error
+            ? resSettled.reason.message
+            : "Chargement impossible.",
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Chargement impossible.");
     } finally {
@@ -326,13 +454,29 @@ export default function ResourceDetailScreen() {
   }, [refreshComments, refreshFavoriteStatus, resourceId]);
   const canEditResource = useMemo(() => {
     if (!resource) return false;
-    const ownerId = resource.user?.id ?? resource.user_id;
+    const ownerRaw = resource.user?.id ?? resource.user_id;
+    const ownerId =
+      ownerRaw === null || ownerRaw === undefined ? undefined : Number(ownerRaw);
+    const userId =
+      user?.id === null || user?.id === undefined ? undefined : Number(user.id);
     return canEditResourcePermission({
       isLoggedIn,
-      userId: user?.id,
+      userId,
       ownerId,
     });
   }, [isLoggedIn, resource, user]);
+
+  const navigateToEdit = useCallback(() => {
+    if (!resource) return;
+    router.push({
+      pathname: "/resource/edit/[id]",
+      params: { id: String(resource.id) },
+    });
+  }, [resource]);
+
+  const goToHome = useCallback(() => {
+    router.replace({ pathname: "/" });
+  }, []);
 
   const scrollContentStyle = useMemo(
     () => [styles.scrollContent, { paddingBottom: contentInsetBottom }],
@@ -354,7 +498,10 @@ export default function ResourceDetailScreen() {
           />
         }
       >
-        <BackButton />
+        <BackButton
+          onPress={goToHome}
+          accessibilityLabel="Retour à l’accueil"
+        />
 
         {resourceLoading ? (
           <View style={styles.centered}>
@@ -377,6 +524,20 @@ export default function ResourceDetailScreen() {
             </ThemedText>
 
             <View style={styles.actionsRow}>
+              {canEditResource ? (
+                <Pressable
+                  onPress={navigateToEdit}
+                  accessibilityRole="button"
+                  accessibilityLabel="Modifier la ressource"
+                  style={styles.iconButton}
+                >
+                  <Ionicons
+                    name="create-outline"
+                    size={22}
+                    color={colors.foreground}
+                  />
+                </Pressable>
+              ) : null}
               {canManageFavorites ? (
                 <Pressable
                   onPress={() => void handleFavoriteToggle()}
@@ -397,44 +558,37 @@ export default function ResourceDetailScreen() {
                 accessibilityLabel="Partager la ressource"
                 style={styles.iconButton}
               >
-                <Ionicons name="share-outline" size={22} color={colors.foreground} />
+                <Ionicons
+                  name="share-outline"
+                  size={22}
+                  color={colors.foreground}
+                />
               </Pressable>
-              {canEditResource ? (
-                <Pressable
-                  onPress={() =>
-                    router.push({
-                      pathname: "/resource/edit/[id]",
-                      params: { id: String(resource.id) },
-                    })
-                  }
-                  accessibilityRole="button"
-                  accessibilityLabel="Modifier la ressource"
-                  style={styles.editButton}
-                >
-                  <ThemedText variant="subtitle2" color="foreground">
-                    Modifier
-                  </ThemedText>
-                </Pressable>
-              ) : null}
             </View>
 
             <View style={styles.metaRow}>
               {resource.category ? (
-                <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.primary }]}
+                >
                   <ThemedText variant="subtitle3" color="gray50">
                     {resource.category.name}
                   </ThemedText>
                 </View>
               ) : null}
               {resource.resource_type ? (
-                <View style={[styles.badge, { backgroundColor: colors.gray500 }]}>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.gray500 }]}
+                >
                   <ThemedText variant="subtitle3" color="gray50">
                     {resource.resource_type.name}
                   </ThemedText>
                 </View>
               ) : null}
               {resource.relation_type ? (
-                <View style={[styles.badge, { backgroundColor: colors.gray500 }]}>
+                <View
+                  style={[styles.badge, { backgroundColor: colors.gray500 }]}
+                >
                   <ThemedText variant="subtitle3" color="gray50">
                     {resource.relation_type.name}
                   </ThemedText>
@@ -442,8 +596,12 @@ export default function ResourceDetailScreen() {
               ) : null}
             </View>
 
-            <Card>
-              <ThemedText variant="body1" color="foreground" style={styles.content}>
+            <Card style={styles.contentCard}>
+              <ThemedText
+                variant="body1"
+                color="foreground"
+                style={styles.content}
+              >
                 {resource.content}
               </ThemedText>
             </Card>
@@ -451,7 +609,11 @@ export default function ResourceDetailScreen() {
             <Card>
               {resource.user ? (
                 <View style={styles.infoRow}>
-                  <Ionicons name="person-outline" size={16} color={colors.gray500} />
+                  <Ionicons
+                    name="person-outline"
+                    size={16}
+                    color={colors.gray500}
+                  />
                   <ThemedText variant="body2" color="gray600">
                     {resource.user.name}
                   </ThemedText>
@@ -459,11 +621,92 @@ export default function ResourceDetailScreen() {
               ) : null}
               {resource.created_at ? (
                 <View style={styles.infoRow}>
-                  <Ionicons name="calendar-outline" size={16} color={colors.gray500} />
+                  <Ionicons
+                    name="calendar-outline"
+                    size={16}
+                    color={colors.gray500}
+                  />
                   <ThemedText variant="body2" color="gray600">
                     {formatDate(resource.created_at)}
                   </ThemedText>
                 </View>
+              ) : null}
+            </Card>
+
+            <Card title="Suivi de la ressource">
+              <View style={styles.progressActionsRow}>
+                <Pressable
+                  onPress={() => void handleSetProgression("exploited")}
+                  disabled={busyAction || !canManageFavorites}
+                  accessibilityRole="button"
+                  accessibilityLabel="Marquer comme exploitée"
+                  style={[
+                    styles.progressButton,
+                    {
+                      backgroundColor: isExploited
+                        ? colors.primary
+                        : colors.background,
+                      borderColor: isExploited
+                        ? colors.primary
+                        : colors.gray300,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={
+                      isExploited
+                        ? "checkmark-circle"
+                        : "checkmark-circle-outline"
+                    }
+                    size={16}
+                    color={isExploited ? colors.gray50 : colors.foreground}
+                  />
+                  <ThemedText
+                    variant="subtitle2"
+                    color={isExploited ? "gray50" : "foreground"}
+                  >
+                    {isExploited ? "Exploitée" : "Marquer exploitée"}
+                  </ThemedText>
+                </Pressable>
+
+                <Pressable
+                  onPress={() => void handleSetProgression("set_aside")}
+                  disabled={busyAction || !canManageFavorites}
+                  accessibilityRole="button"
+                  accessibilityLabel="Mettre de côté"
+                  style={[
+                    styles.progressButton,
+                    {
+                      backgroundColor: isSetAside
+                        ? colors.secondary
+                        : colors.background,
+                      borderColor: isSetAside
+                        ? colors.secondary
+                        : colors.gray300,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name={isSetAside ? "pause-circle" : "pause-circle-outline"}
+                    size={16}
+                    color={isSetAside ? colors.gray50 : colors.foreground}
+                  />
+                  <ThemedText
+                    variant="subtitle2"
+                    color={isSetAside ? "gray50" : "foreground"}
+                  >
+                    {isSetAside ? "Mise de côté" : "Mettre de côté"}
+                  </ThemedText>
+                </Pressable>
+              </View>
+              {!canManageFavorites ? (
+                <ThemedText
+                  variant="body2"
+                  color="gray600"
+                  style={styles.progressHint}
+                >
+                  Connectez-vous pour suivre cette ressource.
+                </ThemedText>
               ) : null}
             </Card>
 
@@ -484,16 +727,28 @@ export default function ResourceDetailScreen() {
                 comments.map((comment) => (
                   <View
                     key={comment.id}
-                    style={[styles.commentBlock, { borderBottomColor: colors.gray300 }]}
+                    style={[
+                      styles.commentBlock,
+                      { borderBottomColor: colors.gray300 },
+                    ]}
                   >
                     <ThemedText variant="body1" color="foreground">
                       {comment.content}
                     </ThemedText>
-                    <ThemedText variant="body2" color="gray600" style={styles.commentMeta}>
-                      {comment.user?.name ?? "Anonyme"} · {formatDateTime(comment.created_at)}
+                    <ThemedText
+                      variant="body2"
+                      color="gray600"
+                      style={styles.commentMeta}
+                    >
+                      {comment.user?.name ?? "Anonyme"} ·{" "}
+                      {formatDateTime(comment.created_at)}
                     </ThemedText>
                     {isPendingModeration(comment) ? (
-                      <ThemedText variant="subtitle3" color="accent" style={styles.pendingMeta}>
+                      <ThemedText
+                        variant="subtitle3"
+                        color="accent"
+                        style={styles.pendingMeta}
+                      >
                         En attente de modération
                       </ThemedText>
                     ) : null}
@@ -524,7 +779,10 @@ export default function ResourceDetailScreen() {
                           multiline
                           style={[
                             styles.input,
-                            { borderColor: colors.gray300, color: colors.foreground },
+                            {
+                              borderColor: colors.gray300,
+                              color: colors.foreground,
+                            },
                           ]}
                         />
                         <Pressable
@@ -548,7 +806,10 @@ export default function ResourceDetailScreen() {
                         {comment.replies.map((reply) => (
                           <View
                             key={reply.id}
-                            style={[styles.replyItem, { borderLeftColor: colors.gray300 }]}
+                            style={[
+                              styles.replyItem,
+                              { borderLeftColor: colors.gray300 },
+                            ]}
                           >
                             <ThemedText variant="body2" color="foreground">
                               {reply.content}
@@ -596,7 +857,10 @@ export default function ResourceDetailScreen() {
                     onPress={handlePostComment}
                     disabled={busyAction}
                     accessibilityRole="button"
-                    style={[styles.commentButton, { backgroundColor: colors.primary }]}
+                    style={[
+                      styles.commentButton,
+                      { backgroundColor: colors.primary },
+                    ]}
                   >
                     <ThemedText variant="subtitle1" color="gray50">
                       Commenter
@@ -604,7 +868,11 @@ export default function ResourceDetailScreen() {
                   </Pressable>
                 </View>
               ) : (
-                <ThemedText variant="body2" color="gray600" style={styles.commentComposer}>
+                <ThemedText
+                  variant="body2"
+                  color="gray600"
+                  style={styles.commentComposer}
+                >
                   Connectez-vous pour commenter et répondre.
                 </ThemedText>
               )}
@@ -638,11 +906,6 @@ const styles = StyleSheet.create({
     padding: 6,
     borderRadius: 20,
   },
-  editButton: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
   metaRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -655,7 +918,17 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   content: {
+    paddingTop: 100,
     lineHeight: 22,
+    textAlign: "center",
+    maxWidth: "88%",
+  },
+  contentCard: {
+    width: "100%",
+    minHeight: 300,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 4,
   },
   infoRow: {
     flexDirection: "row",
@@ -716,5 +989,23 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     alignSelf: "flex-start",
     paddingHorizontal: 12,
+  },
+  progressActionsRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  progressButton: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+  progressHint: {
+    marginTop: 10,
   },
 });

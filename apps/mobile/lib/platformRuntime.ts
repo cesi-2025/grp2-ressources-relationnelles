@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 let platformOverride: string | null = null;
 
 export function setPlatformOverrideForTests(os: string | null): void {
@@ -7,17 +9,13 @@ export function setPlatformOverrideForTests(os: string | null): void {
 export function getPlatformOS(): string {
   if (platformOverride) return platformOverride;
 
-  try {
-    // Use runtime require to avoid hard dependency in test environment.
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const rn = require("react-native");
-    const os = rn?.Platform?.OS;
-    if (typeof os === "string") return os;
-  } catch {
-    // Fall through to safe defaults.
-  }
+  const os = Platform.OS;
+  if (typeof os === "string") return os;
 
-  if (typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent)) {
+  if (
+    typeof navigator !== "undefined" &&
+    /Android/i.test(navigator.userAgent)
+  ) {
     return "android";
   }
 

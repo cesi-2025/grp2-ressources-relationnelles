@@ -6,11 +6,6 @@ module.exports = {
     "^@/(.*)$": "<rootDir>/$1",
   },
   testMatch: ["**/__tests__/**/*.test.[jt]s?(x)"],
-  testPathIgnorePatterns: [
-    "/node_modules/",
-    "/.expo/",
-    "/__tests__/app/",
-    "/__tests__/contexts/",
-  ],
+  testPathIgnorePatterns: ["/node_modules/", "/.expo/"],
   clearMocks: true,
 };

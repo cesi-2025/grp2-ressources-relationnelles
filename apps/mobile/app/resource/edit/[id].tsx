@@ -4,11 +4,7 @@ import { FullScreenLoadingOverlay } from "@/components/FullScreenLoadingOverlay"
 import { LabeledTextInput } from "@/components/LabeledTextInput";
 import { RootView } from "@/components/RootView";
 import { ThemedText } from "@/components/ThemedText";
-import {
-  RELATION_TYPE_OPTIONS,
-  RESOURCE_TYPE_OPTIONS,
-  type ResourceMetaOption,
-} from "@/constants/resourceMeta";
+import { type ResourceMetaOption } from "@/constants/resourceMeta";
 import { useCategory } from "@/contexts/CategoryContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFooterScroll } from "@/contexts/FooterScrollContext";
@@ -16,7 +12,7 @@ import { useThemeColors } from "@/hooks/useThemeColors";
 import { canEditResource } from "@/lib/resourcePermissions";
 import { apiGetResource, apiUpdateResource } from "@/lib/resourceApi";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -78,9 +74,17 @@ export default function EditResourceScreen() {
   const colors = useThemeColors();
   const { scrollHandler, contentInsetBottom } = useFooterScroll();
   const { token, isLoggedIn, user } = useAuth();
-  const { categoryOptions } = useCategory();
+  const {
+    categoryOptions,
+    relationTypePickOptions,
+    resourceTypePickOptions,
+  } = useCategory();
   const params = useLocalSearchParams<{ id: string }>();
   const resourceId = Number(params.id);
+
+  const goToHome = useCallback(() => {
+    router.replace({ pathname: "/" });
+  }, []);
 
   const validCategories = useMemo(
     () => categoryOptions.filter((category) => category.id !== "all"),
@@ -108,10 +112,14 @@ export default function EditResourceScreen() {
       try {
         const resource = await apiGetResource(resourceId);
         if (cancelled) return;
-        const ownerId = resource.user?.id ?? resource.user_id;
+        const ownerRaw = resource.user?.id ?? resource.user_id;
+        const ownerId =
+          ownerRaw === null || ownerRaw === undefined ? undefined : Number(ownerRaw);
+        const userId =
+          user?.id === null || user?.id === undefined ? undefined : Number(user.id);
         const canEdit = canEditResource({
           isLoggedIn,
-          userId: user?.id,
+          userId,
           ownerId,
         });
         if (!canEdit) {
@@ -160,7 +168,10 @@ export default function EditResourceScreen() {
         resource_type_id: resourceTypeId,
         is_public: true,
       });
-      router.replace({ pathname: "/resource/[id]", params: { id: String(resourceId) } });
+      router.replace({
+        pathname: "/resource/[id]",
+        params: { id: String(resourceId) },
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : "Modification impossible.");
     } finally {
@@ -185,7 +196,10 @@ export default function EditResourceScreen() {
           onScroll={scrollHandler}
           scrollEventThrottle={16}
         >
-          <BackButton />
+          <BackButton
+            onPress={goToHome}
+            accessibilityLabel="Retour à l’accueil"
+          />
           <ThemedText variant="headline" color="foreground" style={styles.pageTitle}>
             Modifier la ressource
           </ThemedText>
@@ -256,7 +270,7 @@ export default function EditResourceScreen() {
 
               <SelectRow
                 label="Type de relation"
-                options={RELATION_TYPE_OPTIONS}
+                options={relationTypePickOptions}
                 selectedId={relationTypeId}
                 disabled={submitting}
                 onSelect={(id) => {
@@ -267,7 +281,7 @@ export default function EditResourceScreen() {
 
               <SelectRow
                 label="Type de ressource"
-                options={RESOURCE_TYPE_OPTIONS}
+                options={resourceTypePickOptions}
                 selectedId={resourceTypeId}
                 disabled={submitting}
                 onSelect={(id) => {

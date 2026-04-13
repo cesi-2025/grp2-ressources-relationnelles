@@ -18,6 +18,7 @@ const fetchDefaults: Pick<RequestInit, "credentials"> = {
   credentials: "omit",
 };
 
+// Shared JSON headers for auth requests.
 const jsonHeaders: HeadersInit = {
   Accept: "application/json",
   "Content-Type": "application/json",
@@ -37,9 +38,13 @@ function parseApiErrorBody(data: unknown, status: number): string {
   const d = data as Record<string, unknown>;
   if ("errors" in d && typeof d.errors === "object" && d.errors !== null) {
     const first = Object.values(d.errors as Record<string, string[]>).flat()[0];
-    if (first) return first;
+    if (first) {
+      return first;
+    }
   }
-  if (typeof d.message === "string") return d.message;
+  if (typeof d.message === "string") {
+    return d.message;
+  }
   return `Erreur ${status}`;
 }
 
@@ -158,6 +163,8 @@ export async function apiMe(token: string): Promise<ApiUser> {
     ...fetchDefaults,
     headers: bearerHeaders(token),
   });
-  if (!res.ok) throw new Error("Session invalide");
+  if (!res.ok) {
+    throw new Error("Session invalide");
+  }
   return res.json() as Promise<ApiUser>;
 }

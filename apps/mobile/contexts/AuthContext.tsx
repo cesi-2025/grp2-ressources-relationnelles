@@ -40,6 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<ApiUser | null>(null);
 
+  // Chargement du token et de l'utilisateur une fois au démarrage.
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -73,12 +74,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   }, []);
 
-  const signUp = useCallback(async (name: string, email: string, password: string) => {
-    const data = await apiRegister(name, email, password);
-    await setStoredToken(data.token);
-    setToken(data.token);
-    setUser(data.user);
-  }, []);
+  const signUp = useCallback(
+    async (name: string, email: string, password: string) => {
+      const data = await apiRegister(name, email, password);
+      await setStoredToken(data.token);
+      setToken(data.token);
+      setUser(data.user);
+    },
+    [],
+  );
 
   const signOut = useCallback(async () => {
     const t = token;
@@ -123,9 +127,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [isReady, token, user, signIn, signUp, signOut, deleteAccount, refreshUser],
   );
 
-  return (
-    <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
