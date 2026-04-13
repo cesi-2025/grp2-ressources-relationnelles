@@ -2,19 +2,29 @@
  
 import Link from "next/link";
 import { useState } from "react";
-import { navbarAdminS, responsiveCss } from "@/style/navAdminStyle";
+import { navbarAdminS, responsiveCss } from "@/style/admin/navAdminStyle";
+import { useAuth } from "@/contexts/AuthContext";
+
+const data_admin_tab = {
+  "admin": "Administration",
+  "moderator": "Modération",
+  "super_admin": "Super Administrateur"
+}
+
  
 export default function NavbarAdmin() {
+  const {logout} = useAuth()
+  const { user, loading} = useAuth()
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const mobileMenuId = "admin-mobile-menu";
  
+  if(!loading) return null
   return (
     <>
       <nav style={navbarAdminS.nav} aria-label="Navigation administration">
         <div style={navbarAdminS.inner}>
  
-          {/* ── Logo ──────────────────────────────────────────────────────── */}
-          <Link href="/administration" style={navbarAdminS.logoWrap}>
+          <Link href="/admin" style={navbarAdminS.logoWrap}>
             <div style={navbarAdminS.logoIcon}>MA</div>
             <div>
               <span style={navbarAdminS.logoText}>Harmonie</span>
@@ -22,22 +32,54 @@ export default function NavbarAdmin() {
             </div>
           </Link>
  
-          {/* ── Badge Administration ──────────────────────────────────────── */}
-          <span style={navbarAdminS.adminBadge}>Administration</span>
+          <span style={navbarAdminS.adminBadge}>{user?.role in data_admin_tab? data_admin_tab[user?.role] : ""}</span>
  
           <div style={navbarAdminS.spacer} />
  
-          {/* ── Auth ─────────────────────────────────────────────────────── */}
-          <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
-            <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
-              Connexion
-            </Link>
-            <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
-              Inscription
-            </Link>
-          </div>
- 
-          {/* ── Burger mobile ─────────────────────────────────────────────── */}
+          {user ? (
+            <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 600, fontSize: 14, color: '#1a1a1a' }}>
+                    {user?.name}
+                  </div>
+                  <div style={{ fontSize: 12, color: '#6b7280' }}>
+                    {user?.email}
+                  </div>
+                </div>
+                <div style={{ width: 1, height: 32, background: '#e2e5ea' }} />
+
+                <button
+                  type="button"
+                  onClick={() => { if (confirm('Voulez-vous vraiment vous déconnecter ?')) logout(); }}
+                  style={{
+                    background: 'transparent',
+                    border: '1px solid #d1d5db',
+                    borderRadius: 6,
+                    padding: '6px 14px',
+                    fontSize: 13,
+                    color: '#6b7280',
+                    cursor: 'pointer',
+                    fontFamily: "'Open Sans', sans-serif",
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  Déconnexion
+                </button>
+              </div>
+            </div>
+          ):
+          (
+            <div style={navbarAdminS.authWrap} className="navbar-admin-auth">
+              <Link href="/auth/connexion" style={navbarAdminS.btnOutline} className="btn-admin-outline">
+                Connexion
+              </Link>
+              <Link href="/auth/inscription" style={navbarAdminS.btnPrimary} className="btn-admin-primary">
+                Inscription
+              </Link>
+            </div>
+          )}
+          
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Menu"
@@ -57,7 +99,6 @@ export default function NavbarAdmin() {
           </button>
         </div>
  
-        {/* ── Mobile menu ───────────────────────────────────────────────────── */}
         {isMenuOpen && (
           <div id={mobileMenuId} style={navbarAdminS.mobileMenu}>
             <div style={navbarAdminS.mobileAuthRow}>

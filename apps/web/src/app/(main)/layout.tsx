@@ -1,5 +1,6 @@
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
+import { AuthPage } from "@/components/layout/ProtectedPage";
 
 export default function MainLayout({
   children,

@@ -18,6 +18,7 @@ import {
   ApiRequestError,
 } from "@/lib/api";
 
+
 function getCategoryVariant(category: string): "primary" | "secondary" | "accent" {
   if (category === "Communication" || category === "Gestion des conflits") {
     return "primary";

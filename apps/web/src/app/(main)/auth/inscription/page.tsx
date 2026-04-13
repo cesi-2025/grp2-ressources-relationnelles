@@ -1,5 +1,5 @@
 "use client";
-
+ 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Card from "@/components/ui/Card";
@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiRequestError } from "@/lib/api";
-
+ 
 export default function InscriptionPage() {
   const router = useRouter();
   const { register } = useAuth();
@@ -19,19 +19,19 @@ export default function InscriptionPage() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(false);
-
+ 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError("");
     setFieldErrors({});
-
+ 
     if (password !== passwordConfirmation) {
       setError("Les mots de passe ne correspondent pas.");
       return;
     }
-
+ 
     setLoading(true);
-
+ 
     try {
       await register(name, email, password, passwordConfirmation);
       router.push("/ressources");
@@ -46,7 +46,7 @@ export default function InscriptionPage() {
       setLoading(false);
     }
   }
-
+ 
   return (
     <div className="bg-gray-50 min-h-screen py-12 flex items-center justify-center">
       <div className="max-w-md w-full px-4">
@@ -56,7 +56,7 @@ export default function InscriptionPage() {
             Créez votre compte pour accéder aux ressources
           </p>
         </div>
-
+ 
         <Card>
           <form className="space-y-4" onSubmit={handleSubmit}>
             {error && (
@@ -64,8 +64,9 @@ export default function InscriptionPage() {
                 {error}
               </div>
             )}
-
+ 
             <Input
+              name="name"
               label="Nom complet"
               type="text"
               placeholder="Jean Dupont"
@@ -76,6 +77,7 @@ export default function InscriptionPage() {
               error={fieldErrors.name?.[0]}
             />
             <Input
+              name="email"
               label="Email"
               type="email"
               placeholder="jean.dupont@example.com"
@@ -86,6 +88,7 @@ export default function InscriptionPage() {
               error={fieldErrors.email?.[0]}
             />
             <Input
+              name="password"
               label="Mot de passe"
               type="password"
               placeholder="••••••••"
@@ -96,6 +99,7 @@ export default function InscriptionPage() {
               error={fieldErrors.password?.[0]}
             />
             <Input
+              name="password_confirmation"
               label="Confirmer le mot de passe"
               type="password"
               placeholder="••••••••"
@@ -104,7 +108,7 @@ export default function InscriptionPage() {
               value={passwordConfirmation}
               onChange={(e) => setPasswordConfirmation(e.target.value)}
             />
-
+ 
             <div className="flex items-start">
               <input
                 type="checkbox"
@@ -119,12 +123,12 @@ export default function InscriptionPage() {
                 </Link>
               </label>
             </div>
-
+ 
             <Button variant="primary" className="w-full" type="submit" disabled={loading}>
               {loading ? "Inscription en cours..." : "S'inscrire"}
             </Button>
           </form>
-
+ 
           <div className="mt-6 text-center text-sm text-gray-600">
             Vous avez déjà un compte ?{" "}
             <Link href="/auth/connexion" className="text-primary font-medium hover:underline">
