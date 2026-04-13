@@ -14,12 +14,12 @@ type Tab = "resources" | "comments";
 export default function ModerationPage() {
   const [tab, setTab] = useState<Tab>("resources");
  
-  // ── Ressources ──────────────────────────────────────────────────────────────
+  // Variable pour la gestion des ressource
   const [pending, setPending] = useState<ResourceItem[]>(PENDING_RESOURCES);
   const [rejected, setRejected] = useState<number[]>([]);
   const [resourceConfirm, setResourceConfirm] = useState<{ id: number; action: "approve" | "reject" } | null>(null);
  
-  // ── Commentaires ────────────────────────────────────────────────────────────
+  //  Variable pour la gestion des commantaires
   const [comments, setComments]       = useState<Comment[]>(INITIAL_COMMENTS);
   const [filterFlagged, setFilterFlagged] = useState(false);
   const [editComment, setEditComment]     = useState<Comment | null>(null);
@@ -28,7 +28,7 @@ export default function ModerationPage() {
   const flaggedCount    = comments.filter((c) => c.flagged).length;
   const visibleComments = filterFlagged ? comments.filter((c) => c.flagged) : comments;
  
-  // ── Handlers ressources ─────────────────────────────────────────────────────
+  // Gestion des Commentaires
   function approveResource(id: number) {
     setPending((prev) => prev.filter((r) => r.id !== id));
     setResourceConfirm(null);
@@ -40,7 +40,7 @@ export default function ModerationPage() {
     setResourceConfirm(null);
   }
  
-  // ── Handlers commentaires ───────────────────────────────────────────────────
+  // Prise en chage de la sauvegarde et suppression de commentaire
   function saveComment(id: number, content: string) {
     setComments((prev) => prev.map((c) => (c.id === id ? { ...c, content } : c)));
     setEditComment(null);
