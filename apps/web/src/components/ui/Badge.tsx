@@ -15,7 +15,7 @@ export default function Badge({
 }: BadgeProps) {
   const variantStyles = {
     primary: "bg-primary-light text-white",
-    secondary: "bg-secondary-light text-white",
+    secondary: "bg-secondary-light text-gray-900",
     accent: "bg-accent-light text-gray-900",
     gray: "bg-gray-200 text-gray-700",
     success: "bg-green-100 text-green-800",

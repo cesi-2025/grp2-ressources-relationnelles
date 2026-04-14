@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\Role;
 use App\Http\Requests\CommentRequest;
 use App\Models\Comment;
 use App\Models\Resource;
@@ -40,6 +41,10 @@ class CommentController extends Controller
             return response()->json(['message' => 'Unauthorized.'], 401);
         }
 
+        if ($request->user()->role !== Role::CITIZEN) {
+            return response()->json(['message' => 'Forbidden.'], 403);
+        }
+
         $comment = Comment::query()->create([
             'content' => $request->string('content')->toString(),
             'user_id' => $request->user()->id,
@@ -56,6 +61,10 @@ class CommentController extends Controller
     {
         if (!$request->user()) {
             return response()->json(['message' => 'Unauthorized.'], 401);
+        }
+
+        if ($request->user()->role !== Role::CITIZEN) {
+            return response()->json(['message' => 'Forbidden.'], 403);
         }
 
         $parentComment = Comment::query()->findOrFail($id);

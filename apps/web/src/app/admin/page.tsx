@@ -196,6 +196,8 @@ export default function AdminDashboardPage() {
                         {key === 'creations' && 'Total des ressources créées'}
                         {key === 'resources_published' && 'Ressources validées et visibles publiquement'}
                         {key === 'resources_pending' && 'Ressources en attente de modération'}
+                        {key === 'exploitations' && 'Ressources marquées comme exploitées'}
+                        {key === 'favoris' && 'Total des mises en favori'}
                         {key === 'commentaires' && 'Total des commentaires postés'}
                       </td>
                     </tr>

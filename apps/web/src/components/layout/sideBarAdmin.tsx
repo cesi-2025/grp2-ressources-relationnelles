@@ -15,7 +15,7 @@ const SECTIONS = [
     label: "Navigation",
     role:["admin", "moderator", "super_admin"],
     links: [ 
-      { href: "/admin",            role:["admin", "moderator", "super_admin"],   label: "Accueil",      icon: HomePicture, badge: null },
+      { href: "/admin",            role:["admin", "moderator", "super_admin"],   label: "Statistiques",      icon: HomePicture, badge: null },
       { href: "/admin/ressources", role:["admin", "super_admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
       { href: "/admin/categorie",      role:["admin", "super_admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
     ],
