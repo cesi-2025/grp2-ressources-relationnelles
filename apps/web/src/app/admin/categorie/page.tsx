@@ -53,7 +53,6 @@ export default function CategoriesPage() {
     setDeleting(true);
     setError('');
     try {
-      // ✅ FIX — route correcte : DELETE /admin/categories/{id} (auth:sanctum + role:admin)
       await api(`/admin/categories/${deleteTarget.id}`, { method: 'DELETE' });
       setList((prev) => prev.filter((c) => c.id !== deleteTarget.id));
       setDeleteTarget(null);
@@ -137,9 +136,6 @@ export default function CategoriesPage() {
           onClose={() => { setFormOpen(false); setEditTarget(null); }}
           onSaved={handleSaved}
           onError={setError}
-          // ✅ NOTE — CategoryForm doit utiliser :
-          //   POST  /admin/categories         (création)
-          //   PUT   /admin/categories/{id}    (modification)
         />
       )}
  

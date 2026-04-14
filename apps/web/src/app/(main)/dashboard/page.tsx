@@ -34,18 +34,11 @@ export default function DashboardPage() {
  
   const fetchAll = useCallback(async () => {
     try {
-      // ✅ getProgression() → GET /progression
-      // ProgressionController.index() retourne :
-      // { favorites: [...], exploited: [...], set_aside: [...] }
-      // Chaque entrée de favorites/exploited/set_aside contient un objet
-      // { ..., resource: { id, title, content, ... } }
       const res: any = await getProgression();
  
-      // Extraction des ressources depuis res.favorites
       const favRaw: any[] = Array.isArray(res.favorites) ? res.favorites : [];
       setFavoriteList(favRaw.map((f) => f.resource).filter(Boolean));
  
-      // Extraction depuis res.exploited — on injecte progression_status pour les filtres
       const exploitedRaw: any[] = Array.isArray(res.exploited)
         ? res.exploited
         : Object.values(res.exploited ?? {});
@@ -55,7 +48,6 @@ export default function DashboardPage() {
           .filter(Boolean) as Resource[]
       );
  
-      // Extraction depuis res.set_aside
       const asideRaw: any[] = Array.isArray(res.set_aside)
         ? res.set_aside
         : Object.values(res.set_aside ?? {});
@@ -77,7 +69,6 @@ export default function DashboardPage() {
  
   async function handleRemoveFavorite(resourceId: number) {
     try {
-      // ✅ removeFavorite() existe dans api.ts → DELETE /resources/{id}/favorite
       await removeFavorite(resourceId);
       setFavoriteList((prev) => prev.filter((r) => r.id !== resourceId));
     } catch (e) { console.error(e); }
@@ -85,7 +76,6 @@ export default function DashboardPage() {
  
   async function handleUnexploit(resourceId: number) {
     try {
-      // ✅ markSetAside() existe dans api.ts → POST /resources/{id}/set-aside
       await markSetAside(resourceId);
       const item = exploitedList.find((r) => r.id === resourceId);
       if (item) {
@@ -97,7 +87,6 @@ export default function DashboardPage() {
  
   async function handleCancelAside(resourceId: number) {
     try {
-      // ✅ markExploited() existe dans api.ts → POST /resources/{id}/exploit
       await markExploited(resourceId);
       const item = asideList.find((r) => r.id === resourceId);
       if (item) {

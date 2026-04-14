@@ -29,7 +29,6 @@ export default function AdminDashboardPage() {
  
   const fetchStats = useCallback(async () => {
     if (!user) return;
-    // ✅ FIX — /admin/statistics est interdit aux modérateurs (403)
     if (isModerator) {
       setStatsLoad(false);
       return;

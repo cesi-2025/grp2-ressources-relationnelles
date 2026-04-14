@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
  
-// ── Design Tokens ─────────────────────────────────────────────────────────────
+// modéle du token
 export const tokens = {
   colors: {
     bleuHarmonie:  "#5BA4CF",
@@ -24,7 +24,7 @@ export const tokens = {
   radius: { sm: 6, md: 10, lg: 14 },
 } as const;
  
-// ── NavbarAdmin ───────────────────────────────────────────────────────────────
+// Style pour le navbar Admin
 export const navbarAdminS = {
   nav: {
     position:     "sticky",
@@ -113,7 +113,7 @@ export const navbarAdminS = {
     gap:        2,
   } satisfies CSSProperties,
  
-  // active=true → style actif permanent
+  // Style is activé
   link: (): CSSProperties => ({
     fontFamily:     tokens.fonts.title,
     fontWeight:     700,
@@ -200,7 +200,7 @@ export const navbarAdminS = {
   } satisfies CSSProperties,
 };
  
-// ── SidebarAdmin ──────────────────────────────────────────────────────────────
+// Style sidebar admin
 export const sidebarAdminS = {
   aside: {
     width:         260,
@@ -251,7 +251,7 @@ export const sidebarAdminS = {
     padding:       "10px 24px 4px",
   } satisfies CSSProperties,
  
-  // active=true → style actif permanent
+  // Style sur actovation
   link: (): CSSProperties => ({
     display:        "flex",
     alignItems:     "center",
@@ -322,7 +322,7 @@ export const sidebarAdminS = {
   } satisfies CSSProperties,
 };
  
-// ── Responsive CSS ────────────────────────────────────────────────────────────
+// Style css responsibe
 export const responsiveCss = `
   .nav-admin-link:hover  { background: ${tokens.colors.bleuLight} !important; color: ${tokens.colors.bleuDark} !important; }
   .btn-admin-outline:hover { background: ${tokens.colors.bleuLight} !important; }
