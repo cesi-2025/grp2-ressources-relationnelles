@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
  
 const ADMIN_ROLES = ['admin', 'super_admin', 'moderator'];
-const CITIZEN_ROLES = ['citoyen'];
- 
+const CITIZEN_ROLES = ['citizen'];
+
 const PROTECTED_ROUTES: Record<string, string[]> = {
   '/admin': ADMIN_ROLES,
   '/moderation': ['moderator', 'admin', 'super_admin'],
-  '/dashboard': CITIZEN_ROLES,
+  '/dashboard': [...CITIZEN_ROLES, ...ADMIN_ROLES],
 };
  
 function getRole(request: NextRequest): string | null {

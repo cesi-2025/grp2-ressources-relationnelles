@@ -31,13 +31,13 @@ export default function CategoryForm({ category, onClose, onSaved, onError }: Ca
       let result: Category;
       if (isEdit && category) {
         // ✅ Remplace categories.update() → api() PUT /categories/{id}
-        result = await api<Category>(`/categories/${category.id}`, {
+        result = await api<Category>(`/admin/categories/${category.id}`, {
           method: 'PUT',
           body: { name: name.trim() },
         });
       } else {
         // ✅ Remplace categories.create() → api() POST /categories
-        result = await api<Category>('/categories', {
+        result = await api<Category>('/admin/categories', {
           method: 'POST',
           body: { name: name.trim() },
         });

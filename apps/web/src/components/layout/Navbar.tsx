@@ -56,6 +56,11 @@ export default function Navbar() {
             {loading ? null : user ? (
               <>
                 <span className="text-sm text-gray-700 font-medium">{user.name}</span>
+                <Link href="/dashboard">
+                  <Button variant="outline" size="sm">
+                    Mon espace
+                  </Button>
+                </Link>
                 {(user.role === "admin" || user.role === "super_admin" || user.role === 'moderator') && (
                   <Link href="/admin">
                     <Button variant="outline" size="sm">
@@ -135,7 +140,12 @@ export default function Navbar() {
                 {user ? (
                   <>
                     <span className="text-sm text-gray-700 font-medium px-2">{user.name}</span>
-                    {(user.role === "admin" || user.role === "super_admin") && (
+                    <Link href="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" size="md" className="w-full">
+                        Mon espace
+                      </Button>
+                    </Link>
+                    {(user.role === "admin" || user.role === "super_admin" || user.role === "moderator") && (
                       <Link href="/admin" onClick={() => setIsMenuOpen(false)}>
                         <Button variant="outline" size="md" className="w-full">
                           Administration

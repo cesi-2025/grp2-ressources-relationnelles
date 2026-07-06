@@ -91,7 +91,7 @@ export default function Home() {
             <Link href="/ressources?category=ecoute">
               <Card hover className="h-full">
                 <div className="text-4xl mb-4" aria-hidden="true">👂</div>
-                <h3 className="text-xl font-semibold text-secondary mb-2">
+                <h3 className="text-xl font-semibold text-green-800 mb-2">
                   Écoute active
                 </h3>
                 <p className="text-gray-600 mb-4">
@@ -104,7 +104,7 @@ export default function Home() {
             <Link href="/ressources?category=empathie">
               <Card hover className="h-full">
                 <div className="text-4xl mb-4" aria-hidden="true">❤️</div>
-                <h3 className="text-xl font-semibold text-accent-dark mb-2">
+                <h3 className="text-xl font-semibold text-amber-700 mb-2">
                   Empathie
                 </h3>
                 <p className="text-gray-600 mb-4">
@@ -130,7 +130,7 @@ export default function Home() {
             <Link href="/ressources?category=intelligence-emotionnelle">
               <Card hover className="h-full">
                 <div className="text-4xl mb-4" aria-hidden="true">🧠</div>
-                <h3 className="text-xl font-semibold text-secondary mb-2">
+                <h3 className="text-xl font-semibold text-green-800 mb-2">
                   Intelligence émotionnelle
                 </h3>
                 <p className="text-gray-600 mb-4">
@@ -143,7 +143,7 @@ export default function Home() {
             <Link href="/ressources?category=collaboration">
               <Card hover className="h-full">
                 <div className="text-4xl mb-4" aria-hidden="true">🌟</div>
-                <h3 className="text-xl font-semibold text-accent-dark mb-2">
+                <h3 className="text-xl font-semibold text-amber-700 mb-2">
                   Collaboration
                 </h3>
                 <p className="text-gray-600 mb-4">

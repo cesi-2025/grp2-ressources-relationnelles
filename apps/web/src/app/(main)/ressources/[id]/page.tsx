@@ -11,8 +11,13 @@ import {
   getResource,
   getComments,
   createComment,
+  replyComment,
   addFavorite,
   removeFavorite,
+  getShareLink,
+  markExploited,
+  markSetAside,
+  startActivity,
   type Resource,
   type Comment,
   ApiRequestError,
@@ -42,6 +47,11 @@ export default function ResourceDetailPage() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [commentText, setCommentText] = useState("");
   const [commentLoading, setCommentLoading] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<number | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replyLoading, setReplyLoading] = useState(false);
+  const [shareStatus, setShareStatus] = useState<string>("");
+  const [activityStatus, setActivityStatus] = useState<string>("");
 
   useEffect(() => {
     setLoading(true);
@@ -85,6 +95,73 @@ export default function ResourceDetailPage() {
       }
     } finally {
       setCommentLoading(false);
+    }
+  }
+
+  async function handleSubmitReply(parentId: number) {
+    if (!replyText.trim()) return;
+    setReplyLoading(true);
+    try {
+      const reply = await replyComment(parentId, replyText.trim());
+      setComments((prev) =>
+        prev.map((c) =>
+          c.id === parentId
+            ? { ...c, replies: [...(c.replies ?? []), reply] }
+            : c,
+        ),
+      );
+      setReplyText("");
+      setReplyTarget(null);
+    } catch (err) {
+      if (err instanceof ApiRequestError) alert(err.message);
+    } finally {
+      setReplyLoading(false);
+    }
+  }
+
+  async function handleShare() {
+    try {
+      const link = await getShareLink(resourceId);
+      const url = link.url.startsWith("http") ? link.url : window.location.origin + link.url;
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(url);
+        setShareStatus("Lien copié dans le presse-papiers.");
+      } else {
+        setShareStatus(url);
+      }
+      setTimeout(() => setShareStatus(""), 4000);
+    } catch {
+      setShareStatus("Partage indisponible.");
+    }
+  }
+
+  async function handleMarkExploited() {
+    try {
+      await markExploited(resourceId);
+      setActivityStatus("Ressource marquée comme exploitée.");
+      setTimeout(() => setActivityStatus(""), 4000);
+    } catch {
+      setActivityStatus("Action impossible.");
+    }
+  }
+
+  async function handleMarkSetAside() {
+    try {
+      await markSetAside(resourceId);
+      setActivityStatus("Ressource mise de côté.");
+      setTimeout(() => setActivityStatus(""), 4000);
+    } catch {
+      setActivityStatus("Action impossible.");
+    }
+  }
+
+  async function handleStartActivity() {
+    try {
+      const res = await startActivity(resourceId);
+      setActivityStatus(`Session démarrée (#${res.session.id}).`);
+      setTimeout(() => setActivityStatus(""), 4000);
+    } catch (err) {
+      setActivityStatus(err instanceof ApiRequestError ? err.message : "Démarrage impossible.");
     }
   }
 
@@ -140,12 +217,34 @@ export default function ResourceDetailPage() {
             </div>
 
             {user ? (
-              <Button
-                variant={isFavorite ? "secondary" : "outline"}
-                onClick={handleToggleFavorite}
-              >
-                {isFavorite ? "★ Retiré des favoris" : "☆ Ajouter aux favoris"}
-              </Button>
+              <div className="flex flex-wrap gap-2 md:justify-end">
+                <Button
+                  variant={isFavorite ? "secondary" : "outline"}
+                  onClick={handleToggleFavorite}
+                >
+                  {isFavorite ? "★ Retiré des favoris" : "☆ Ajouter aux favoris"}
+                </Button>
+                <Button variant="outline" onClick={handleShare}>
+                  Partager
+                </Button>
+                <Button variant="outline" onClick={handleMarkExploited}>
+                  Marquer exploitée
+                </Button>
+                <Button variant="outline" onClick={handleMarkSetAside}>
+                  Mettre de côté
+                </Button>
+                {(resource.resource_type?.name?.toLowerCase().includes("activit") ||
+                  resource.resource_type?.name?.toLowerCase().includes("jeu")) && (
+                  <Button variant="primary" onClick={handleStartActivity}>
+                    Démarrer
+                  </Button>
+                )}
+                {user.id === resource.user_id && (
+                  <Link href={`/ressources/${resource.id}/editer`}>
+                    <Button variant="outline">Modifier</Button>
+                  </Link>
+                )}
+              </div>
             ) : (
               <p className="text-sm text-gray-600 md:max-w-xs">
                 Connectez-vous pour ajouter cette ressource à vos favoris.
@@ -155,6 +254,11 @@ export default function ResourceDetailPage() {
               </p>
             )}
           </div>
+          {(shareStatus || activityStatus) && (
+            <p className="text-sm text-primary mb-4" role="status" aria-live="polite">
+              {shareStatus || activityStatus}
+            </p>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-600 mb-7">
             <div>
@@ -215,6 +319,46 @@ export default function ResourceDetailPage() {
                           <p className="text-gray-700 text-sm">{reply.content}</p>
                         </div>
                       ))}
+                    </div>
+                  )}
+                  {user && (
+                    <div className="mt-3">
+                      {replyTarget === comment.id ? (
+                        <div className="space-y-2">
+                          <textarea
+                            rows={2}
+                            value={replyText}
+                            onChange={(e) => setReplyText(e.target.value)}
+                            placeholder="Votre réponse..."
+                            className="w-full px-3 py-2 bg-white border-2 border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                          />
+                          <div className="flex gap-2">
+                            <Button
+                              variant="primary"
+                              size="sm"
+                              disabled={replyLoading || !replyText.trim()}
+                              onClick={() => handleSubmitReply(comment.id)}
+                            >
+                              {replyLoading ? "Envoi..." : "Publier la réponse"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => { setReplyTarget(null); setReplyText(""); }}
+                            >
+                              Annuler
+                            </Button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => { setReplyTarget(comment.id); setReplyText(""); }}
+                          className="text-xs font-medium text-primary hover:underline"
+                        >
+                          Répondre
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

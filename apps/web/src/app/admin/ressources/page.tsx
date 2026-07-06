@@ -44,12 +44,9 @@ export default function AdminRessourcesPage() {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
  
   useEffect(() => {
-    if (!user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
-        router.replace('/auth/connexion');
-      }
+    if (!user){router.replace('/auth/connexion');
     }else if(user){
-      if(['admin', 'super_admin', 'moderator'].includes(user.role)) {
+      if(!['admin', 'super_admin', 'moderator'].includes(user.role)) {
         router.replace('/dashboard');
       }
     }
@@ -130,7 +127,8 @@ export default function AdminRessourcesPage() {
     if (!deleteItem) return;
     setDeleting(true);
     try {
-      await api(`/admin/resources/${deleteItem.id}/suspend`, { method: 'PUT' });
+      // Suppression définitive (route DELETE /admin/resources/{id}).
+      await api(`/admin/resources/${deleteItem.id}`, { method: 'DELETE' });
       addToast(`Ressource "${deleteItem.title}" supprimée.`, 'success');
       setDeleteItem(null);
       fetchRes();

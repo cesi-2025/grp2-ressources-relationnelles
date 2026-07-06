@@ -47,7 +47,7 @@ class SuperAdminController extends Controller
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
             'email_hash' => ['required', 'string', 'size:64', 'unique:users,email_hash'],
             'password' => ['required', 'confirmed', Password::defaults()],
-            'role' => ['required', Rule::in([Role::MODERATOR->value, Role::ADMIN->value, Role::CITIZEN->value, Role::SUPER_ADMIN->value])],
+            'role' => ['required', Rule::in([Role::MODERATOR->value, Role::ADMIN->value, Role::SUPER_ADMIN->value])],
             'is_active' => ['sometimes', 'boolean'],
         ]);
  
