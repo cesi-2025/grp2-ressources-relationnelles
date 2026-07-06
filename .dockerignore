@@ -1,0 +1,9 @@
+**/node_modules
+**/.next
+apps/mobile
+api/vendor
+api/storage/logs
+api/.env
+.git
+.env
+.env.*
