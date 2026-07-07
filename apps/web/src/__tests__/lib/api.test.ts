@@ -163,7 +163,9 @@ describe("Auth API functions", () => {
     expect(result.token).toBe("tok");
 
     const body = JSON.parse(mockFetch.mock.calls[0][1].body);
-    expect(body).toEqual({ email: "a@b.c", password: "pass" });
+    // login envoie aussi un email_hash (SHA-256) pour la confidentialité RGPD.
+    expect(body).toMatchObject({ email: "a@b.c", password: "pass" });
+    expect(typeof body.email_hash).toBe("string");
   });
 
   it("register sends all fields", async () => {
@@ -225,7 +227,7 @@ describe("Resource API functions", () => {
 
   it("createResource sends POST with data", async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1 }));
-    const data = { title: "T", description: "D", category_id: 1, relation_type_id: 1, resource_type_id: 1 };
+    const data = { title: "T", content: "D", category_id: 1, relation_type_id: 1, resource_type_id: 1 };
 
     await createResource(data);
 

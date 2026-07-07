@@ -10,11 +10,17 @@ import UserPicture from "@/style/picture/team.png"
 import ModerationPicture from "@/style/picture/moderator.png"
 import Image from "next/image";
 
-const SECTIONS = [
+type AdminBadge = { color: string; text: string } | null;
+
+const SECTIONS: {
+  label: string;
+  role: string[];
+  links: { href: string; role: string[]; label: string; icon: typeof HomePicture; badge: AdminBadge }[];
+}[] = [
   {
     label: "Navigation",
     role:["admin", "moderator", "super_admin"],
-    links: [ 
+    links: [
       { href: "/admin",            role:["admin", "moderator", "super_admin"],   label: "Statistiques",      icon: HomePicture, badge: null },
       { href: "/admin/ressources", role:["admin", "super_admin"],  label: "Ressources",   icon: RessourcesPicture, badge: null },
       { href: "/admin/categorie",      role:["admin", "super_admin"],  label: "Categorie", icon: CategoriePicture, badge: null },
@@ -41,13 +47,13 @@ export default function SidebarAdmin() {
         <div style={sidebarAdminS.headerSub}>Mode administration</div>
       </div>
       {SECTIONS.map((section, si) => (
-        section.role.includes(user?.role) ? (
+        user?.role && section.role.includes(user.role) ? (
           <div key={si} style={sidebarAdminS.section}>
                   
                     <div style={sidebarAdminS.sectionLabel}>{section.label}</div>
                     
                     {section.links.map((link) => (
-                      link.role.includes(user?.role) ?(
+                      user?.role && link.role.includes(user.role) ? (
                         <Link
                           key={link.href}
                           href={link.href}
