@@ -225,7 +225,7 @@ describe("Resource API functions", () => {
 
   it("createResource sends POST with data", async () => {
     mockFetch.mockResolvedValueOnce(jsonResponse({ id: 1 }));
-    const data = { title: "T", description: "D", category_id: 1, relation_type_id: 1, resource_type_id: 1 };
+    const data = { title: "T", content: "D", category_id: 1, relation_type_id: 1, resource_type_id: 1 };
 
     await createResource(data);
 
