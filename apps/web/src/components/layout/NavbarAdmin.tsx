@@ -32,7 +32,7 @@ export default function NavbarAdmin() {
             </div>
           </Link>
  
-          <span style={navbarAdminS.adminBadge}>{user?.role in data_admin_tab? data_admin_tab[user?.role] : ""}</span>
+          <span style={navbarAdminS.adminBadge}>{user?.role && user.role in data_admin_tab ? data_admin_tab[user.role as keyof typeof data_admin_tab] : ""}</span>
  
           <div style={navbarAdminS.spacer} />
  

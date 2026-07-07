@@ -41,13 +41,13 @@ export default function SidebarAdmin() {
         <div style={sidebarAdminS.headerSub}>Mode administration</div>
       </div>
       {SECTIONS.map((section, si) => (
-        section.role.includes(user?.role) ? (
+        user?.role && section.role.includes(user.role) ? (
           <div key={si} style={sidebarAdminS.section}>
                   
                     <div style={sidebarAdminS.sectionLabel}>{section.label}</div>
                     
                     {section.links.map((link) => (
-                      link.role.includes(user?.role) ?(
+                      user?.role && link.role.includes(user.role) ? (
                         <Link
                           key={link.href}
                           href={link.href}
