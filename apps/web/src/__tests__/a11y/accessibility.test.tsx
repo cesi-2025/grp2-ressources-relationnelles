@@ -6,7 +6,7 @@ import * as matchers from "vitest-axe/matchers";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import ResourceCard from "@/components/resources/ResourceCard";
-import Pagination from "@/components/resources/Pagination";
+import Pagination from "@/components/resources/pagination";
 import type { Resource } from "@/lib/api";
 
 // Étend Vitest avec le matcher axe (toHaveNoViolations).
