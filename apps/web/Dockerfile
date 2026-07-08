@@ -12,7 +12,6 @@ FROM base AS builder
 WORKDIR /app
 RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/apps/web/node_modules ./apps/web/node_modules
 COPY . .
 
 ARG NEXT_PUBLIC_API_URL
