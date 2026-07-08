@@ -12,6 +12,7 @@
     "test:a11y": "vitest run src/__tests__/a11y"
   },
   "dependencies": {
+    "@sentry/nextjs": "^10.64.0",
     "next": "16.1.6",
     "next-auth": "^4.24.13",
     "react": "19.2.3",
