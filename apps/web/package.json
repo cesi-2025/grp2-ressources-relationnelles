@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "test:a11y": "vitest run src/__tests__/a11y"
   },
   "dependencies": {
     "@sentry/nextjs": "^10.64.0",
@@ -31,6 +32,7 @@
     "jsdom": "^29.0.2",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vitest": "^4.1.4"
+    "vitest": "^4.1.4",
+    "vitest-axe": "^0.1.0"
   }
 }
