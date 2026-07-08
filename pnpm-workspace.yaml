@@ -5,7 +5,10 @@ nodeLinker: hoisted
 onlyBuiltDependencies:
   - sharp
   - unrs-resolver
+ignoredBuiltDependencies:
+  - '@sentry/cli'
 allowBuilds:
+  '@sentry/cli': false
   sharp: true
   unrs-resolver: true
 overrides:
